@@ -231,8 +231,23 @@
 /* Footer toggle: the icon turns around instead of being swapped */
 
 .footer {
+  position: relative;
+  z-index: 1;
   flex: none;
   padding: 10px;
+  background: inherit;
+  transition: box-shadow 150ms ease;
+
+  /* Folders continue under it */
+  &[data-more-above] {
+    @mixin light {
+      box-shadow: 0 -6px 10px -8px rgb(31 29 26 / 22%);
+    }
+
+    @mixin dark {
+      box-shadow: 0 -6px 12px -8px rgb(0 0 0 / 60%);
+    }
+  }
 }
 
 .footer .link {

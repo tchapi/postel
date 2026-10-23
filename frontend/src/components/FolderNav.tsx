@@ -1,4 +1,5 @@
 import type React from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Kbd, ScrollArea, Stack, Tooltip, UnstyledButton } from '@mantine/core'
 import {
   IconArchive,
@@ -110,6 +111,23 @@ export function FolderNav({
   const { t } = useI18n()
   const label = useFolderLabel()
 
+  // A small shadow over the footer while more folders hide below it
+  const viewport = useRef<HTMLDivElement>(null)
+  const [moreBelow, setMoreBelow] = useState(false)
+  const measure = useCallback(() => {
+    const v = viewport.current
+    if (v) setMoreBelow(v.scrollHeight - v.scrollTop - v.clientHeight > 1)
+  }, [])
+  useEffect(() => {
+    const v = viewport.current
+    if (!v) return
+    measure()
+    const observer = new ResizeObserver(measure)
+    observer.observe(v)
+    if (v.firstElementChild) observer.observe(v.firstElementChild)
+    return () => observer.disconnect()
+  }, [measure, folders, collapsed])
+
   // One markup for both widths: icons keep their place, text fades and the pane's width does the rest.
   const compose = onCompose ? (
     <div className={classes.composeWrap}>
@@ -193,7 +211,13 @@ export function FolderNav({
 
   return shell(
     <>
-      <ScrollArea style={{ flex: 1 }} type="hover" scrollbars="y">
+      <ScrollArea
+        style={{ flex: 1 }}
+        type="hover"
+        scrollbars="y"
+        viewportRef={viewport}
+        onScrollPositionChange={measure}
+      >
         <Stack gap={2} p={10} component="nav" aria-label={t.folders}>
           {system.map((f) => renderLink(f))}
           {custom.length > 0 && (
@@ -206,7 +230,7 @@ export function FolderNav({
         </Stack>
       </ScrollArea>
       {onToggleCollapsed && (
-        <div className={classes.footer}>
+        <div className={classes.footer} data-more-above={moreBelow || undefined}>
           <Tooltip label={t.expandFolders} position="right" disabled={!collapsed}>
             <UnstyledButton
               className={classes.link}
