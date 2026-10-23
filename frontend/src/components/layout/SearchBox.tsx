@@ -1,4 +1,4 @@
-import { CloseButton, TextInput } from '@mantine/core'
+import { CloseButton, Kbd, TextInput } from '@mantine/core'
 import { useHotkeys } from '@mantine/hooks'
 import { IconSearch } from '@tabler/icons-react'
 import { useNavigate, useParams, useSearch } from '@tanstack/react-router'
@@ -37,12 +37,16 @@ export function SearchBox() {
   return (
     <TextInput
       ref={ref}
-      size="xs"
-      w={{ base: 160, sm: 280 }}
+      size="sm"
+      radius="md"
+      w="100%"
+      maw={520}
+      variant="filled"
       placeholder="Search sender, recipient, subject"
-      leftSection={<IconSearch size={14} />}
+      leftSection={<IconSearch size={16} stroke={1.5} />}
+      rightSectionPointerEvents={value ? 'all' : 'none'}
       rightSection={
-        value && (
+        value ? (
           <CloseButton
             size="xs"
             aria-label="Clear search"
@@ -51,6 +55,8 @@ export function SearchBox() {
               submit('')
             }}
           />
+        ) : (
+          <Kbd visibleFrom="sm">/</Kbd>
         )
       }
       value={value}

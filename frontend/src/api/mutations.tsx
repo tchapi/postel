@@ -1,3 +1,4 @@
+import { Button, Group, Text } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { type InfiniteData, useMutation, useQueryClient } from '@tanstack/react-query'
 
@@ -78,16 +79,27 @@ export function useMoveMessages() {
     const id = `move-${Date.now()}`
     mutation.mutate(args, {
       onSuccess: (result) => {
+        const text = `${label} ${args.uids.length > 1 ? `${args.uids.length} messages` : 'message'} to ${toLabel}`
         notifications.show({
           id,
-          message: `${label} ${args.uids.length > 1 ? `${args.uids.length} messages` : 'message'} to ${toLabel}`,
           autoClose: 6000,
-          ...undoAction(() => {
-            notifications.hide(id)
-            if (result.uids.length > 0) {
-              mutation.mutate({ folder: args.to, uids: result.uids, to: args.folder })
-            }
-          }, result.uids.length > 0),
+          message: (
+            <Group justify="space-between" wrap="nowrap" gap="sm">
+              <Text size="sm">{text}</Text>
+              {result.uids.length > 0 && (
+                <Button
+                  size="compact-xs"
+                  variant="subtle"
+                  onClick={() => {
+                    notifications.hide(id)
+                    mutation.mutate({ folder: args.to, uids: result.uids, to: args.folder })
+                  }}
+                >
+                  Undo
+                </Button>
+              )}
+            </Group>
+          ),
         })
       },
       onError: () =>
@@ -112,15 +124,4 @@ export function useDeleteMessages() {
       void client.invalidateQueries({ queryKey: ['messages', folder] })
     },
   })
-}
-
-/** Mantine notifications have no action slot, the undo rides in the message. */
-function undoAction(onUndo: () => void, enabled: boolean) {
-  if (!enabled) return {}
-  return {
-    withCloseButton: true,
-    onClick: onUndo,
-    style: { cursor: 'pointer' },
-    title: 'Click to undo',
-  }
 }

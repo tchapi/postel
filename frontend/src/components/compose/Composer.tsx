@@ -18,7 +18,13 @@ import { useMediaQuery } from '@mantine/hooks'
 import { modals } from '@mantine/modals'
 import { notifications } from '@mantine/notifications'
 import { Link, RichTextEditor } from '@mantine/tiptap'
-import { IconPaperclip, IconSend, IconX } from '@tabler/icons-react'
+import {
+  IconArrowsMaximize,
+  IconArrowsMinimize,
+  IconPaperclip,
+  IconSend,
+  IconX,
+} from '@tabler/icons-react'
 import { useEditor } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import { useEffect, useRef, useState } from 'react'
@@ -72,6 +78,7 @@ function initialKey(initial: ComposerInitial): string {
 
 function ComposerDrawer({ initial, onClose }: { initial: ComposerInitial; onClose: () => void }) {
   const mobile = useMediaQuery('(max-width: 48em)')
+  const [full, setFull] = useState(false)
   const [to, setTo] = useState<Address[]>(initial.to ?? [])
   const [cc, setCc] = useState<Address[]>(initial.cc ?? [])
   const [bcc, setBcc] = useState<Address[]>(initial.bcc ?? [])
@@ -224,8 +231,25 @@ function ComposerDrawer({ initial, onClose }: { initial: ComposerInitial; onClos
       opened
       onClose={() => void closeKeepingDraft()}
       position="right"
-      size={mobile ? '100%' : 720}
-      title={subject || 'New message'}
+      size={mobile || full ? '100%' : 720}
+      title={
+        <Group gap="xs" wrap="nowrap">
+          <Text fw={600} truncate maw={mobile ? 220 : 520}>
+            {subject || 'New message'}
+          </Text>
+          {!mobile && (
+            <Tooltip label={full ? 'Smaller' : 'Full screen'}>
+              <ActionIcon
+                size="sm"
+                onClick={() => setFull((value) => !value)}
+                aria-label={full ? 'Smaller' : 'Full screen'}
+              >
+                {full ? <IconArrowsMinimize size={14} /> : <IconArrowsMaximize size={14} />}
+              </ActionIcon>
+            </Tooltip>
+          )}
+        </Group>
+      }
       padding="md"
       trapFocus={false}
       styles={{ body: { height: 'calc(100% - 60px)', display: 'flex', flexDirection: 'column' } }}

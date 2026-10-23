@@ -3,16 +3,19 @@ import {
   Avatar,
   Box,
   Button,
+  Collapse,
   Group,
   Stack,
   Text,
   Tooltip,
   UnstyledButton,
 } from '@mantine/core'
+import { useDisclosure } from '@mantine/hooks'
 import { IconPhotoOff } from '@tabler/icons-react'
 
 import type { Address, Message, MessageRow } from '../../api/types'
 import { displayName, formatFullDate, formatListDate, initials } from '../../lib/format'
+import { splitQuotedText } from '../../lib/quoted'
 import { AttachmentList } from './AttachmentList'
 import { HtmlBody } from './HtmlBody'
 
@@ -108,9 +111,7 @@ export function MessageView({ message, onShowImages, onCollapse }: Props) {
         {message.html ? (
           <HtmlBody html={message.html} remoteImages={message.remoteImagesLoaded} />
         ) : (
-          <Text size="sm" style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>
-            {message.text ?? ''}
-          </Text>
+          <TextBody text={message.text ?? ''} />
         )}
       </Box>
     </Stack>
@@ -136,5 +137,39 @@ export function CollapsedMessage({ row, onExpand }: { row: MessageRow; onExpand:
         </Text>
       </Group>
     </UnstyledButton>
+  )
+}
+
+const textStyle = { whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' } as const
+
+function TextBody({ text }: { text: string }) {
+  const { body, quoted } = splitQuotedText(text)
+  const [opened, { toggle }] = useDisclosure(false)
+  return (
+    <Stack gap={4}>
+      <Text size="sm" style={textStyle}>
+        {body}
+      </Text>
+      {quoted && (
+        <>
+          <Button
+            size="compact-xs"
+            variant="light"
+            color="gray"
+            w="fit-content"
+            onClick={toggle}
+            aria-expanded={opened}
+            title={opened ? 'Hide quoted text' : 'Show quoted text'}
+          >
+            •••
+          </Button>
+          <Collapse expanded={opened}>
+            <Text size="sm" c="dimmed" style={textStyle}>
+              {quoted}
+            </Text>
+          </Collapse>
+        </>
+      )}
+    </Stack>
   )
 }

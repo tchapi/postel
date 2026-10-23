@@ -43,6 +43,12 @@
 - [x] Settings import and export (JSON file)
 - [ ] Contacts autocomplete from Davis
 
+## Design
+
+- [x] First pass from [the brief](design-brief.md): theme defaults, centred search, collapsible folder pane, empty states, folded quotes, Undo in toasts, offline toast, unread count in the tab title, ⌘K palette, `?` shortcuts sheet, full-screen composer
+- [ ] Swipe actions on mobile, pull to refresh
+- [ ] Resizable list and reader split
+
 ## Later
 
 - Sieve filters, FrankenPHP worker mode, IMAP IDLE through SSE,

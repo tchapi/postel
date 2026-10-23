@@ -1,4 +1,6 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
+
+import { foldQuotedHtml } from '../../lib/quoted'
 
 type Props = {
   html: string
@@ -11,6 +13,7 @@ type Props = {
  */
 export function HtmlBody({ html, remoteImages }: Props) {
   const ref = useRef<HTMLIFrameElement>(null)
+  const folded = useMemo(() => foldQuotedHtml(html), [html])
 
   const csp = [
     "default-src 'none'",
@@ -25,7 +28,10 @@ export function HtmlBody({ html, remoteImages }: Props) {
     blockquote { margin: 0 0 0 0.5em; padding-left: 0.75em; border-left: 2px solid GrayText; color: GrayText; }
     pre { white-space: pre-wrap; }
     table { max-width: 100%; }
-  </style></head><body>${html}</body></html>`
+    a { color: LinkText; }
+    details.quoted > summary { list-style: none; display: inline-block; margin: 8px 0; padding: 0 8px; border-radius: 8px; font-size: 12px; line-height: 16px; letter-spacing: 1px; color: GrayText; background: color-mix(in srgb, GrayText 16%, transparent); cursor: pointer; }
+    details.quoted > summary::-webkit-details-marker { display: none; }
+  </style></head><body>${folded}</body></html>`
 
   useEffect(() => {
     const frame = ref.current

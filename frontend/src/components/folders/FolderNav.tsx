@@ -1,4 +1,13 @@
-import { Badge, NavLink, type NavLinkProps, Skeleton, Stack, Text } from '@mantine/core'
+import {
+  Badge,
+  Indicator,
+  NavLink,
+  type NavLinkProps,
+  Skeleton,
+  Stack,
+  Text,
+  Tooltip,
+} from '@mantine/core'
 import {
   IconArchive,
   IconBan,
@@ -13,6 +22,7 @@ import { type ComponentPropsWithoutRef, forwardRef } from 'react'
 
 import { useFolders } from '../../api/queries'
 import type { Folder, FolderRole } from '../../api/types'
+import { flattenFolders } from '../../lib/folders'
 
 const roleIcons: Record<FolderRole, typeof IconFolder> = {
   inbox: IconInbox,
@@ -32,9 +42,11 @@ const RouterNavLink = createLink(
 
 type Props = {
   onNavigate?: () => void
+  /** Icons only, names in tooltips */
+  collapsed?: boolean
 }
 
-export function FolderNav({ onNavigate }: Props) {
+export function FolderNav({ onNavigate, collapsed = false }: Props) {
   const { data: folders, isPending, isError } = useFolders()
   const { folderId } = useParams({ strict: false })
 
@@ -71,7 +83,7 @@ export function FolderNav({ onNavigate }: Props) {
         leftSection={<Icon size={16} stroke={1.5} />}
         rightSection={
           unread && (
-            <Badge size="sm" variant="light" circle={unread < 100}>
+            <Badge size="sm" variant="transparent" c="dimmed" fw={600} px={0}>
               {unread}
             </Badge>
           )
@@ -83,6 +95,36 @@ export function FolderNav({ onNavigate }: Props) {
         {folder.children.length > 0 &&
           folder.children.map((child) => renderFolder(child, depth + 1))}
       </RouterNavLink>
+    )
+  }
+
+  if (collapsed) {
+    return (
+      <Stack gap={2} align="center">
+        {flattenFolders(folders).map((folder) => {
+          const Icon = folder.role ? roleIcons[folder.role] : IconFolder
+          const label = folder.unread > 0 ? `${folder.name} (${folder.unread})` : folder.name
+          return (
+            <Tooltip key={folder.id} label={label} position="right">
+              <RouterNavLink
+                to="/folders/$folderId"
+                params={{ folderId: folder.id }}
+                preload="intent"
+                onClick={onNavigate}
+                aria-label={label}
+                active={folder.id === folderId}
+                w={44}
+                styles={{ section: { marginInlineEnd: 0 }, body: { display: 'none' } }}
+                leftSection={
+                  <Indicator size={7} offset={2} disabled={folder.unread === 0}>
+                    <Icon size={18} stroke={1.5} />
+                  </Indicator>
+                }
+              />
+            </Tooltip>
+          )
+        })}
+      </Stack>
     )
   }
 
