@@ -1,5 +1,7 @@
 import {
   Button,
+  Divider,
+  FileButton,
   Group,
   Modal,
   SegmentedControl,
@@ -12,9 +14,10 @@ import { notifications } from '@mantine/notifications'
 import { Link, RichTextEditor } from '@mantine/tiptap'
 import { useEditor } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 
 import { type Density, type Settings, useUpdateSettings } from '../../api/settings'
+import { buildSettingsFile, parseSettingsFile, SETTINGS_FILE_NAME } from '../../lib/settingsFile'
 
 type Props = {
   settings: Settings
@@ -58,6 +61,41 @@ function SettingsForm({ settings, onClose }: { settings: Settings; onClose: () =
         onError: () => notifications.show({ color: 'red', message: 'Could not save the settings' }),
       },
     )
+  }
+
+  const resetFileRef = useRef<() => void>(null)
+
+  const exportFile = () => {
+    const json = JSON.stringify(buildSettingsFile(settings), null, 2)
+    const url = URL.createObjectURL(new Blob([json], { type: 'application/json' }))
+    const link = document.createElement('a')
+    link.href = url
+    link.download = SETTINGS_FILE_NAME
+    link.click()
+    setTimeout(() => URL.revokeObjectURL(url))
+  }
+
+  const importFile = async (file: File | null) => {
+    if (!file) return
+    // so picking the same file again still fires onChange
+    resetFileRef.current?.()
+    try {
+      const imported = parseSettingsFile(await file.text())
+      setFromName(imported.fromName ?? '')
+      setLoadRemoteImages(imported.loadRemoteImages)
+      setDensity(imported.density)
+      editor?.commands.setContent(imported.signature ?? '')
+      notifications.show({
+        title: 'Settings loaded',
+        message: 'Check them and press Save to keep them',
+      })
+    } catch (error) {
+      notifications.show({
+        color: 'red',
+        title: 'Could not import the settings',
+        message: error instanceof Error ? error.message : 'Unreadable file',
+      })
+    }
   }
 
   return (
@@ -105,6 +143,30 @@ function SettingsForm({ settings, onClose }: { settings: Settings; onClose: () =
             { label: 'Compact', value: 'compact' },
           ]}
         />
+      </div>
+
+      <Divider mt="xs" />
+
+      <div>
+        <Text size="sm" c="dimmed" mb="xs">
+          Import / export
+        </Text>
+        <Group gap="xs">
+          <Button variant="default" size="xs" onClick={exportFile}>
+            Export
+          </Button>
+          <FileButton
+            onChange={(file) => void importFile(file)}
+            accept=".json,application/json"
+            resetRef={resetFileRef}
+          >
+            {(props) => (
+              <Button variant="default" size="xs" {...props}>
+                Import…
+              </Button>
+            )}
+          </FileButton>
+        </Group>
       </div>
 
       <Group justify="flex-end" mt="sm">
