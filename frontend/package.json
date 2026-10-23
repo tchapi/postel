@@ -1,0 +1,49 @@
+{
+  "name": "webmail-frontend",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "lint": "oxlint",
+    "typecheck": "tsc -b",
+    "format": "prettier --check .",
+    "format:fix": "prettier --write .",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@mantine/core": "^9.7.3",
+    "@mantine/dropzone": "^9.7.3",
+    "@mantine/hooks": "^9.7.3",
+    "@mantine/modals": "^9.7.3",
+    "@mantine/notifications": "^9.7.3",
+    "@mantine/spotlight": "^9.7.3",
+    "@mantine/tiptap": "^9.7.3",
+    "@tabler/icons-react": "^3.49.0",
+    "@tanstack/react-query": "^5.104.5",
+    "@tanstack/react-router": "^1.170.46",
+    "@tanstack/react-virtual": "^3.14.22",
+    "@tiptap/extension-link": "^3.32.0",
+    "@tiptap/pm": "^3.32.0",
+    "@tiptap/react": "^3.32.0",
+    "@tiptap/starter-kit": "^3.32.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "^24.19.2",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.1.2",
+    "oxlint": "^1.88.0",
+    "postcss": "^8.5.31",
+    "postcss-preset-mantine": "^1.18.0",
+    "postcss-simple-vars": "^7.0.1",
+    "prettier": "^3.9.10",
+    "typescript": "~6.0.3",
+    "vite": "^8.3.4",
+    "vitest": "^5.0.5"
+  }
+}
