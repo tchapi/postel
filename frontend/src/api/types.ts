@@ -25,14 +25,21 @@ export type Address = {
 export type MessageRow = {
   uid: number
   folder: string
-  from: Address
+  from: Address | null
   subject: string
   snippet: string
-  date: string
+  date: string | null
   seen: boolean
   flagged: boolean
   hasAttachments: boolean
   size: number
+}
+
+export type MessagePage = {
+  items: MessageRow[]
+  total: number
+  page: number
+  perPage: number
 }
 
 export type Attachment = {
@@ -43,12 +50,13 @@ export type Attachment = {
   inline: boolean
 }
 
-export type Message = MessageRow & {
+export type Message = Omit<MessageRow, 'snippet' | 'hasAttachments'> & {
   to: Address[]
   cc: Address[]
-  replyTo?: Address[]
-  html?: string
-  text?: string
+  replyTo: Address[]
+  messageId: string | null
+  html: string | null
+  text: string | null
   hasRemoteImages: boolean
   attachments: Attachment[]
 }

@@ -15,10 +15,11 @@
 ## Phase 1, read-only
 
 - [x] Folders with unread counts
-- [ ] Message list: paged, sorted by date, virtualized
-- [ ] Reader: headers, sanitized HTML, text fallback, attachments, inline images
-- [ ] Remote images blocked by default
-- [ ] Dark mode, keyboard navigation (`j`, `k`, `enter`, `esc`)
+- [x] Message list: paged, sorted by date, virtualized
+- [x] Reader: headers, sanitized HTML, text fallback, attachments, inline images
+- [x] Remote images blocked by default
+- [x] Dark mode, keyboard navigation (`j`, `k`, `esc`)
+- [ ] Mark as read when opened (needs the flags endpoint, phase 2)
 
 ## Phase 2, actions
 

@@ -88,6 +88,9 @@ npm run dev                    # proxies /api to the backend on :8000
 npm run format && npm run lint && npm run typecheck && npm run build
 ```
 
+There is no Authelia in front of the dev server, so the Vite proxy asserts the
+identity itself (`alice` by default, see `frontend/.env.example`).
+
 A throwaway mail server with a test account, a master user and a synthetic
 mailbox (Docker required):
 
