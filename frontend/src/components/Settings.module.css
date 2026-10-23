@@ -1,0 +1,59 @@
+.page {
+  max-width: 760px;
+  margin-inline: auto;
+}
+
+.mobileHeader {
+  height: 56px;
+  flex: none;
+  border-bottom: 1px solid var(--mantine-color-default-border);
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding-block: 20px;
+  border-top: 1px solid var(--mantine-color-default-border);
+
+  @media (max-width: $mantine-breakpoint-sm) {
+    &:first-of-type {
+      border-top: 0;
+    }
+  }
+}
+
+.heading {
+  margin: 0;
+  font-size: var(--mantine-font-size-xs);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--mantine-color-dimmed);
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 200px minmax(0, 1fr);
+  column-gap: 24px;
+  align-items: start;
+
+  @media (max-width: $mantine-breakpoint-sm) {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 8px;
+  }
+}
+
+.signature :global(.ProseMirror) {
+  min-height: 72px;
+}
+
+.swatch {
+  cursor: pointer;
+
+  &[data-checked] {
+    box-shadow:
+      0 0 0 2px var(--mantine-color-body),
+      0 0 0 4px var(--swatch-color);
+  }
+}

@@ -1,0 +1,77 @@
+.header {
+  height: 56px;
+  gap: 4px;
+  padding: 0 12px 0 20px;
+  border-bottom: 1px solid var(--mantine-color-default-border);
+
+  @media (max-width: $mantine-breakpoint-sm) {
+    padding: 0 8px 0 4px;
+  }
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+}
+
+.field {
+  min-height: 46px;
+  border-bottom: 1px solid var(--mantine-color-default-border);
+
+  @media (max-width: $mantine-breakpoint-sm) {
+    min-height: 52px;
+  }
+}
+
+.fieldLabel {
+  width: 52px;
+  flex: none;
+}
+
+.pill {
+  font-size: var(--mantine-font-size-sm);
+}
+
+.editor {
+  border: 0;
+}
+
+.toolbar {
+  padding-inline: 0;
+  border-bottom: 1px solid var(--mantine-color-default-border);
+  position: static;
+}
+
+.editor :global(.ProseMirror) {
+  min-height: 220px;
+  padding-inline: 0;
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.quoteToggle {
+  align-self: flex-start;
+}
+
+.quoted {
+  border: 1px solid var(--mantine-color-default-border);
+  border-radius: var(--mantine-radius-sm);
+  overflow: hidden;
+}
+
+.dropzone {
+  border-style: dashed;
+  padding: 8px;
+}
+
+.footer {
+  height: 64px;
+  flex: none;
+  border-top: 1px solid var(--mantine-color-default-border);
+}
+
+.sendKbd {
+  background: transparent;
+  border-color: rgb(255 255 255 / 40%);
+  color: var(--mantine-color-white);
+}

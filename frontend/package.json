@@ -14,6 +14,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@fontsource-variable/figtree": "^5.3.0",
     "@mantine/core": "^9.7.3",
     "@mantine/dropzone": "^9.7.3",
     "@mantine/hooks": "^9.7.3",
@@ -23,7 +24,6 @@
     "@mantine/tiptap": "^9.7.3",
     "@tabler/icons-react": "^3.49.0",
     "@tanstack/react-query": "^5.104.5",
-    "@tanstack/react-router": "^1.170.46",
     "@tanstack/react-virtual": "^3.14.22",
     "@tiptap/extension-link": "^3.32.0",
     "@tiptap/pm": "^3.32.0",

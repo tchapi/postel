@@ -62,6 +62,25 @@ sandboxed `iframe` with `srcdoc` on the frontend. Remote images are stripped
 unless the user asks for them. Attachments are served with
 `Content-Disposition: attachment` and `X-Content-Type-Options: nosniff`.
 
+## Frontend
+
+The interface lives in `frontend/src/components`, one component per screen
+part, and none of them fetches anything: they take props and call back.
+`MailApp.tsx` is the only container. It reads data through the `MailHooks`
+contract (`hooks.ts`), implemented on top of the API in `api/mailHooks.ts`,
+which is also where optimistic updates and undo live.
+
+Two things the hooks hide from the components:
+
+- UIDs are unique per folder only. Rows from a search across folders get an
+  encoded UID (folder slot above 2^32), decoded before any API call.
+- A conversation row stands for all its messages: actions on it are expanded
+  to every UID of the conversation.
+
+Remote images: the message is fetched with its images, and the sandboxed
+frame's Content-Security-Policy blocks them until the user allows them, once
+or for that sender.
+
 ## Container
 
 One image, three processes under supervisord:

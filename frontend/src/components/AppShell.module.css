@@ -1,0 +1,86 @@
+.main {
+  display: flex;
+  height: 100dvh;
+  min-height: 0;
+}
+
+.listPane {
+  flex: none;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.splitter {
+  flex: none;
+  width: 1px;
+  position: relative;
+  background: var(--mantine-color-default-border);
+  cursor: col-resize;
+  touch-action: none;
+
+  /* Wider invisible hit area. */
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0 -4px;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--mantine-primary-color-filled);
+  }
+}
+
+.readerPane {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.drawerContent {
+  display: flex;
+  flex-direction: column;
+}
+
+.drawerHeader {
+  padding-inline: 20px 12px;
+  border-bottom: 1px solid var(--mantine-color-default-border);
+}
+
+.drawerBody {
+  flex: 1;
+  min-height: 0;
+  padding: 0;
+}
+
+.searchTrigger {
+  flex: 0 1 560px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 8px 0 12px;
+  border: 1px solid var(--mantine-color-default-border);
+  border-radius: 18px;
+  background: var(--mantine-color-default);
+  color: var(--mantine-color-dimmed);
+  font-size: var(--mantine-font-size-md);
+
+  @mixin hover {
+    border-color: var(--mantine-color-dimmed);
+  }
+}
+
+.searchLabel {
+  flex: 1;
+}
+
+.avatarButton {
+  border-radius: 50%;
+  display: inline-flex;
+  min-width: 44px;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+}

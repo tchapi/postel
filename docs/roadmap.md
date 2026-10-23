@@ -43,11 +43,11 @@
 - [x] Settings import and export (JSON file)
 - [ ] Contacts autocomplete from Davis
 
-## Design
+## Interface
 
-- [x] First pass from [the brief](design-brief.md): theme defaults, centred search, collapsible folder pane, empty states, folded quotes, Undo in toasts, offline toast, unread count in the tab title, ⌘K palette, `?` shortcuts sheet, full-screen composer
-- [ ] Swipe actions on mobile, pull to refresh
-- [ ] Resizable list and reader split
+- [x] Interface from the design package (see [the brief](design-brief.md)): warm neutrals, six accents, Figtree, three/two/one panes, resizable split, icon rail, swipe actions, pull to refresh, search with filters across folders, Spotlight, undo everywhere including send, EN/FR
+- [x] Conversations, display name and settings backup carried into it
+- [ ] Contacts autocomplete (the composer is ready, the hook returns nothing until Davis is wired)
 
 ## Later
 

@@ -1,0 +1,43 @@
+.root {
+  min-width: 0;
+}
+
+.header {
+  height: 52px;
+  flex: none;
+  border-bottom: 1px solid var(--mantine-color-default-border);
+}
+
+.extra {
+  flex: none;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--mantine-color-default-border);
+}
+
+.pull {
+  flex: none;
+  overflow: hidden;
+  color: var(--mantine-color-dimmed);
+  border-bottom: 1px solid var(--mantine-color-default-border);
+
+  @mixin light {
+    background: var(--mantine-color-gray-0);
+  }
+
+  @mixin dark {
+    background: var(--mantine-color-dark-8);
+  }
+}
+
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.menuAnchor {
+  position: fixed;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}

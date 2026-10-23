@@ -1,0 +1,62 @@
+.root {
+  background: var(--mantine-color-body);
+
+  @mixin light {
+    background: var(--mantine-color-gray-1);
+  }
+
+  @mixin dark {
+    background: var(--mantine-color-dark-8);
+  }
+}
+
+.link {
+  border-radius: var(--mantine-radius-sm);
+  height: 34px;
+  padding-block: 0;
+}
+
+.sectionLabel {
+  letter-spacing: 0.04em;
+}
+
+.composeLabel {
+  flex: 1;
+  text-align: left;
+}
+
+/* Kbd sits on the filled accent button: translucent white keeps it legible on every accent. */
+.composeKbd {
+  border-color: rgba(255, 255, 255, 0.45);
+  background: transparent;
+  color: var(--mantine-color-white);
+}
+
+.railBadge {
+  font-size: 10px;
+  font-weight: 700;
+  padding-inline: 4px;
+}
+
+.railDivider {
+  width: 24px;
+  height: 1px;
+  margin: 6px 0;
+  background: var(--mantine-color-default-border);
+}
+
+.collapse {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 36px;
+  margin: 8px;
+  padding: 0 10px;
+  border-radius: var(--mantine-radius-sm);
+  color: var(--mantine-color-dimmed);
+  font-size: var(--mantine-font-size-sm);
+
+  @mixin hover {
+    background: var(--mantine-color-default-hover);
+  }
+}

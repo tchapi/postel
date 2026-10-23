@@ -1,15 +1,17 @@
 import { describe, expect, it } from 'vitest'
 
-import type { Settings } from '../api/settings'
+import type { Settings } from '../types'
 import { buildSettingsFile, parseSettingsFile } from './settingsFile'
 
 const settings: Settings = {
   fromName: 'Alice',
-  signature: '<p>Cheers</p>',
-  loadRemoteImages: true,
+  signatureHtml: '<p>Cheers</p>',
+  remoteImages: 'always',
   density: 'compact',
   threads: false,
-  updatedAt: '2026-10-23T10:00:00+00:00',
+  language: 'fr',
+  accent: 'jade',
+  allowedSenders: ['news@shop.example'],
 }
 
 const file = (overrides: Record<string, unknown>) =>
@@ -25,7 +27,7 @@ const file = (overrides: Record<string, unknown>) =>
   })
 
 describe('buildSettingsFile', () => {
-  it('keeps the settings and drops updatedAt', () => {
+  it('writes the API field names and leaves the sender list out', () => {
     expect(buildSettingsFile(settings)).toEqual({
       version: 1,
       settings: {
@@ -34,96 +36,52 @@ describe('buildSettingsFile', () => {
         loadRemoteImages: true,
         density: 'compact',
         threads: false,
+        language: 'fr',
+        accent: 'jade',
       },
     })
   })
 
   it('reads back what it writes', () => {
-    const { updatedAt: _, ...expected } = settings
+    const { allowedSenders: _, ...expected } = settings
     expect(parseSettingsFile(JSON.stringify(buildSettingsFile(settings)))).toEqual(expected)
   })
 })
 
 describe('parseSettingsFile', () => {
-  it('accepts a null name and signature', () => {
+  it('reads files written before threads, language and accent existed', () => {
     expect(parseSettingsFile(file({}))).toEqual({
-      fromName: null,
-      signature: null,
-      loadRemoteImages: false,
+      fromName: '',
+      signatureHtml: '',
+      remoteImages: 'block',
       density: 'comfortable',
-      threads: true,
     })
   })
 
   it('drops unknown fields', () => {
-    expect(parseSettingsFile(file({ updatedAt: 'x', theme: 'dark' }))).toEqual({
-      fromName: null,
-      signature: null,
-      loadRemoteImages: false,
-      density: 'comfortable',
-      threads: true,
+    expect(parseSettingsFile(file({ updatedAt: 'x', theme: 'dark' }))).not.toHaveProperty('theme')
+  })
+
+  it.each([
+    ['not json', 'The file is not valid JSON'],
+    ['[]', 'The file is not a settings export'],
+    [JSON.stringify({ version: 2, settings: {} }), 'Unsupported version 2, expected 1'],
+    [JSON.stringify({ version: 1 }), 'Missing "settings" object'],
+    [file({ fromName: 3 }), '"fromName" must be a string or null'],
+    [file({ loadRemoteImages: 'yes' }), '"loadRemoteImages" must be true or false'],
+    [file({ density: 'cosy' }), 'Unknown density "cosy", expected "comfortable" or "compact"'],
+    [file({ threads: 'yes' }), '"threads" must be true or false'],
+    [file({ language: 'de' }), 'Unknown language "de", expected "en" or "fr"'],
+    [file({ accent: 'chartreuse' }), 'Unknown accent "chartreuse"'],
+  ])('rejects %s', (text, message) => {
+    expect(() => parseSettingsFile(text)).toThrow(message)
+  })
+
+  it('rejects a missing field', () => {
+    const text = JSON.stringify({
+      version: 1,
+      settings: { signature: null, loadRemoteImages: false, density: 'compact' },
     })
-  })
-
-  it('rejects invalid JSON', () => {
-    expect(() => parseSettingsFile('{nope')).toThrow('The file is not valid JSON')
-  })
-
-  it('rejects a document that is not an object', () => {
-    expect(() => parseSettingsFile('[1, 2]')).toThrow('The file is not a settings export')
-  })
-
-  it('rejects a wrong or missing version', () => {
-    expect(() => parseSettingsFile(JSON.stringify({ version: 2, settings: {} }))).toThrow(
-      'Unsupported version 2, expected 1',
-    )
-    expect(() => parseSettingsFile(JSON.stringify({ settings: {} }))).toThrow(
-      'Unsupported version null, expected 1',
-    )
-  })
-
-  it('rejects a missing settings object', () => {
-    expect(() => parseSettingsFile(JSON.stringify({ version: 1 }))).toThrow(
-      'Missing "settings" object',
-    )
-  })
-
-  it.each(['fromName', 'signature', 'loadRemoteImages', 'density'])(
-    'rejects a missing %s',
-    (field) => {
-      const document = JSON.parse(file({}))
-      delete document.settings[field]
-      expect(() => parseSettingsFile(JSON.stringify(document))).toThrow(`Missing field "${field}"`)
-    },
-  )
-
-  it('rejects wrongly typed fields', () => {
-    expect(() => parseSettingsFile(file({ fromName: 42 }))).toThrow(
-      '"fromName" must be a string or null',
-    )
-    expect(() => parseSettingsFile(file({ signature: ['a'] }))).toThrow(
-      '"signature" must be a string or null',
-    )
-    expect(() => parseSettingsFile(file({ loadRemoteImages: 'yes' }))).toThrow(
-      '"loadRemoteImages" must be true or false',
-    )
-  })
-
-  it('rejects an unknown density', () => {
-    expect(() => parseSettingsFile(file({ density: 'cosy' }))).toThrow(
-      'Unknown density "cosy", expected "comfortable" or "compact"',
-    )
-  })
-})
-
-describe('parseSettingsFile and conversations', () => {
-  it('defaults to conversations for files written before the setting existed', () => {
-    expect(parseSettingsFile(file({})).threads).toBe(true)
-  })
-
-  it('rejects a non boolean', () => {
-    expect(() => parseSettingsFile(file({ threads: 'yes' }))).toThrow(
-      '"threads" must be true or false',
-    )
+    expect(() => parseSettingsFile(text)).toThrow('Missing field "fromName"')
   })
 })

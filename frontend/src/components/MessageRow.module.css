@@ -1,0 +1,181 @@
+.swipeWrap {
+  position: relative;
+  overflow: hidden;
+  border-bottom: 1px solid var(--mantine-color-default-border);
+}
+
+.swipeAction {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-inline: 22px;
+  font-size: var(--mantine-font-size-sm);
+  font-weight: 600;
+}
+
+.swipeArchive {
+  justify-content: flex-start;
+  background: var(--mantine-primary-color-filled);
+  color: var(--mantine-color-white);
+}
+
+.swipeDelete {
+  justify-content: flex-end;
+  background: var(--mantine-color-red-8);
+  color: var(--mantine-color-white);
+}
+
+.row {
+  position: relative;
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
+  column-gap: 8px;
+  align-items: start;
+  height: 78px;
+  padding: 11px 10px;
+  background: var(--mantine-color-body);
+  cursor: default;
+  touch-action: pan-y;
+  user-select: none;
+  transition: transform 160ms ease;
+
+  [data-density='compact'] & {
+    height: 64px;
+    padding-block: 5px;
+  }
+
+  @mixin hover {
+    background: var(--mantine-color-default-hover);
+  }
+
+  /* Accent tints: selected rows a little stronger than the reader's row. */
+  &[data-active] {
+    background: color-mix(
+      in srgb,
+      var(--mantine-primary-color-filled) 7%,
+      var(--mantine-color-body)
+    );
+  }
+
+  &[data-selected] {
+    background: var(--mantine-primary-color-light);
+  }
+}
+
+/* Keyboard cursor: visible only while the list has focus. */
+:global([role='listbox']:focus-visible) .row[data-active] {
+  outline: 2px solid var(--mantine-primary-color-filled);
+  outline-offset: -2px;
+}
+
+.lead {
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dot {
+  display: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--mantine-primary-color-filled);
+
+  .row[data-unread] & {
+    display: block;
+  }
+}
+
+.check {
+  display: none;
+}
+
+.row:hover .dot,
+.row[data-selection-mode] .dot,
+.row:focus-within .dot {
+  display: none;
+}
+
+.row:hover .check,
+.row[data-selection-mode] .check,
+.row:focus-within .check {
+  display: block;
+}
+
+.body {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.line {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  height: 20px;
+}
+
+.sender,
+.subject {
+  flex: 1;
+  min-width: 0;
+  font-weight: 400;
+
+  .row[data-unread] & {
+    font-weight: 600;
+  }
+}
+
+.date {
+  flex: none;
+  font-size: var(--mantine-font-size-xs);
+  color: var(--mantine-color-dimmed);
+
+  .row[data-unread] & {
+    color: var(--mantine-color-text);
+    font-weight: 600;
+  }
+}
+
+.clip {
+  flex: none;
+  color: var(--mantine-color-dimmed);
+}
+
+.folderBadge {
+  flex: none;
+  text-transform: none;
+  font-weight: 400;
+}
+
+.star {
+  flex: none;
+  color: var(--mantine-color-dimmed);
+  opacity: 0;
+
+  &[data-flagged] {
+    color: var(--mail-star);
+    opacity: 1;
+  }
+
+  .row:hover &,
+  .row[data-active] &,
+  &:focus-visible {
+    opacity: 1;
+  }
+}
+
+.snippet {
+  display: block;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .row {
+    transition: none;
+  }
+}

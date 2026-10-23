@@ -1,0 +1,37 @@
+.earlier {
+  border: 1px solid var(--mantine-color-default-border);
+  border-radius: var(--mantine-radius-md);
+  overflow: hidden;
+}
+
+.item {
+  display: block;
+  width: 100%;
+  padding: 10px 14px;
+
+  & + & {
+    border-top: 1px solid var(--mantine-color-default-border);
+  }
+}
+
+button.item:hover {
+  background: var(--mantine-color-default-hover);
+}
+
+.sender {
+  flex: none;
+  max-width: 40%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.date {
+  flex: none;
+  white-space: nowrap;
+}
+
+.text {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}

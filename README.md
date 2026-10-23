@@ -5,7 +5,7 @@ container, no database, no mailbox sync: the backend is a thin IMAP proxy and
 the frontend is a single-page app.
 
 - **Backend**: PHP 8.4, Symfony 7.4, [webklex/php-imap](https://github.com/Webklex/php-imap)
-- **Frontend**: React 19, [Mantine](https://mantine.dev), TanStack Query and Router, Vite
+- **Frontend**: React 19, [Mantine](https://mantine.dev), TanStack Query, Vite, [Figtree](https://github.com/erikdkennedy/figtree) self-hosted
 - **Container**: php-fpm + Caddy under supervisord, one image
 
 > [!NOTE]
@@ -38,6 +38,7 @@ Everything is an environment variable.
 | `SMTP_PORT` | `587` | Submission port |
 | `SMTP_ENCRYPTION` | `tls` | `false`, `ssl` or `tls` (STARTTLS) |
 | `SMTP_VALIDATE_CERT` | `true` | Verify the SMTP certificate |
+| `LOGOUT_URL` | | Where Sign out goes, e.g. Authelia's logout page. Empty reloads the page |
 | `APP_DATA_DIR` | `/app/var/data` | Uploads waiting to be sent, the settings database. Mount a volume there |
 | `DATABASE_URL` | `sqlite:////app/var/data/webmail.db` | Settings storage, any Doctrine DSN. Migrations run at start |
 
