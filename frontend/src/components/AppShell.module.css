@@ -88,6 +88,8 @@
 /* The width follows the main pane's padding transition instead of jumping. */
 .navbar {
   transition-property: transform, top, height, width;
+  /* Its own background already sets it apart */
+  border-inline-end: 0;
 
   &[data-resizing] {
     transition: none;

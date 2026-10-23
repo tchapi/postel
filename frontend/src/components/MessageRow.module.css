@@ -1,23 +1,6 @@
 .swipeWrap {
   position: relative;
   overflow: hidden;
-
-  /* Inset divider under the text, hidden next to a highlighted row */
-  &::after {
-    content: '';
-    position: absolute;
-    left: 38px;
-    right: 10px;
-    bottom: 0;
-    height: 1px;
-    background: var(--mantine-color-default-border);
-  }
-
-  /* No line touching a highlighted row, above it or below it */
-  &:has(> .row:is([data-active], [data-selected], :hover))::after,
-  &:has(+ .swipeWrap > .row:is([data-active], [data-selected], :hover))::after {
-    opacity: 0;
-  }
 }
 
 .swipeAction {
