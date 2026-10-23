@@ -88,12 +88,30 @@ npm run dev                    # proxies /api to the backend on :8000
 npm run format && npm run lint && npm run typecheck && npm run build
 ```
 
+A throwaway mail server with a test account, a master user and a synthetic
+mailbox (Docker required):
+
+```sh
+docker compose -f dev/mailserver/compose.yaml up -d
+cd backend && php bin/console app:dev:seed-mailbox --count=2000
+```
+
+Then point the backend at it in `backend/.env.local`:
+
+```sh
+IMAP_HOST=127.0.0.1
+IMAP_PORT=1143
+IMAP_MASTER_PASSWORD=master-password
+```
+
 In `dev`, loopback is a trusted proxy, so any client can impersonate a user
 with the headers, which is the point:
 
 ```sh
 curl -H 'Remote-User: alice' -H 'Remote-Email: alice@example.com' http://127.0.0.1:8000/api/folders
 ```
+
+Findings from the technical spikes live in [docs/spikes](docs/spikes).
 
 ## License
 

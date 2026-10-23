@@ -18,9 +18,14 @@ local copy of the mailbox, no sync job, no queue. On the same Docker network an
 IMAP login costs a few milliseconds, which is cheaper than keeping a mailbox
 index coherent.
 
-Dovecot does the heavy lifting: `SORT`, `SEARCH` and `STATUS` are server side,
-so paging a large mailbox is one `UID SORT` and one `FETCH` of a page of
-envelopes.
+Dovecot does the heavy lifting: `SORT`, `SEARCH`, `STATUS` and `PREVIEW` are
+server side, so paging a large mailbox is one `UID SORT` and one `FETCH` of a
+page of headers and snippets, about 40 ms on 20k messages.
+
+`webklex/php-imap` is the transport (connection, folders, `APPEND`, `STORE`,
+`MOVE`, raw commands). Its query builder and message parser are not used, see
+[spikes/2026-10-23-imap.md](spikes/2026-10-23-imap.md). Messages are parsed
+with `zbateson/mail-mime-parser`.
 
 Drafts and sent mail live in IMAP (`APPEND`). The only local state is a SQLite
 file for user settings and the contacts cache, planned for phase 3.
