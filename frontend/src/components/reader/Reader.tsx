@@ -45,7 +45,7 @@ function addressList(label: string, addresses: Address[]) {
 export function Reader() {
   const { folderId, uid } = useParams({ from: '/folders/$folderId/$uid' })
   const navigate = useNavigate()
-  const [showImages, setShowImages] = useState(false)
+  const [showImages, setShowImages] = useState<boolean | undefined>(undefined)
   const { data: message, isPending, isError } = useMessage(folderId, Number(uid), showImages)
   const flag = useFlagMessages()
 
@@ -131,7 +131,7 @@ export function Reader() {
           </Stack>
         </Group>
 
-        {message.hasRemoteImages && !showImages && (
+        {message.hasRemoteImages && !message.remoteImagesLoaded && (
           <Alert
             icon={<IconPhotoOff size={16} />}
             color="gray"
@@ -152,7 +152,7 @@ export function Reader() {
 
         <Box>
           {message.html ? (
-            <HtmlBody html={message.html} remoteImages={showImages} />
+            <HtmlBody html={message.html} remoteImages={message.remoteImagesLoaded} />
           ) : (
             <Text size="sm" style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>
               {message.text ?? ''}

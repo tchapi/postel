@@ -8,10 +8,11 @@ import classes from './MessageRow.module.css'
 type Props = {
   row: Row
   active: boolean
+  compact?: boolean
   onOpen: () => void
 }
 
-export function MessageRow({ row, active, onOpen }: Props) {
+export function MessageRow({ row, active, compact, onOpen }: Props) {
   const weight = row.seen ? undefined : 600
 
   return (
@@ -39,9 +40,11 @@ export function MessageRow({ row, active, onOpen }: Props) {
         <Text component="span" size="sm" fw={weight} className={classes.grow}>
           {row.subject || '(no subject)'}
         </Text>
-        <Text component="span" size="xs" c="dimmed" className={classes.grow}>
-          {row.snippet}
-        </Text>
+        {!compact && (
+          <Text component="span" size="xs" c="dimmed" className={classes.grow}>
+            {row.snippet}
+          </Text>
+        )}
       </span>
     </button>
   )

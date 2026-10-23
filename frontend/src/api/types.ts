@@ -61,5 +61,6 @@ export type Message = Omit<MessageRow, 'snippet' | 'hasAttachments'> & {
   html: string | null
   text: string | null
   hasRemoteImages: boolean
+  remoteImagesLoaded: boolean
   attachments: Attachment[]
 }

@@ -6,10 +6,11 @@ import { useVirtualizer } from '@tanstack/react-virtual'
 import { useEffect, useMemo, useRef } from 'react'
 
 import { useMessages } from '../../api/queries'
+import { useSettings } from '../../api/settings'
 import { ListFilters } from './ListFilters'
 import { MessageRow } from './MessageRow'
 
-const ROW_HEIGHT = 72
+const ROW_HEIGHTS = { comfortable: 72, compact: 56 }
 
 type Props = {
   folderId: string
@@ -25,6 +26,8 @@ export function MessageList({ folderId }: Props) {
   const activeUid = uid === undefined ? null : Number(uid)
   const navigate = useNavigate()
   const scrollRef = useRef<HTMLDivElement>(null)
+  const { data: settings } = useSettings()
+  const rowHeight = ROW_HEIGHTS[settings?.density ?? 'comfortable']
 
   const rows = useMemo(() => data?.pages.flatMap((page) => page.items) ?? [], [data])
   const total = data?.pages[0]?.total
@@ -32,7 +35,7 @@ export function MessageList({ folderId }: Props) {
   const virtualizer = useVirtualizer({
     count: rows.length,
     getScrollElement: () => scrollRef.current,
-    estimateSize: () => ROW_HEIGHT,
+    estimateSize: () => rowHeight,
     overscan: 10,
   })
 
@@ -76,7 +79,7 @@ export function MessageList({ folderId }: Props) {
     body = (
       <Stack gap={0}>
         {Array.from({ length: 12 }, (_, i) => (
-          <Skeleton key={i} height={ROW_HEIGHT - 16} m={8} />
+          <Skeleton key={i} height={rowHeight - 16} m={8} />
         ))}
       </Stack>
     )
@@ -123,7 +126,12 @@ export function MessageList({ folderId }: Props) {
                   transform: `translateY(${item.start}px)`,
                 }}
               >
-                <MessageRow row={row} active={row.uid === activeUid} onOpen={() => open(row.uid)} />
+                <MessageRow
+                  row={row}
+                  active={row.uid === activeUid}
+                  compact={rowHeight === ROW_HEIGHTS.compact}
+                  onOpen={() => open(row.uid)}
+                />
               </div>
             )
           })}

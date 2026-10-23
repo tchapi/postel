@@ -32,6 +32,7 @@ import {
   useSendMessage,
 } from '../../api/compose'
 import { useDeleteMessages } from '../../api/mutations'
+import { useSettings } from '../../api/settings'
 import type { Address, Attachment } from '../../api/types'
 import { formatBytes } from '../../lib/format'
 import { type ComposerInitial, useComposer } from './ComposerContext'
@@ -43,8 +44,24 @@ type PendingUpload = { key: string; name: string; size: number; upload?: Upload;
 
 export function Composer() {
   const { initial, close } = useComposer()
+  const { data: settings } = useSettings()
   if (!initial) return null
-  return <ComposerDrawer key={initialKey(initial)} initial={initial} onClose={close} />
+  return (
+    <ComposerDrawer
+      key={initialKey(initial)}
+      initial={withSignature(initial, settings?.signature ?? null)}
+      onClose={close}
+    />
+  )
+}
+
+/** The signature goes under the cursor, above any quote. Drafts already have theirs. */
+function withSignature(initial: ComposerInitial, signature: string | null): ComposerInitial {
+  if (!signature || initial.replaces) return initial
+  const block = `<p>-- </p>${signature}`
+  if (!initial.html) return { ...initial, html: `<p></p>${block}` }
+  // Replies and forwards start with an empty paragraph to type in
+  return { ...initial, html: initial.html.replace(/^<p><\/p>/, `<p></p>${block}`) }
 }
 
 /** A new key remounts the form with fresh state, no reconciliation of a half-typed mail. */

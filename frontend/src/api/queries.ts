@@ -14,8 +14,8 @@ export const queryKeys = {
   folders: ['folders'] as const,
   messages: (folderId: string, filters: ListFilters = {}) =>
     ['messages', folderId, filters.q ?? '', !!filters.unread, !!filters.flagged] as const,
-  message: (folderId: string, uid: number, images: boolean) =>
-    ['message', folderId, uid, images] as const,
+  message: (folderId: string, uid: number, images: boolean | undefined) =>
+    ['message', folderId, uid, images ?? 'default'] as const,
 }
 
 export const folderPath = (folderId: string) => `/folders/${encodeURIComponent(folderId)}`
@@ -49,11 +49,14 @@ export function useMessages(folderId: string, filters: ListFilters = {}) {
   })
 }
 
-export function useMessage(folderId: string, uid: number, images: boolean) {
+/** `images` undefined leaves the remote images decision to the user's settings. */
+export function useMessage(folderId: string, uid: number, images: boolean | undefined) {
   return useQuery({
     queryKey: queryKeys.message(folderId, uid, images),
     queryFn: () =>
-      api<Message>(`${folderPath(folderId)}/messages/${uid}${images ? '?images=1' : ''}`),
+      api<Message>(
+        `${folderPath(folderId)}/messages/${uid}${images === undefined ? '' : `?images=${images ? 1 : 0}`}`,
+      ),
   })
 }
 

@@ -38,7 +38,7 @@
 - [x] Attachments upload, carried over on forward and draft edits
 - [x] Drafts (`APPEND` to Drafts, autosave every 30s, edit from the Drafts folder)
 - [x] Send through SMTP submission with the master user, copy to Sent
-- [ ] Signatures and settings (SQLite)
+- [x] Signatures and settings (SQLite): display name, signature, remote images default, density
 - [ ] Contacts autocomplete from Davis
 
 ## Later
