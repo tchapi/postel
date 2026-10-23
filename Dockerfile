@@ -33,13 +33,16 @@ COPY docker/php-fpm.conf /usr/local/etc/php-fpm.d/zz-webmail.conf
 
 WORKDIR /app
 ENV APP_ENV=prod
+ENV APP_DATA_DIR=/app/var/data
 COPY --chown=www-data:www-data backend/ ./
 COPY --from=composer --chown=www-data:www-data /app/vendor ./vendor
 COPY --from=frontend --chown=www-data:www-data /app/dist ./public
 
 # Compile the container at build time. Env vars are read at runtime.
 RUN php bin/console cache:warmup \
+    && mkdir -p var/data \
     && chown -R www-data:www-data var
+VOLUME /app/var/data
 
 EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=3s --start-period=10s \

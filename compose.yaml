@@ -14,4 +14,11 @@ services:
       IMAP_ENCRYPTION: ${IMAP_ENCRYPTION:-false}
       IMAP_MASTER_USER: ${IMAP_MASTER_USER:-webmail}
       IMAP_MASTER_PASSWORD: ${IMAP_MASTER_PASSWORD:?}
-      MAILER_DSN: ${MAILER_DSN:-smtp://mail:587}
+      SMTP_HOST: ${SMTP_HOST:-mail}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_ENCRYPTION: ${SMTP_ENCRYPTION:-tls}
+    volumes:
+      - webmail_data:/app/var/data
+
+volumes:
+  webmail_data:

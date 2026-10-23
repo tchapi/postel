@@ -11,6 +11,7 @@ final readonly class Message
     /**
      * @param list<Address>    $to
      * @param list<Address>    $cc
+     * @param list<Address>    $bcc
      * @param list<Address>    $replyTo
      * @param list<Attachment> $attachments
      */
@@ -20,11 +21,14 @@ final readonly class Message
         public ?Address $from,
         public array $to,
         public array $cc,
+        public array $bcc,
         public array $replyTo,
         public string $subject,
         public ?DateTimeImmutable $date,
         public bool $seen,
         public bool $flagged,
+        public bool $answered,
+        public bool $draft,
         public int $size,
         public ?string $messageId,
         public ?string $html,

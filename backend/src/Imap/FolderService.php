@@ -56,6 +56,30 @@ final class FolderService
     }
 
     /**
+     * The path of the folder with that role, from LIST alone.
+     */
+    public function findByRole(RemoteUser $user, FolderRole $role): ?string
+    {
+        $client = $this->clients->forUser($user);
+        $client->connect();
+
+        try {
+            /** @var array<string, array{delimiter: string, flags: list<string>}> $listed */
+            $listed = $client->getConnection()->folders('', '*')->validatedData();
+        } finally {
+            $client->disconnect();
+        }
+
+        foreach ($listed as $path => $item) {
+            if (FolderRole::detect($path, $item['flags']) === $role) {
+                return $path;
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * @param array<string, array{parent: ?string, name: string, role: ?FolderRole, unread: int, total: int}> $nodes
      *
      * @return list<Folder>

@@ -25,6 +25,16 @@ final class ImapClientFactory
     ) {
     }
 
+    public function masterUser(): string
+    {
+        return $this->config->masterUser;
+    }
+
+    public function masterPassword(): string
+    {
+        return $this->config->masterPassword;
+    }
+
     public function forUser(RemoteUser $user): Client
     {
         $login = 'username' === $this->config->loginAttribute ? $user->username : $user->email;

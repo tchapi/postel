@@ -34,7 +34,11 @@ Everything is an environment variable.
 | `IMAP_MASTER_USER`     | `webmail`     | Dovecot master user                                                                                     |
 | `IMAP_MASTER_PASSWORD` |               | Its password, required                                                                                  |
 | `IMAP_LOGIN_ATTRIBUTE` | `email`       | Which header is the IMAP login: `email` (`Remote-Email`) or `username` (`Remote-User`)                  |
-| `MAILER_DSN`           | `null://null` | SMTP submission, e.g. `smtp://mail:587`                                                                 |
+| `SMTP_HOST` | `mail` | SMTP submission server, authenticated with the same master user |
+| `SMTP_PORT` | `587` | Submission port |
+| `SMTP_ENCRYPTION` | `tls` | `false`, `ssl` or `tls` (STARTTLS) |
+| `SMTP_VALIDATE_CERT` | `true` | Verify the SMTP certificate |
+| `APP_DATA_DIR` | `/app/var/data` | Uploads waiting to be sent, settings. Mount a volume there |
 
 ### Dovecot master user
 

@@ -13,6 +13,7 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Webklex\PHPIMAP\Connection\Protocols\ImapProtocol;
 
 use function array_slice;
+use function is_array;
 use function is_string;
 use function sprintf;
 
@@ -21,8 +22,10 @@ use function sprintf;
  */
 final class Mailbox
 {
-    private function __construct(private readonly RawCommand $commands)
-    {
+    private function __construct(
+        private readonly ImapProtocol $protocol,
+        private readonly RawCommand $commands,
+    ) {
     }
 
     /**
@@ -42,7 +45,7 @@ final class Mailbox
             if (!$protocol instanceof ImapProtocol) {
                 throw new LogicException('IMAP only');
             }
-            $mailbox = new self(new RawCommand($protocol));
+            $mailbox = new self($protocol, new RawCommand($protocol));
             $mailbox->select($folder, $readOnly);
 
             return $work($mailbox);
@@ -71,6 +74,25 @@ final class Mailbox
         }
 
         return $uids;
+    }
+
+    /**
+     * APPEND through webklex (it handles the literal continuation), the new
+     * UID read from the UIDPLUS answer when the server gives one.
+     *
+     * @param list<string> $flags
+     */
+    public function append(string $folder, string $raw, array $flags = []): ?int
+    {
+        $response = $this->protocol->appendMessage($folder, $raw, $flags);
+        foreach ($response->getResponse() as $line) {
+            $line = is_array($line) ? implode(' ', array_map('strval', array_filter($line, 'is_scalar'))) : (string) $line;
+            if (1 === preg_match('/APPENDUID \d+ (\d+)/', $line, $m)) {
+                return (int) $m[1];
+            }
+        }
+
+        return null;
     }
 
     private function select(string $folder, bool $readOnly): void

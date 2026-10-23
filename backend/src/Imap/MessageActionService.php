@@ -68,6 +68,19 @@ final class MessageActionService
     }
 
     /**
+     * Adds flags such as \Answered or $Forwarded.
+     *
+     * @param list<int>    $uids
+     * @param list<string> $flags
+     */
+    public function setFlags(RemoteUser $user, string $folder, array $uids, array $flags): void
+    {
+        Mailbox::open($this->clients, $user, $folder, false, static function (Mailbox $mailbox) use ($uids, $flags): void {
+            $mailbox->command('UID STORE', sprintf('%s +FLAGS.SILENT (%s)', Mailbox::set($uids), implode(' ', $flags)));
+        });
+    }
+
+    /**
      * Gone for good: flagged deleted then expunged, no trash involved.
      *
      * @param list<int> $uids
