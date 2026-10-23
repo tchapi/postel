@@ -1,7 +1,7 @@
 From: Corporate <hr@bigcorp.example>
 To: alice@example.test
 Subject: Important update (Outlook)
-Date: Sun, 12 Oct 2026 15:00:00 +0200
+Date: Mon, 12 Oct 2026 15:00:00 +0200
 Message-ID: <outlook-html@fixtures.webmail>
 MIME-Version: 1.0
 Content-Type: multipart/alternative; boundary="alt"

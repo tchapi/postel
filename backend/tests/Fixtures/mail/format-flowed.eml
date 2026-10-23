@@ -1,7 +1,7 @@
 From: Bob <bob@example.test>
 To: alice@example.test
 Subject: Flowed text from a terminal client
-Date: Tue, 07 Oct 2026 18:30:00 +0200
+Date: Wed, 07 Oct 2026 18:30:00 +0200
 Message-ID: <format-flowed@fixtures.webmail>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=utf-8; format=flowed; delsp=no

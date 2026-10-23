@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http;
 
+use App\Imap\Exception\ImapCommandFailed;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -42,6 +43,7 @@ final class ApiExceptionSubscriber implements EventSubscriberInterface
         [$status, $error] = match (true) {
             $exception instanceof HttpExceptionInterface => [$exception->getStatusCode(), $exception->getMessage() ?: Response::$statusTexts[$exception->getStatusCode()] ?? 'error'],
             $exception instanceof AuthFailedException => [Response::HTTP_BAD_GATEWAY, 'imap_auth_failed'],
+            $exception instanceof ImapCommandFailed => [Response::HTTP_BAD_GATEWAY, 'imap_command_failed'],
             $exception instanceof ConnectionFailedException => [Response::HTTP_BAD_GATEWAY, 'imap_unreachable'],
             default => [Response::HTTP_INTERNAL_SERVER_ERROR, 'internal_error'],
         };

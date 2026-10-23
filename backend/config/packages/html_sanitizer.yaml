@@ -1,0 +1,38 @@
+framework:
+    html_sanitizer:
+        sanitizers:
+            # HTML mail: formatting only, no scripts, no forms, no frames, no
+            # external resources except the images the user asked for.
+            mail:
+                allow_safe_elements: true
+                allow_static_elements: true
+                drop_elements: ['script', 'iframe', 'frame', 'object', 'embed', 'applet', 'form', 'input', 'button', 'select', 'textarea', 'meta', 'link', 'base', 'svg', 'math', 'style', 'noscript', 'template']
+                allow_attributes:
+                    style: '*'
+                    class: '*'
+                    id: '*'
+                    width: '*'
+                    height: '*'
+                    align: '*'
+                    valign: '*'
+                    bgcolor: '*'
+                    color: ['font']
+                    face: ['font']
+                    size: ['font']
+                    border: '*'
+                    cellpadding: ['table']
+                    cellspacing: ['table']
+                    colspan: ['td', 'th']
+                    rowspan: ['td', 'th']
+                    dir: '*'
+                    lang: '*'
+                allow_elements:
+                    center: '*'
+                    font: ['color', 'face', 'size']
+                allowed_link_schemes: ['http', 'https', 'mailto', 'tel']
+                allowed_media_schemes: ['http', 'https']
+                allow_relative_medias: true
+                allow_relative_links: false
+                max_input_length: 4000000
+                with_attribute_sanitizers:
+                    - App\Mail\StyleAttributeSanitizer

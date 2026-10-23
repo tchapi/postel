@@ -1,7 +1,7 @@
 From: Mallory <mallory@evil.example>
 To: alice@example.test
 Subject: <script>alert(1)</script> Free money
-Date: Tue, 14 Oct 2026 03:00:00 +0200
+Date: Wed, 14 Oct 2026 03:00:00 +0200
 Message-ID: <xss@fixtures.webmail>
 MIME-Version: 1.0
 Content-Type: text/html; charset=utf-8
