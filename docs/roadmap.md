@@ -51,7 +51,8 @@
 
 ## Later
 
-- Sieve filters, FrankenPHP worker mode, IMAP IDLE through SSE,
-  i18n, mobile polish
+- Sieve filters, FrankenPHP worker mode, i18n, mobile polish
 
-Explicitly out of scope: multiple accounts, labels, calendar, PGP.
+Explicitly out of scope: multiple accounts, labels, calendar, PGP, and live
+updates (each stream would hold a PHP worker and an IMAP connection, polling
+every 30s is enough).
