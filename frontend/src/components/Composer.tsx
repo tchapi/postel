@@ -54,7 +54,7 @@ export type ComposerProps = {
   /** The container delays the real send and offers Undo. */
   onSend: (draft: DraftInput) => void
   onDiscard: (draftUid: number | undefined) => void
-  /** Esc / close: the draft is kept. */
+  /** Esc, a click outside or the close button: the draft is kept. */
   onClose: (draft: DraftInput) => void
 }
 
@@ -130,6 +130,12 @@ export function Composer(props: ComposerProps) {
     }
   }
   const scheduleSave = useDebouncedCallback(() => void save(), 2000)
+
+  // Unmounting drops a pending debounced save, so run it now: the last edits end up in the draft
+  const close = () => {
+    scheduleSave.flush()
+    onClose(draft())
+  }
 
   const send = () => {
     if (!to.length && !cc.length && !bcc.length) {
@@ -226,10 +232,9 @@ export function Composer(props: ComposerProps) {
   return (
     <Drawer.Root
       opened
-      onClose={() => onClose(draft())}
+      onClose={close}
       position="right"
       size={fullScreen ? '100%' : 720}
-      closeOnClickOutside={false}
       trapFocus
       returnFocus
     >
@@ -238,7 +243,7 @@ export function Composer(props: ComposerProps) {
         <Stack gap={0} h="100%">
           <Drawer.Header className={classes.header}>
             {isMobile && (
-              <ActionIcon size={44} aria-label={t.closeComposer} onClick={() => onClose(draft())}>
+              <ActionIcon size={44} aria-label={t.closeComposer} onClick={close}>
                 <XIcon size={22} strokeWidth={1.75} />
               </ActionIcon>
             )}
@@ -348,6 +353,7 @@ export function Composer(props: ComposerProps) {
                     <RichTextEditor.Link />
                     <RichTextEditor.BulletList />
                     <RichTextEditor.Blockquote />
+                    <RichTextEditor.CodeBlock />
                   </RichTextEditor.ControlsGroup>
                   <RichTextEditor.ControlsGroup>
                     <RichTextEditor.ClearFormatting />

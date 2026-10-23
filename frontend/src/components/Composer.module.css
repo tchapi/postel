@@ -1,5 +1,7 @@
 .header {
   height: 56px;
+  /* Mantine's drawer header has a 60px minimum, which would make the form overflow by 4px */
+  min-height: 0;
   gap: 4px;
   padding: 0 12px 0 20px;
   /* An inset line instead of a border: a border eats 1px of the height and puts centred icons on half pixels. */
@@ -42,6 +44,8 @@
   border: 0;
 }
 
+/* Mantine wraps the content in a typography block: stretch it too, so the whole area takes clicks */
+.editor :global(.mantine-RichTextEditor-Typography),
 .editor :global(.mantine-RichTextEditor-content) {
   flex: 1;
   display: flex;
