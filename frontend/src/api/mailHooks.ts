@@ -509,9 +509,14 @@ export function createMailHooks(qc: QueryClient): MailHooks {
     useContacts: (q) =>
       useQuery({
         queryKey: ['contacts', q],
-        // Contacts come from Davis, not wired yet: see docs/roadmap.md
-        queryFn: async () => [],
-        enabled: false,
+        // The backend answers from its cache of the Davis address books, an empty list without Davis
+        queryFn: async () =>
+          (await api<Dto.Contact[]>(`/contacts?q=${encodeURIComponent(q)}`)).map((c) => ({
+            email: c.email,
+            name: c.name ?? undefined,
+          })),
+        enabled: q.length > 0,
+        staleTime: 60_000,
         placeholderData: keepPreviousData,
       }),
 

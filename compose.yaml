@@ -17,6 +17,9 @@ services:
       SMTP_HOST: ${SMTP_HOST:-mail}
       SMTP_PORT: ${SMTP_PORT:-587}
       SMTP_ENCRYPTION: ${SMTP_ENCRYPTION:-tls}
+      DAVIS_URL: ${DAVIS_URL:-}
+      DAVIS_APP_ID: ${DAVIS_APP_ID:-}
+      DAVIS_APP_SECRET: ${DAVIS_APP_SECRET:-}
     volumes:
       - webmail_data:/app/var/data
 

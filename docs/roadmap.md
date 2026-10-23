@@ -41,13 +41,12 @@
 - [x] Send through SMTP submission with the master user, copy to Sent
 - [x] Signatures and settings (SQLite): display name, signature, remote images default, density
 - [x] Settings import and export (JSON file)
-- [ ] Contacts autocomplete from Davis
+- [x] Contacts autocomplete from Davis, through an app key
 
 ## Interface
 
 - [x] Interface from the design package (see [the brief](design-brief.md)): warm neutrals, six accents, Figtree, three/two/one panes, resizable split, icon rail, swipe actions, pull to refresh, search with filters across folders, Spotlight, undo everywhere including send, EN/FR
 - [x] Conversations, display name and settings backup carried into it
-- [ ] Contacts autocomplete (the composer is ready, the hook returns nothing until Davis is wired)
 
 ## Later
 

@@ -38,6 +38,10 @@ Everything is an environment variable.
 | `SMTP_PORT` | `587` | Submission port |
 | `SMTP_ENCRYPTION` | `tls` | `false`, `ssl` or `tls` (STARTTLS) |
 | `SMTP_VALIDATE_CERT` | `true` | Verify the SMTP certificate |
+| `DAVIS_URL` | | Davis DAV root for contacts autocomplete, e.g. `https://dav.example.com/dav/`. Empty turns contacts off |
+| `DAVIS_APP_ID` | | Davis app key id (`app_…`) |
+| `DAVIS_APP_SECRET` | | Its secret |
+| `DAVIS_LOGIN_ATTRIBUTE` | `username` | Which header is the Davis login: `username` (`Remote-User`) or `email` (`Remote-Email`) |
 | `LOGOUT_URL` | | Where Sign out goes, e.g. Authelia's logout page. Empty reloads the page |
 | `APP_DATA_DIR` | `/app/var/data` | Uploads waiting to be sent, the settings database. Mount a volume there |
 | `DATABASE_URL` | `sqlite:////app/var/data/webmail.db` | Settings storage, any Doctrine DSN. Migrations run at start |
@@ -51,6 +55,16 @@ docker exec mailserver setup dovecot-master add webmail
 ```
 
 Plain Dovecot: see [master users](https://doc.dovecot.org/configuration_manual/authentication/master_users/).
+
+### Davis app key
+
+Contacts come from [Davis](https://github.com/tchapi/davis) over CardDAV, with an app key so the webmail never holds anyone's Davis password ([tchapi/davis#313](https://github.com/tchapi/davis/pull/313), not released yet). Create one for all users, or only the ones using the webmail:
+
+```sh
+docker exec davis bin/console davis:app-key:create webmail
+```
+
+Then set `DAVIS_URL`, `DAVIS_APP_ID` and `DAVIS_APP_SECRET`. A user without a Davis account just gets no suggestions.
 
 ### Reverse proxy
 
@@ -109,12 +123,13 @@ docker compose -f dev/mailserver/compose.yaml up -d
 cd backend && php bin/console app:dev:seed-mailbox --count=2000
 ```
 
-And a throwaway Davis for contacts, with 300 contacts for `alice`:
+And a throwaway Davis for contacts, with 300 contacts for `alice` and an app key for the webmail. App keys are not in a Davis release yet, see `dev/davis/compose.yaml` to run the branch:
 
 ```sh
 docker compose -f dev/davis/compose.yaml up -d
-docker exec webmail-dev-davis sh -c 'cd /var/www/davis && APP_ENV=prod bin/console doctrine:migrations:migrate --no-interaction'
+docker exec -u www-data webmail-dev-davis sh -c 'cd /var/www/davis && APP_ENV=prod bin/console doctrine:migrations:migrate --no-interaction'
 dev/davis/seed.sh
+docker exec -u www-data webmail-dev-davis sh -c 'cd /var/www/davis && APP_ENV=prod bin/console davis:app-key:create webmail'
 ```
 
 Then point the backend at the mail server in `backend/.env.local`:
@@ -123,6 +138,9 @@ Then point the backend at the mail server in `backend/.env.local`:
 IMAP_HOST=127.0.0.1
 IMAP_PORT=1143
 IMAP_MASTER_PASSWORD=master-password
+DAVIS_URL=http://127.0.0.1:9000/dav/
+DAVIS_APP_ID=app_...
+DAVIS_APP_SECRET=...
 ```
 
 In `dev`, loopback is a trusted proxy, so any client can impersonate a user

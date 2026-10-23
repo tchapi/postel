@@ -28,7 +28,7 @@ page of headers and snippets, about 40 ms on 20k messages.
 with `zbateson/mail-mime-parser`.
 
 Drafts and sent mail live in IMAP (`APPEND`). The only local state is a SQLite
-file for user settings and the contacts cache, planned for phase 3.
+file for user settings and the contacts cache.
 
 ## Authentication
 
@@ -50,9 +50,13 @@ own credentials. `IMAP_LOGIN_ATTRIBUTE` picks which header is the login:
 `email` for servers whose accounts are full addresses (docker-mailserver),
 `username` otherwise.
 
-Contacts will use the same trick against Davis once it supports a master user,
-with CardDAV as the API: `addressbook-query` to fill a local cache,
-`sync-collection` to refresh it, see
+Contacts use the same trick against Davis, with an app key: the backend logs
+in as `<login>*<app id>` with the key's secret and Davis acts as `<login>`.
+Autocomplete reads a local copy of the address books, since every CardDAV
+request costs ~170 ms (Davis checks a bcrypt hash). The first search fills it,
+then at most every five minutes and after the response has gone out, one
+`PROPFIND` compares each book's sync token and a changed book is fetched again
+whole with `addressbook-query`. See
 [spikes/2026-10-23-carddav.md](spikes/2026-10-23-carddav.md).
 
 ## Rendering mail

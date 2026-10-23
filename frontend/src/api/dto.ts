@@ -105,3 +105,6 @@ export type DraftPayload = {
 }
 
 export type Upload = { id: string; name: string; mime: string; size: number }
+
+/** GET /api/contacts?q= */
+export type Contact = { name: string | null; email: string }
