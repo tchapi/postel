@@ -130,6 +130,9 @@ export function MessageList(props: MessageListProps) {
     getScrollElement: () => viewportRef.current,
     estimateSize: () => rowHeight,
     overscan: 10,
+    // Room above the first row's highlight and below the last one
+    paddingStart: 6,
+    paddingEnd: 6,
   })
 
   useEffect(() => {
@@ -358,6 +361,7 @@ export function MessageList(props: MessageListProps) {
         onTouchStart={onTouchStart}
         onTouchMove={onTouchMove}
         onTouchEnd={() => void onTouchEnd()}
+        classNames={{ viewport: classes.viewport }}
         viewportProps={{
           role: 'listbox',
           tabIndex: 0,

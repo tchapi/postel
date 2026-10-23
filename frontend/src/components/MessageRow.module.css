@@ -13,7 +13,9 @@
     background: var(--mantine-color-default-border);
   }
 
-  &:has(> .row:is([data-active], [data-selected], :hover))::after {
+  /* No line touching a highlighted row, above it or below it */
+  &:has(> .row:is([data-active], [data-selected], :hover))::after,
+  &:has(+ .swipeWrap > .row:is([data-active], [data-selected], :hover))::after {
     opacity: 0;
   }
 }
@@ -83,8 +85,8 @@
 
 /* Keyboard cursor: visible only while the list has focus. */
 :global([role='listbox']:focus-visible) .row[data-active] {
-  outline: 2px solid var(--mantine-primary-color-filled);
-  outline-offset: -2px;
+  outline: 1.5px solid color-mix(in srgb, var(--mantine-primary-color-filled) 55%, transparent);
+  outline-offset: -1.5px;
 }
 
 .lead {

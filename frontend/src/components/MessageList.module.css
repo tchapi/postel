@@ -42,3 +42,8 @@
   height: 0;
   pointer-events: none;
 }
+
+/* The active row shows where the keyboard is; the list itself gets no frame on focus. */
+.viewport:focus-visible {
+  outline: none;
+}
