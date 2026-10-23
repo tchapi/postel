@@ -38,7 +38,8 @@ Everything is an environment variable.
 | `SMTP_PORT` | `587` | Submission port |
 | `SMTP_ENCRYPTION` | `tls` | `false`, `ssl` or `tls` (STARTTLS) |
 | `SMTP_VALIDATE_CERT` | `true` | Verify the SMTP certificate |
-| `APP_DATA_DIR` | `/app/var/data` | Uploads waiting to be sent, settings. Mount a volume there |
+| `APP_DATA_DIR` | `/app/var/data` | Uploads waiting to be sent, the settings database. Mount a volume there |
+| `DATABASE_URL` | `sqlite:////app/var/data/webmail.db` | Settings storage, any Doctrine DSN. Migrations run at start |
 
 ### Dovecot master user
 

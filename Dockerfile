@@ -20,7 +20,7 @@ FROM caddy:2.10.2 AS caddy
 FROM php:8.4-fpm-alpine
 LABEL org.opencontainers.image.source="https://github.com/tchapi/webmail"
 
-RUN apk add --no-cache supervisor icu-libs \
+RUN apk add --no-cache supervisor su-exec icu-libs \
     && apk add --no-cache --virtual .build-deps icu-dev $PHPIZE_DEPS \
     && docker-php-ext-install -j"$(nproc)" intl opcache \
     && apk del .build-deps
@@ -30,10 +30,12 @@ COPY docker/Caddyfile /etc/caddy/Caddyfile
 COPY docker/supervisord.conf /etc/supervisord.conf
 COPY docker/php.ini "$PHP_INI_DIR/conf.d/zz-webmail.ini"
 COPY docker/php-fpm.conf /usr/local/etc/php-fpm.d/zz-webmail.conf
+COPY --chmod=755 docker/entrypoint.sh /usr/local/bin/entrypoint.sh
 
 WORKDIR /app
 ENV APP_ENV=prod
 ENV APP_DATA_DIR=/app/var/data
+ENV DATABASE_URL=sqlite:////app/var/data/webmail.db
 COPY --chown=www-data:www-data backend/ ./
 COPY --from=composer --chown=www-data:www-data /app/vendor ./vendor
 COPY --from=frontend --chown=www-data:www-data /app/dist ./public
@@ -48,4 +50,4 @@ EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=3s --start-period=10s \
     CMD wget -qO- http://127.0.0.1:8080/api/health >/dev/null || exit 1
 
-CMD ["supervisord", "-c", "/etc/supervisord.conf"]
+ENTRYPOINT ["entrypoint.sh"]

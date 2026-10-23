@@ -76,6 +76,7 @@ final class MessageService
                 html: $html,
                 text: null === $text || '' === trim($text) ? null : $text,
                 hasRemoteImages: $hasRemoteImages,
+                remoteImagesLoaded: $remoteImages,
                 attachments: null === $structure ? [] : array_map(self::attachment(...), $structure->attachments()),
             );
         });

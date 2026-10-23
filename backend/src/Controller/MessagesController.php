@@ -8,6 +8,7 @@ use App\Imap\MessageListService;
 use App\Imap\MessageService;
 use App\Imap\SearchCriteria;
 use App\Security\RemoteUser;
+use App\Settings\SettingsService;
 use DateTimeInterface;
 use Symfony\Component\HttpFoundation\HeaderUtils;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -24,6 +25,7 @@ final class MessagesController
     public function __construct(
         private readonly MessageListService $list,
         private readonly MessageService $messages,
+        private readonly SettingsService $settings,
         private readonly SerializerInterface $serializer,
     ) {
     }
@@ -56,7 +58,11 @@ final class MessagesController
     #[Route('/{uid}', methods: ['GET'], requirements: ['uid' => '\d+'])]
     public function get(#[CurrentUser] RemoteUser $user, string $folder, int $uid, Request $request): JsonResponse
     {
-        return $this->json($this->messages->get($user, $folder, $uid, $request->query->getBoolean('images')));
+        $images = $request->query->has('images')
+            ? $request->query->getBoolean('images')
+            : $this->settings->get($user)->loadRemoteImages;
+
+        return $this->json($this->messages->get($user, $folder, $uid, $images));
     }
 
     /**

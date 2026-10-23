@@ -13,6 +13,7 @@ use App\Imap\MessageService;
 use App\Imap\Protocol\FetchItem;
 use App\Mail\MessageParser;
 use App\Security\RemoteUser;
+use App\Settings\SettingsService;
 use Symfony\Component\Mime\Address;
 use Symfony\Component\Mime\Email;
 use Symfony\Component\Mime\Part\DataPart;
@@ -35,13 +36,15 @@ final class MessageBuilder
         private readonly MessageService $messages,
         private readonly MessageParser $parser,
         private readonly UploadStore $uploads,
+        private readonly SettingsService $settings,
     ) {
     }
 
     public function build(RemoteUser $user, Draft $draft): Email
     {
+        $fromName = $this->settings->get($user)->fromName ?? $user->displayName ?? '';
         $email = (new Email())
-            ->from(new Address($user->email, $user->displayName ?? ''))
+            ->from(new Address($user->email, $fromName))
             ->subject($draft->subject)
         ;
         foreach (['to', 'cc', 'bcc'] as $field) {

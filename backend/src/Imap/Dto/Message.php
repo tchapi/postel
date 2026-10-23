@@ -34,6 +34,7 @@ final readonly class Message
         public ?string $html,
         public ?string $text,
         public bool $hasRemoteImages,
+        public bool $remoteImagesLoaded,
         public array $attachments,
     ) {
     }
