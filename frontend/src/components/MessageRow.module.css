@@ -131,6 +131,9 @@
 
 .date {
   flex: none;
+  /* A whole-pixel box, so the icons placed before it don't land between pixels */
+  min-width: 34px;
+  text-align: right;
   font-size: var(--mantine-font-size-xs);
   color: var(--mantine-color-dimmed);
 

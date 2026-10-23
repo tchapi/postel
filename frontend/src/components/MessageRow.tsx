@@ -153,8 +153,8 @@ function MessageRowImpl({
             )}
             {row.hasAttachments && (
               <IconPaperclip
-                size={14}
-                stroke={1.75}
+                size={16}
+                stroke={1.5}
                 className={classes.clip}
                 aria-label={t.hasAttachments}
               />
@@ -188,7 +188,7 @@ function MessageRowImpl({
                 onToggleStar(row)
               }}
             >
-              {row.flagged ? <IconStarFilled size={15} /> : <IconStar size={15} stroke={1.75} />}
+              {row.flagged ? <IconStarFilled size={16} /> : <IconStar size={16} stroke={1.5} />}
             </ActionIcon>
           </div>
           <Text span size="sm" c="dimmed" truncate className={classes.snippet}>
