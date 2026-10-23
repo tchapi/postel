@@ -51,7 +51,9 @@ own credentials. `IMAP_LOGIN_ATTRIBUTE` picks which header is the login:
 `username` otherwise.
 
 Contacts will use the same trick against Davis once it supports a master user,
-with CardDAV `addressbook-query` as the API.
+with CardDAV as the API: `addressbook-query` to fill a local cache,
+`sync-collection` to refresh it, see
+[spikes/2026-10-23-carddav.md](spikes/2026-10-23-carddav.md).
 
 ## Rendering mail
 

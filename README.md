@@ -96,7 +96,15 @@ docker compose -f dev/mailserver/compose.yaml up -d
 cd backend && php bin/console app:dev:seed-mailbox --count=2000
 ```
 
-Then point the backend at it in `backend/.env.local`:
+And a throwaway Davis for contacts, with 300 contacts for `alice`:
+
+```sh
+docker compose -f dev/davis/compose.yaml up -d
+docker exec webmail-dev-davis sh -c 'cd /var/www/davis && APP_ENV=prod bin/console doctrine:migrations:migrate --no-interaction'
+dev/davis/seed.sh
+```
+
+Then point the backend at the mail server in `backend/.env.local`:
 
 ```sh
 IMAP_HOST=127.0.0.1

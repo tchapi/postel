@@ -8,7 +8,9 @@
       [spikes/2026-10-23-imap.md](spikes/2026-10-23-imap.md): webklex as
       transport only, raw `UID SORT` + `FETCH` for the list,
       `zbateson/mail-mime-parser` for bodies
-- [ ] CardDAV `addressbook-query` against Davis
+- [x] CardDAV `addressbook-query` against Davis. Outcome in
+      [spikes/2026-10-23-carddav.md](spikes/2026-10-23-carddav.md): CardDAV is
+      enough, cache contacts locally, Davis needs a master user (PR to open)
 
 ## Phase 1, read-only
 
