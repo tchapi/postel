@@ -3,10 +3,11 @@ import { useHotkeys } from '@mantine/hooks'
 import { IconMailOff } from '@tabler/icons-react'
 import { useNavigate, useParams, useSearch } from '@tanstack/react-router'
 import { useVirtualizer } from '@tanstack/react-virtual'
-import { useEffect, useMemo, useRef } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 
 import { useMessages } from '../../api/queries'
 import { useSettings } from '../../api/settings'
+import { BulkActionBar } from './BulkActionBar'
 import { ListFilters } from './ListFilters'
 import { MessageRow } from './MessageRow'
 
@@ -31,6 +32,38 @@ export function MessageList({ folderId }: Props) {
 
   const rows = useMemo(() => data?.pages.flatMap((page) => page.items) ?? [], [data])
   const total = data?.pages[0]?.total
+
+  // Selection is per folder and only over rows that are loaded
+  const [selected, setSelected] = useState<Set<number>>(new Set())
+  const [lastToggled, setLastToggled] = useState<number | null>(null)
+  const [selectionFolder, setSelectionFolder] = useState(folderId)
+  if (selectionFolder !== folderId) {
+    setSelectionFolder(folderId)
+    setSelected(new Set())
+    setLastToggled(null)
+  }
+  const clearSelection = () => {
+    setSelected(new Set())
+    setLastToggled(null)
+  }
+
+  const toggle = (index: number, shift: boolean) => {
+    const next = new Set(selected)
+    const target = rows[index]!
+    const on = !next.has(target.uid)
+    const apply = (rowUid: number) => (on ? next.add(rowUid) : next.delete(rowUid))
+    if (shift && lastToggled !== null) {
+      const [from, to] = [Math.min(lastToggled, index), Math.max(lastToggled, index)]
+      for (let i = from; i <= to; i++) {
+        const row = rows[i]
+        if (row) apply(row.uid)
+      }
+    } else {
+      apply(target.uid)
+    }
+    setSelected(next)
+    setLastToggled(index)
+  }
 
   const virtualizer = useVirtualizer({
     count: rows.length,
@@ -66,13 +99,26 @@ export function MessageList({ folderId }: Props) {
     ['j', () => move(1)],
     ['k', () => move(-1)],
     [
+      'x',
+      () => {
+        const index = rows.findIndex((row) => row.uid === activeUid)
+        if (index !== -1) toggle(index, false)
+      },
+    ],
+    [
       'Escape',
-      () =>
-        void navigate({ to: '/folders/$folderId', params: { folderId }, search: (prev) => prev }),
+      () => {
+        if (selected.size > 0) {
+          clearSelection()
+          return
+        }
+        void navigate({ to: '/folders/$folderId', params: { folderId }, search: (prev) => prev })
+      },
     ],
   ])
 
   const filtered = !!(search.q || search.unread || search.flagged)
+  const selecting = selected.size > 0
 
   let body
   if (isPending) {
@@ -129,8 +175,11 @@ export function MessageList({ folderId }: Props) {
                 <MessageRow
                   row={row}
                   active={row.uid === activeUid}
+                  selected={selected.has(row.uid)}
+                  selecting={selecting}
                   compact={rowHeight === ROW_HEIGHTS.compact}
                   onOpen={() => open(row.uid)}
+                  onToggle={(shift) => toggle(item.index, shift)}
                 />
               </div>
             )
@@ -147,7 +196,18 @@ export function MessageList({ folderId }: Props) {
 
   return (
     <Stack gap={0} h="100%">
-      <ListFilters folderId={folderId} total={total} />
+      {selecting ? (
+        <BulkActionBar
+          folderId={folderId}
+          selected={[...selected]}
+          loaded={rows.length}
+          allSelected={selected.size === rows.length}
+          onSelectAll={() => setSelected(new Set(rows.map((row) => row.uid)))}
+          onClear={clearSelection}
+        />
+      ) : (
+        <ListFilters folderId={folderId} total={total} />
+      )}
       <div style={{ flex: 1, minHeight: 0 }}>{body}</div>
     </Stack>
   )

@@ -1,4 +1,4 @@
-import { Group, Text } from '@mantine/core'
+import { Checkbox, Group, Text } from '@mantine/core'
 import { IconPaperclip, IconStarFilled } from '@tabler/icons-react'
 
 import type { MessageRow as Row } from '../../api/types'
@@ -8,23 +8,41 @@ import classes from './MessageRow.module.css'
 type Props = {
   row: Row
   active: boolean
+  selected: boolean
+  selecting: boolean
   compact?: boolean
   onOpen: () => void
+  onToggle: (shift: boolean) => void
 }
 
-export function MessageRow({ row, active, compact, onOpen }: Props) {
+export function MessageRow({ row, active, selected, selecting, compact, onOpen, onToggle }: Props) {
   const weight = row.seen ? undefined : 600
 
   return (
-    <button
-      type="button"
+    <div
       className={classes.row}
       data-active={active || undefined}
-      onClick={onOpen}
-      aria-current={active ? 'true' : undefined}
+      data-selected={selected || undefined}
     >
+      <span className={classes.check} data-visible={selecting || undefined}>
+        <Checkbox
+          size="xs"
+          checked={selected}
+          aria-label={selected ? 'Deselect' : 'Select'}
+          onChange={() => undefined}
+          onClick={(event) => {
+            event.stopPropagation()
+            onToggle(event.shiftKey)
+          }}
+        />
+      </span>
       <span className={classes.dot} data-unread={row.seen ? undefined : ''} />
-      <span className={classes.body}>
+      <button
+        type="button"
+        className={classes.body}
+        onClick={onOpen}
+        aria-current={active ? 'true' : undefined}
+      >
         <span className={classes.line}>
           <Text component="span" size="sm" fw={weight} className={classes.grow}>
             {displayName(row.from)}
@@ -45,7 +63,7 @@ export function MessageRow({ row, active, compact, onOpen }: Props) {
             {row.snippet}
           </Text>
         )}
-      </span>
-    </button>
+      </button>
+    </div>
   )
 }

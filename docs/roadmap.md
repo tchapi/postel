@@ -27,7 +27,7 @@
 - [x] Move, archive, junk, trash, with undo
 - [x] Search on From, To and Subject, unread and starred filters
 - [x] Unread polling (folder counts every 30s)
-- [ ] Bulk selection and actions
+- [x] Bulk selection (checkbox, shift-click ranges, `x`) with archive, delete, junk, read, unread, star, move
 - [ ] Spotlight: folder jump, shortcuts help
 - [ ] Body search once an FTS index is in place on the server
 
