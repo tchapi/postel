@@ -31,6 +31,7 @@ import {
   useSaveDraft,
   useSendMessage,
 } from '../../api/compose'
+import { useDeleteMessages } from '../../api/mutations'
 import type { Address, Attachment } from '../../api/types'
 import { formatBytes } from '../../lib/format'
 import { type ComposerInitial, useComposer } from './ComposerContext'
@@ -68,6 +69,7 @@ function ComposerDrawer({ initial, onClose }: { initial: ComposerInitial; onClos
   const dirty = useRef(false)
   const send = useSendMessage()
   const save = useSaveDraft()
+  const remove = useDeleteMessages()
 
   const editor = useEditor({
     extensions: [StarterKit, Link.configure({ openOnClick: false })],
@@ -101,17 +103,34 @@ function ComposerDrawer({ initial, onClose }: { initial: ComposerInitial; onClos
     replaces,
   })
 
-  const saveDraft = async (silent = false) => {
-    if (!dirty.current && silent) return
+  const isEmpty = () =>
+    to.length + cc.length + bcc.length === 0 &&
+    subject.trim() === '' &&
+    (editor?.getText().trim() ?? '') === '' &&
+    uploads.length + carried.length === 0
+
+  const saveDraft = async (silent = false): Promise<boolean> => {
+    if (!dirty.current && silent) return true
     try {
       const saved = await save.mutateAsync(payload())
       setReplaces(saved)
       setSavedAt(new Date())
       dirty.current = false
       if (!silent) notifications.show({ message: 'Draft saved' })
+      return true
     } catch {
-      if (!silent) notifications.show({ color: 'red', message: 'Could not save the draft' })
+      notifications.show({ color: 'red', message: 'Could not save the draft' })
+      return false
     }
+  }
+
+  /** Closing keeps the draft: whatever was typed is saved first. */
+  const closeKeepingDraft = async () => {
+    if (isEmpty() && !replaces) {
+      onClose()
+      return
+    }
+    if (await saveDraft(true)) onClose()
   }
 
   useEffect(() => {
@@ -157,27 +176,36 @@ function ComposerDrawer({ initial, onClose }: { initial: ComposerInitial; onClos
     })
   }
 
+  /** Discarding deletes: the saved draft, the uploads, the lot. */
   const discard = () => {
-    if (!dirty.current && !replaces) {
+    const wipe = () => {
+      uploads.forEach((u) => u.upload && void deleteUpload(u.upload.id).catch(() => undefined))
+      if (replaces) remove.mutate({ folder: replaces.folder, uids: [replaces.uid] })
+      onClose()
+    }
+    if (isEmpty() && !replaces) {
       onClose()
       return
     }
     modals.openConfirmModal({
-      title: 'Discard this message?',
-      children: <Text size="sm">Unsaved changes will be lost.</Text>,
-      labels: { confirm: 'Discard', cancel: 'Keep editing' },
+      title: replaces ? 'Delete this draft?' : 'Discard this message?',
+      children: (
+        <Text size="sm">
+          {replaces
+            ? 'The draft will be removed from the Drafts folder.'
+            : 'What you typed will be lost. Closing the window instead keeps it as a draft.'}
+        </Text>
+      ),
+      labels: { confirm: replaces ? 'Delete draft' : 'Discard', cancel: 'Keep editing' },
       confirmProps: { color: 'red' },
-      onConfirm: () => {
-        uploads.forEach((u) => u.upload && void deleteUpload(u.upload.id).catch(() => undefined))
-        onClose()
-      },
+      onConfirm: wipe,
     })
   }
 
   return (
     <Drawer
       opened
-      onClose={discard}
+      onClose={() => void closeKeepingDraft()}
       position="right"
       size={mobile ? '100%' : 720}
       title={subject || 'New message'}
@@ -306,15 +334,18 @@ function ComposerDrawer({ initial, onClose }: { initial: ComposerInitial; onClos
               </Text>
             )}
           </Group>
-          <Button
-            variant="subtle"
-            color="gray"
-            size="xs"
-            leftSection={<IconX size={14} />}
-            onClick={discard}
-          >
-            Discard
-          </Button>
+          <Tooltip label="Closing the window keeps the draft, this deletes it">
+            <Button
+              variant="subtle"
+              color="gray"
+              size="xs"
+              leftSection={<IconX size={14} />}
+              onClick={discard}
+              loading={remove.isPending}
+            >
+              Discard
+            </Button>
+          </Tooltip>
         </Group>
       </Stack>
     </Drawer>
