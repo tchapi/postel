@@ -1,0 +1,33 @@
+# Authelia for the local stack only: every secret here is public on purpose.
+server:
+  address: tcp://0.0.0.0:9091
+
+log:
+  level: info
+
+identity_validation:
+  reset_password:
+    jwt_secret: dev-only-jwt-secret-not-for-production
+
+authentication_backend:
+  file:
+    path: /config/users.yml
+
+access_control:
+  default_policy: one_factor
+
+session:
+  secret: dev-only-session-secret-not-for-production
+  cookies:
+    - domain: localtest.me
+      authelia_url: https://auth.localtest.me:8443
+      default_redirection_url: https://mail.localtest.me:8443
+
+storage:
+  encryption_key: dev-only-storage-key-not-for-production
+  local:
+    path: /data/db.sqlite3
+
+notifier:
+  filesystem:
+    filename: /data/notifications.txt

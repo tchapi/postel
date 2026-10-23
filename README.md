@@ -150,6 +150,14 @@ with the headers, which is the point:
 curl -H 'Remote-User: alice' -H 'Remote-Email: alice@example.com' http://127.0.0.1:8000/api/folders
 ```
 
+To try the production image as it runs for real, behind Traefik and Authelia, on top of the dev mail server and Davis:
+
+```sh
+DAVIS_APP_ID=app_... DAVIS_APP_SECRET=... docker compose -f dev/stack/compose.yaml up -d --build
+```
+
+Then open https://mail.localtest.me:8443 (self-signed certificate) and log in as `alice` / `alice-password`.
+
 Findings from the technical spikes live in [docs/spikes](docs/spikes).
 
 ## License

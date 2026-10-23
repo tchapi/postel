@@ -1,0 +1,8 @@
+# alice / alice-password. The email is the IMAP login (IMAP_LOGIN_ATTRIBUTE=email),
+# the username the Davis one.
+users:
+  alice:
+    disabled: false
+    displayname: Alice
+    email: alice@example.test
+    password: $argon2id$v=19$m=65536,t=3,p=4$D1FQEDuMVDD0mBaJu0XVdQ$1Nzjlkm2aTwlT0vXWlw7uWPDgo1wohz+DdT+rW/GCMQ
