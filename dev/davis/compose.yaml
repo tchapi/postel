@@ -1,0 +1,26 @@
+# A throwaway Davis (CardDAV/CalDAV) server for local development and spikes.
+#
+#   docker compose -f dev/davis/compose.yaml up -d
+#   docker exec webmail-dev-davis sh -c 'bin/console doctrine:migrations:migrate --no-interaction'
+#
+# Admin: admin / admin-password at http://127.0.0.1:9000
+# CardDAV user: alice / alice-password, see dev/davis/seed.sh
+services:
+  davis:
+    image: ghcr.io/tchapi/davis-standalone:5.5.1
+    container_name: webmail-dev-davis
+    ports:
+      - "127.0.0.1:9000:9000"
+    environment:
+      APP_ENV: prod
+      APP_SECRET: not-a-secret-dev-only
+      DATABASE_DRIVER: sqlite
+      DATABASE_URL: sqlite:////var/www/davis/var/data.db
+      ADMIN_LOGIN: admin
+      ADMIN_PASSWORD: admin-password
+      AUTH_METHOD: Basic
+      AUTH_REALM: davis-dev
+      CALDAV_ENABLED: "true"
+      CARDDAV_ENABLED: "true"
+      WEBDAV_ENABLED: "false"
+      MAILER_DSN: null://null
