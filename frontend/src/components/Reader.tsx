@@ -120,21 +120,21 @@ export function Reader(props: ReaderProps) {
       {isMobile && message && (
         <Group grow gap={0} className={classes.mobileBar} role="toolbar" aria-label={t.reply}>
           <UnstyledButton className={classes.mobileAction} onClick={() => props.onAction('reply')}>
-            <IconArrowBackUp size={24} stroke={1.5} />
+            <IconArrowBackUp size={20} stroke={1.75} />
             {t.reply}
           </UnstyledButton>
           <UnstyledButton
             className={classes.mobileAction}
             onClick={() => props.onAction('replyAll')}
           >
-            <IconArrowBackUpDouble size={24} stroke={1.5} />
+            <IconArrowBackUpDouble size={20} stroke={1.75} />
             {t.replyAll}
           </UnstyledButton>
           <UnstyledButton
             className={classes.mobileAction}
             onClick={() => props.onAction('forward')}
           >
-            <IconArrowForwardUp size={24} stroke={1.5} />
+            <IconArrowForwardUp size={20} stroke={1.75} />
             {t.forward}
           </UnstyledButton>
         </Group>
@@ -153,9 +153,9 @@ function ReaderToolbar({ message, isMobile, moveTargets, onAction, onBack }: Rea
       <Menu.Target>
         <ActionIcon size={isMobile ? 44 : 'lg'} aria-label={t.moreActions} disabled={disabled}>
           {isMobile ? (
-            <IconDotsVertical size={24} stroke={1.5} />
+            <IconDotsVertical size={20} stroke={1.75} />
           ) : (
-            <IconDots size={24} stroke={1.5} />
+            <IconDots size={18} stroke={2} />
           )}
         </ActionIcon>
       </Menu.Target>
@@ -190,7 +190,7 @@ function ReaderToolbar({ message, isMobile, moveTargets, onAction, onBack }: Rea
     return (
       <Group gap={2} px={4} className={classes.toolbar} role="toolbar" aria-label={t.moreActions}>
         <ActionIcon size={44} aria-label={t.back} onClick={onBack}>
-          <IconArrowLeft size={24} stroke={1.5} />
+          <IconArrowLeft size={22} stroke={1.75} />
         </ActionIcon>
         <Box style={{ flex: 1 }} />
         <ActionIcon
@@ -244,18 +244,18 @@ function ReaderToolbar({ message, isMobile, moveTargets, onAction, onBack }: Rea
       role="toolbar"
       aria-label={t.moreActions}
     >
-      {btn(t.reply, <IconArrowBackUp size={24} stroke={1.5} />, 'reply', 'reply')}
-      {btn(t.replyAll, <IconArrowBackUpDouble size={24} stroke={1.5} />, 'replyAll', 'replyAll')}
-      {btn(t.forward, <IconArrowForwardUp size={24} stroke={1.5} />, 'forward', 'forward')}
+      {btn(t.reply, <IconArrowBackUp size={18} stroke={2} />, 'reply', 'reply')}
+      {btn(t.replyAll, <IconArrowBackUpDouble size={18} stroke={2} />, 'replyAll', 'replyAll')}
+      {btn(t.forward, <IconArrowForwardUp size={18} stroke={2} />, 'forward', 'forward')}
       <Divider orientation="vertical" mx={8} my={16} />
-      {btn(t.archive, <IconArchive size={24} stroke={1.5} />, 'archive', 'archive')}
-      {btn(t.delete, <IconTrash size={24} stroke={1.5} />, 'delete', 'delete')}
-      {btn(t.junk, <IconBan size={24} stroke={1.5} />, 'junk')}
+      {btn(t.archive, <IconArchive size={18} stroke={2} />, 'archive', 'archive')}
+      {btn(t.delete, <IconTrash size={18} stroke={2} />, 'delete', 'delete')}
+      {btn(t.junk, <IconBan size={18} stroke={2} />, 'junk')}
       <Menu position="bottom-start">
         <Tooltip label={t.moveTo}>
           <Menu.Target>
             <ActionIcon size="lg" aria-label={t.moveTo} disabled={disabled}>
-              <IconFolderShare size={24} stroke={1.5} />
+              <IconFolderShare size={18} stroke={2} />
             </ActionIcon>
           </Menu.Target>
         </Tooltip>
@@ -267,14 +267,14 @@ function ReaderToolbar({ message, isMobile, moveTargets, onAction, onBack }: Rea
       {btn(
         flagged ? t.unstar : t.star,
         flagged ? (
-          <IconStarFilled size={24} style={{ color: 'var(--mail-star)' }} />
+          <IconStarFilled size={18} style={{ color: 'var(--mail-star)' }} />
         ) : (
-          <IconStar size={24} stroke={1.5} />
+          <IconStar size={18} stroke={2} />
         ),
         flagged ? 'unstar' : 'star',
         'star',
       )}
-      {btn(t.markUnread, <IconMail size={24} stroke={1.5} />, 'unread', 'unread')}
+      {btn(t.markUnread, <IconMail size={18} stroke={2} />, 'unread', 'unread')}
       {moreMenu}
     </Group>
   )
@@ -374,7 +374,7 @@ function ReaderBody({
         <Alert
           variant="default"
           radius="sm"
-          icon={<IconPhotoOff size={24} stroke={1.5} />}
+          icon={<IconPhotoOff size={18} stroke={2} />}
           className={classes.banner}
           role="status"
         >

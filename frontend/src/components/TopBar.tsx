@@ -98,7 +98,7 @@ export function TopBar(p: TopBarProps) {
           aria-expanded={p.navOpened}
           onClick={p.onNavToggle}
         >
-          <IconMenu2 size={24} stroke={1.5} />
+          <IconMenu2 size={22} stroke={1.75} />
         </ActionIcon>
         <Group gap={8} align="baseline" wrap="nowrap" style={{ flex: 1, minWidth: 0 }}>
           <Title order={1} size="h2" lineClamp={1}>
@@ -111,7 +111,7 @@ export function TopBar(p: TopBarProps) {
           )}
         </Group>
         <ActionIcon size={44} aria-label={t.searchMail} onClick={p.onSearch}>
-          <IconSearch size={24} stroke={1.5} />
+          <IconSearch size={22} stroke={1.75} />
         </ActionIcon>
         {userMenu}
       </Group>
@@ -133,7 +133,7 @@ export function TopBar(p: TopBarProps) {
               : t.openFolders
           }
         >
-          <IconMenu2 size={24} stroke={1.5} />
+          <IconMenu2 size={18} stroke={2} />
         </ActionIcon>
         {p.layout === 'desktop' && <Brand />}
       </Group>
