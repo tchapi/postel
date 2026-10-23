@@ -229,7 +229,7 @@ export function MessageList(props: MessageListProps) {
         onClear={onClearSelection}
       />
     ) : (
-      <Group gap={8} wrap="nowrap" h="100%" pl={12} pr={8}>
+      <Group gap={8} wrap="nowrap" h="100%" pl={6} pr={2}>
         {!isTouch && (
           <Checkbox
             size="xs"

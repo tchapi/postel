@@ -3,7 +3,7 @@
 }
 
 .toolbar {
-  height: 52px;
+  height: 44px;
   flex: none;
 
   @media (max-width: $mantine-breakpoint-sm) {
@@ -107,28 +107,39 @@
 }
 
 .bar {
-  /* A very light grey, halfway between the content and the window frame: set apart without a line */
+  flex: none;
+  /* Floats in its pane: rounded, a slight shadow, a little deeper once content scrolls under it */
+  position: relative;
+  z-index: 1;
+  margin: 6px 6px 0;
+  border-radius: var(--mantine-radius-md);
+  transition: box-shadow 150ms ease;
+
   @mixin light {
     background: color-mix(in srgb, var(--mantine-color-gray-1) 55%, var(--mantine-color-body));
+    box-shadow:
+      0 1px 2px rgb(31 29 26 / 6%),
+      0 2px 8px -2px rgb(31 29 26 / 10%);
   }
 
   @mixin dark {
     background: color-mix(in srgb, var(--mantine-color-dark-8) 55%, var(--mantine-color-body));
+    box-shadow:
+      0 1px 2px rgb(0 0 0 / 30%),
+      0 2px 8px -2px rgb(0 0 0 / 40%);
   }
 
-  flex: none;
-  position: relative;
-  z-index: 1;
-  transition: box-shadow 150ms ease;
-
-  /* A soft shadow, no line, only once content scrolls under it */
   &[data-scrolled] {
     @mixin light {
-      box-shadow: 0 6px 12px -8px rgb(31 29 26 / 22%);
+      box-shadow:
+        0 1px 2px rgb(31 29 26 / 8%),
+        0 6px 14px -6px rgb(31 29 26 / 22%);
     }
 
     @mixin dark {
-      box-shadow: 0 6px 14px -8px rgb(0 0 0 / 60%);
+      box-shadow:
+        0 1px 2px rgb(0 0 0 / 35%),
+        0 6px 16px -6px rgb(0 0 0 / 60%);
     }
   }
 }
