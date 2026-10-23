@@ -6,6 +6,7 @@ namespace App\Controller;
 
 use App\Imap\MessageListService;
 use App\Imap\MessageService;
+use App\Imap\SearchCriteria;
 use App\Security\RemoteUser;
 use DateTimeInterface;
 use Symfony\Component\HttpFoundation\HeaderUtils;
@@ -42,6 +43,11 @@ final class MessagesController
             $request->query->getInt('perPage', 50),
             $sort,
             'asc' !== $request->query->getString('order', 'desc'),
+            SearchCriteria::build(
+                $request->query->getString('q'),
+                $request->query->getBoolean('unread'),
+                $request->query->getBoolean('flagged'),
+            ),
         );
 
         return $this->json($page);

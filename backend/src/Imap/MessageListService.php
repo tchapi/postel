@@ -42,14 +42,14 @@ final class MessageListService
         return isset(self::SORT_KEYS[$sort]);
     }
 
-    public function page(RemoteUser $user, string $folder, int $page, int $perPage, string $sort = 'date', bool $descending = true): MessagePage
+    public function page(RemoteUser $user, string $folder, int $page, int $perPage, string $sort = 'date', bool $descending = true, string $search = 'ALL'): MessagePage
     {
         $perPage = max(1, min(self::MAX_PER_PAGE, $perPage));
         $page = max(1, $page);
         $criteria = ($descending ? 'REVERSE ' : '').(self::SORT_KEYS[$sort] ?? 'DATE');
 
-        return Mailbox::open($this->clients, $user, $folder, true, function (Mailbox $mailbox) use ($folder, $page, $perPage, $criteria): MessagePage {
-            $uids = $mailbox->sort($criteria);
+        return Mailbox::open($this->clients, $user, $folder, true, function (Mailbox $mailbox) use ($folder, $page, $perPage, $criteria, $search): MessagePage {
+            $uids = $mailbox->sort($criteria, $search);
             $slice = array_slice($uids, ($page - 1) * $perPage, $perPage);
             if ([] === $slice) {
                 return new MessagePage([], count($uids), $page, $perPage);

@@ -11,6 +11,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Event\ExceptionEvent;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
+use Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException;
 use Symfony\Component\HttpKernel\KernelEvents;
 use Webklex\PHPIMAP\Exceptions\AuthFailedException;
 use Webklex\PHPIMAP\Exceptions\ConnectionFailedException;
@@ -41,6 +42,7 @@ final class ApiExceptionSubscriber implements EventSubscriberInterface
         $exception = $event->getThrowable();
 
         [$status, $error] = match (true) {
+            $exception instanceof UnprocessableEntityHttpException => [Response::HTTP_UNPROCESSABLE_ENTITY, 'invalid_request'],
             $exception instanceof HttpExceptionInterface => [$exception->getStatusCode(), $exception->getMessage() ?: Response::$statusTexts[$exception->getStatusCode()] ?? 'error'],
             $exception instanceof AuthFailedException => [Response::HTTP_BAD_GATEWAY, 'imap_auth_failed'],
             $exception instanceof ImapCommandFailed => [Response::HTTP_BAD_GATEWAY, 'imap_command_failed'],
