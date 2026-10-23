@@ -117,6 +117,7 @@ export function MessageList(props: MessageListProps) {
   } = props
   const { t } = useI18n()
   const viewportRef = useRef<HTMLDivElement>(null)
+  const [scrolled, setScrolled] = useState(false)
   const rowHeight = ROW_HEIGHT[density]
   const [menu, setMenu] = useState<ContextMenuState>(null)
   const [pull, setPull] = useState(0)
@@ -334,7 +335,9 @@ export function MessageList(props: MessageListProps) {
     <Stack gap={0} h="100%" className={classes.root}>
       {/* On phones the top bar already names the folder. */}
       {(!isTouch || selected.size > 0 || onCloseSearch) && (
-        <Box className={classes.header}>{header}</Box>
+        <Box className={classes.header} data-scrolled={scrolled || undefined}>
+          {header}
+        </Box>
       )}
       {headerExtra && <Box className={classes.extra}>{headerExtra}</Box>}
 
@@ -362,6 +365,8 @@ export function MessageList(props: MessageListProps) {
         onTouchMove={onTouchMove}
         onTouchEnd={() => void onTouchEnd()}
         classNames={{ viewport: classes.viewport }}
+        scrollbarSize={6}
+        onScrollPositionChange={({ y }) => setScrolled(y > 0)}
         viewportProps={{
           role: 'listbox',
           tabIndex: 0,

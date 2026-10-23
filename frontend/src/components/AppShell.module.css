@@ -99,10 +99,17 @@
   white-space: nowrap;
 }
 
-/* The app header too: Mantine draws its border inside the 52px. */
+/* The top bar shares the folder pane's tint: one L-shaped frame around the content, no line needed. */
 .appHeader:global(.mantine-AppShell-header) {
   border-bottom: 0;
-  box-shadow: inset 0 -1px 0 var(--mantine-color-default-border);
+
+  @mixin light {
+    background: var(--mantine-color-gray-1);
+  }
+
+  @mixin dark {
+    background: var(--mantine-color-dark-8);
+  }
 }
 
 /* Drag the folder pane's edge; double-click puts it back to its default width. */

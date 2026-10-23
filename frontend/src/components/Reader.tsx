@@ -73,6 +73,10 @@ export type ReaderProps = {
 export function Reader(props: ReaderProps) {
   const { t } = useI18n()
   const { message, status, selectedCount, isMobile } = props
+  // The toolbar's shadow shows once the message scrolls under it; a new message starts unscrolled
+  const messageKey = message ? `${message.folder}:${message.uid}` : null
+  const [scrolledKey, setScrolledKey] = useState<string | null>(null)
+  const scrolled = scrolledKey !== null && scrolledKey === messageKey
 
   if (status === 'idle' || (!message && status !== 'pending' && status !== 'error')) {
     return (
@@ -97,8 +101,15 @@ export function Reader(props: ReaderProps) {
 
   return (
     <Stack gap={0} h="100%" className={classes.root}>
-      <ReaderToolbar {...props} />
-      <ScrollArea style={{ flex: 1, minHeight: 0 }} type="hover" scrollbars="y">
+      <div className={classes.bar} data-scrolled={scrolled || undefined}>
+        <ReaderToolbar {...props} />
+      </div>
+      <ScrollArea
+        style={{ flex: 1, minHeight: 0 }}
+        type="hover"
+        scrollbars="y"
+        onScrollPositionChange={({ y }) => setScrolledKey(y > 0 ? messageKey : null)}
+      >
         {status === 'pending' && <ReaderSkeleton />}
         {status === 'error' && <ErrorState title={t.openError} onRetry={props.onRetry} />}
         {status === 'success' && message && (

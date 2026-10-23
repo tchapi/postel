@@ -105,3 +105,25 @@
   height: 100%;
   font-size: var(--mantine-font-size-xs);
 }
+
+.bar {
+  flex: none;
+  position: relative;
+  z-index: 1;
+  transition: box-shadow 150ms ease;
+
+  /* Appears only once content scrolls under it */
+  &[data-scrolled] {
+    @mixin light {
+      box-shadow:
+        0 1px 0 var(--mantine-color-default-border),
+        0 6px 12px -8px rgb(31 29 26 / 22%);
+    }
+
+    @mixin dark {
+      box-shadow:
+        0 1px 0 var(--mantine-color-default-border),
+        0 6px 14px -8px rgb(0 0 0 / 60%);
+    }
+  }
+}
