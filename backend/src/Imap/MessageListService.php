@@ -121,6 +121,9 @@ final class MessageListService
         });
     }
 
+    /** Long conversations are cut to their newest messages. */
+    public const int MAX_THREAD = 100;
+
     /**
      * The conversation a message belongs to, oldest first.
      *
@@ -137,7 +140,9 @@ final class MessageListService
                 }
             }
             // Same order as the threaded list, so its newest message is our last one.
-            $rank = array_flip($mailbox->sort('REVERSE DATE', 'UID '.Mailbox::set($members)));
+            $newestFirst = $mailbox->sort('REVERSE DATE', 'UID '.Mailbox::set($members));
+            $members = array_slice($newestFirst, 0, self::MAX_THREAD);
+            $rank = array_flip($members);
             $rows = array_values($this->rows($mailbox, $folder, $members));
             usort($rows, static fn (MessageRow $a, MessageRow $b) => ($rank[$b->uid] ?? 0) <=> ($rank[$a->uid] ?? 0));
 

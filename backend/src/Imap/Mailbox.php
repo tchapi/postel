@@ -108,14 +108,22 @@ final class Mailbox
     }
 
     /**
-     * Conversations as UID lists, from the server's REFERENCES threading.
+     * Conversations as UID lists. REFS (Dovecot) only follows the References
+     * headers; REFERENCES (RFC 5256) also merges by subject, which glues every
+     * "Re: Invoice" together, so it is only the fallback.
      *
      * @return list<list<int>>
      */
     public function threads(string $search = 'ALL'): array
     {
+        try {
+            $response = $this->command('UID THREAD', 'REFS UTF-8 '.$search);
+        } catch (ImapCommandFailed) {
+            $response = $this->command('UID THREAD', 'REFERENCES UTF-8 '.$search);
+        }
+
         $threads = [];
-        foreach ($this->command('UID THREAD', 'REFERENCES UTF-8 '.$search)->tokenized('THREAD') as $row) {
+        foreach ($response->tokenized('THREAD') as $row) {
             foreach (array_slice($row, 2) as $thread) {
                 $uids = self::flatten(is_array($thread) ? $thread : [$thread]);
                 if ([] !== $uids) {
@@ -156,6 +164,25 @@ final class Mailbox
      */
     public static function set(array $uids): string
     {
-        return implode(',', $uids);
+        // "4:7,9" instead of "4,5,6,7,9": a conversation or a selection can be thousands long.
+        $uids = array_values(array_unique($uids));
+        sort($uids);
+        $ranges = [];
+        $start = $end = null;
+        foreach ($uids as $uid) {
+            if (null !== $end && $uid === $end + 1) {
+                $end = $uid;
+                continue;
+            }
+            if (null !== $start) {
+                $ranges[] = $start === $end ? (string) $start : $start.':'.$end;
+            }
+            $start = $end = $uid;
+        }
+        if (null !== $start) {
+            $ranges[] = $start === $end ? (string) $start : $start.':'.$end;
+        }
+
+        return implode(',', $ranges);
     }
 }

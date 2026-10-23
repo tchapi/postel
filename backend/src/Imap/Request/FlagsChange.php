@@ -14,7 +14,7 @@ final readonly class FlagsChange
     public function __construct(
         #[Assert\NotBlank]
         public string $folder,
-        #[Assert\Count(min: 1, max: 500)]
+        #[Assert\Count(min: 1, max: 10000)]
         #[Assert\All([new Assert\Type('int'), new Assert\Positive()])]
         public array $uids,
         public ?bool $seen = null,
