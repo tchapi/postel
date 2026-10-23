@@ -33,6 +33,8 @@ export type MessageRow = {
   flagged: boolean
   hasAttachments: boolean
   size: number
+  threadSize: number
+  threadUids: number[]
 }
 
 export type MessagePage = {
@@ -50,7 +52,10 @@ export type Attachment = {
   inline: boolean
 }
 
-export type Message = Omit<MessageRow, 'snippet' | 'hasAttachments'> & {
+export type Message = Omit<
+  MessageRow,
+  'snippet' | 'hasAttachments' | 'threadSize' | 'threadUids'
+> & {
   to: Address[]
   cc: Address[]
   bcc: Address[]

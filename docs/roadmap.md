@@ -27,6 +27,7 @@
 - [x] Move, archive, junk, trash, with undo
 - [x] Search on From, To and Subject, unread and starred filters
 - [x] Unread polling (folder counts every 30s)
+- [x] Conversations: one row per thread (server-side REFERENCES threading, per folder), stacked reader, setting to turn it off
 - [x] Bulk selection (checkbox, shift-click ranges, `x`) with archive, delete, junk, read, unread, star, move
 - [ ] Spotlight: folder jump, shortcuts help
 - [ ] Body search once an FTS index is in place on the server
@@ -44,7 +45,7 @@
 
 ## Later
 
-- Threading, sieve filters, FrankenPHP worker mode, IMAP IDLE through SSE,
+- Sieve filters, FrankenPHP worker mode, IMAP IDLE through SSE,
   i18n, mobile polish
 
 Explicitly out of scope: multiple accounts, labels, calendar, PGP.

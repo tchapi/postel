@@ -1,19 +1,28 @@
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
 
 import { api } from './client'
-import type { Folder, Me, Message, MessagePage } from './types'
+import type { Folder, Me, Message, MessagePage, MessageRow } from './types'
 
 export type ListFilters = {
   q?: string
   unread?: boolean
   flagged?: boolean
+  threads?: boolean
 }
 
 export const queryKeys = {
   me: ['me'] as const,
   folders: ['folders'] as const,
   messages: (folderId: string, filters: ListFilters = {}) =>
-    ['messages', folderId, filters.q ?? '', !!filters.unread, !!filters.flagged] as const,
+    [
+      'messages',
+      folderId,
+      filters.q ?? '',
+      !!filters.unread,
+      !!filters.flagged,
+      !!filters.threads,
+    ] as const,
+  thread: (folderId: string, uid: number) => ['thread', folderId, uid] as const,
   message: (folderId: string, uid: number, images: boolean | undefined) =>
     ['message', folderId, uid, images ?? 'default'] as const,
 }
@@ -39,6 +48,7 @@ export function useMessages(folderId: string, filters: ListFilters = {}) {
   if (filters.q) params.set('q', filters.q)
   if (filters.unread) params.set('unread', '1')
   if (filters.flagged) params.set('flagged', '1')
+  if (filters.threads) params.set('threads', '1')
 
   return useInfiniteQuery({
     queryKey: queryKeys.messages(folderId, filters),
@@ -46,6 +56,14 @@ export function useMessages(folderId: string, filters: ListFilters = {}) {
       api<MessagePage>(`${folderPath(folderId)}/messages?${params}&page=${pageParam}`),
     initialPageParam: 1,
     getNextPageParam: (last) => (last.items.length < last.perPage ? undefined : last.page + 1),
+  })
+}
+
+export function useThread(folderId: string, uid: number, enabled: boolean) {
+  return useQuery({
+    queryKey: queryKeys.thread(folderId, uid),
+    queryFn: () => api<MessageRow[]>(`${folderPath(folderId)}/messages/${uid}/thread`),
+    enabled,
   })
 }
 

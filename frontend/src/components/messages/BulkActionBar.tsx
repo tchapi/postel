@@ -16,7 +16,10 @@ import { flattenFolders, folderByRole } from '../../lib/folders'
 
 type Props = {
   folderId: string
+  /** UIDs to act on, whole conversations included */
   selected: number[]
+  /** How many rows are ticked */
+  count: number
   loaded: number
   allSelected: boolean
   onSelectAll: () => void
@@ -26,6 +29,7 @@ type Props = {
 export function BulkActionBar({
   folderId,
   selected,
+  count,
   loaded,
   allSelected,
   onSelectAll,
@@ -90,12 +94,12 @@ export function BulkActionBar({
         <Checkbox
           size="xs"
           checked={allSelected}
-          indeterminate={!allSelected && selected.length > 0}
+          indeterminate={!allSelected && count > 0}
           onChange={() => (allSelected ? onClear() : onSelectAll())}
           aria-label={allSelected ? 'Clear selection' : `Select all ${loaded} loaded`}
         />
         <Text size="sm" fw={500}>
-          {selected.length}
+          {count}
         </Text>
       </Group>
       <Group gap={2} wrap="nowrap">

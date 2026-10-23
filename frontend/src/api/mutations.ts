@@ -48,6 +48,7 @@ export function useFlagMessages() {
     onSettled: (_data, _error, { folder }) => {
       void client.invalidateQueries({ queryKey: queryKeys.folders })
       void client.invalidateQueries({ queryKey: ['messages', folder] })
+      void client.invalidateQueries({ queryKey: ['thread', folder] })
     },
   })
 }

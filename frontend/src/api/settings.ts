@@ -9,6 +9,7 @@ export type Settings = {
   signature: string | null
   loadRemoteImages: boolean
   density: Density
+  threads: boolean
   updatedAt: string | null
 }
 
@@ -17,6 +18,7 @@ export const DEFAULT_SETTINGS: Settings = {
   signature: null,
   loadRemoteImages: false,
   density: 'comfortable',
+  threads: true,
   updatedAt: null,
 }
 

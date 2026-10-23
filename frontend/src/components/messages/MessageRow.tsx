@@ -46,6 +46,11 @@ export function MessageRow({ row, active, selected, selecting, compact, onOpen, 
         <span className={classes.line}>
           <Text component="span" size="sm" fw={weight} className={classes.grow}>
             {displayName(row.from)}
+            {row.threadSize > 1 && (
+              <Text component="span" size="xs" c="dimmed" fw={400} ml={6}>
+                {row.threadSize}
+              </Text>
+            )}
           </Text>
           <Group component="span" gap={4} wrap="nowrap">
             {row.flagged && <IconStarFilled size={12} color="var(--mantine-color-yellow-6)" />}

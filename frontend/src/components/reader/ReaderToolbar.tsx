@@ -31,6 +31,8 @@ import { useComposer } from '../compose/ComposerContext'
 
 type Props = {
   message: Message
+  /** The whole conversation when there is one: moves and read state apply to all of it */
+  uids?: number[]
 }
 
 type Action = {
@@ -42,7 +44,7 @@ type Action = {
   color?: string
 }
 
-export function ReaderToolbar({ message }: Props) {
+export function ReaderToolbar({ message, uids: conversation }: Props) {
   const { data: folders } = useFolders()
   const { data: me } = useMe()
   const composer = useComposer()
@@ -52,7 +54,7 @@ export function ReaderToolbar({ message }: Props) {
   const remove = useDeleteMessages()
 
   const folder = message.folder
-  const uids = [message.uid]
+  const uids = conversation?.length ? conversation : [message.uid]
   const leave = () =>
     void navigate({
       to: '/folders/$folderId',
@@ -164,7 +166,7 @@ export function ReaderToolbar({ message }: Props) {
       key: 's',
       icon: message.flagged ? IconStarFilled : IconStar,
       color: message.flagged ? 'yellow' : undefined,
-      run: () => flag.mutate({ folder, uids, flagged: !message.flagged }),
+      run: () => flag.mutate({ folder, uids: [message.uid], flagged: !message.flagged }),
     },
     {
       label: 'Mark as unread',

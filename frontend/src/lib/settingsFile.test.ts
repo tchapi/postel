@@ -8,6 +8,7 @@ const settings: Settings = {
   signature: '<p>Cheers</p>',
   loadRemoteImages: true,
   density: 'compact',
+  threads: false,
   updatedAt: '2026-10-23T10:00:00+00:00',
 }
 
@@ -32,6 +33,7 @@ describe('buildSettingsFile', () => {
         signature: '<p>Cheers</p>',
         loadRemoteImages: true,
         density: 'compact',
+        threads: false,
       },
     })
   })
@@ -49,6 +51,7 @@ describe('parseSettingsFile', () => {
       signature: null,
       loadRemoteImages: false,
       density: 'comfortable',
+      threads: true,
     })
   })
 
@@ -58,6 +61,7 @@ describe('parseSettingsFile', () => {
       signature: null,
       loadRemoteImages: false,
       density: 'comfortable',
+      threads: true,
     })
   })
 
@@ -108,6 +112,18 @@ describe('parseSettingsFile', () => {
   it('rejects an unknown density', () => {
     expect(() => parseSettingsFile(file({ density: 'cosy' }))).toThrow(
       'Unknown density "cosy", expected "comfortable" or "compact"',
+    )
+  })
+})
+
+describe('parseSettingsFile and conversations', () => {
+  it('defaults to conversations for files written before the setting existed', () => {
+    expect(parseSettingsFile(file({})).threads).toBe(true)
+  })
+
+  it('rejects a non boolean', () => {
+    expect(() => parseSettingsFile(file({ threads: 'yes' }))).toThrow(
+      '"threads" must be true or false',
     )
   })
 })

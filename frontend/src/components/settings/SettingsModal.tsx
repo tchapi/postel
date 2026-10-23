@@ -37,6 +37,7 @@ function SettingsForm({ settings, onClose }: { settings: Settings; onClose: () =
   const [fromName, setFromName] = useState(settings.fromName ?? '')
   const [loadRemoteImages, setLoadRemoteImages] = useState(settings.loadRemoteImages)
   const [density, setDensity] = useState<Density>(settings.density)
+  const [threads, setThreads] = useState(settings.threads)
   const update = useUpdateSettings()
 
   const editor = useEditor({
@@ -52,6 +53,7 @@ function SettingsForm({ settings, onClose }: { settings: Settings; onClose: () =
         signature: editor?.getText().trim() ? html : null,
         loadRemoteImages,
         density,
+        threads,
       },
       {
         onSuccess: () => {
@@ -84,6 +86,7 @@ function SettingsForm({ settings, onClose }: { settings: Settings; onClose: () =
       setFromName(imported.fromName ?? '')
       setLoadRemoteImages(imported.loadRemoteImages)
       setDensity(imported.density)
+      setThreads(imported.threads)
       editor?.commands.setContent(imported.signature ?? '')
       notifications.show({
         title: 'Settings loaded',
@@ -129,6 +132,13 @@ function SettingsForm({ settings, onClose }: { settings: Settings; onClose: () =
         description="Images hosted on the internet reveal that you opened the message"
         checked={loadRemoteImages}
         onChange={(e) => setLoadRemoteImages(e.currentTarget.checked)}
+      />
+
+      <Switch
+        label="Group by conversation"
+        description="Replies are shown together with the message they answer"
+        checked={threads}
+        onChange={(e) => setThreads(e.currentTarget.checked)}
       />
 
       <div>

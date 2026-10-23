@@ -19,15 +19,16 @@ type Props = {
 
 export function MessageList({ folderId }: Props) {
   const search = useSearch({ from: '/folders/$folderId' })
+  const { data: settings } = useSettings()
+  const threads = settings?.threads ?? true
   const { data, isPending, isError, fetchNextPage, hasNextPage, isFetchingNextPage } = useMessages(
     folderId,
-    search,
+    { ...search, threads },
   )
   const { uid } = useParams({ strict: false })
   const activeUid = uid === undefined ? null : Number(uid)
   const navigate = useNavigate()
   const scrollRef = useRef<HTMLDivElement>(null)
-  const { data: settings } = useSettings()
   const rowHeight = ROW_HEIGHTS[settings?.density ?? 'comfortable']
 
   const rows = useMemo(() => data?.pages.flatMap((page) => page.items) ?? [], [data])
@@ -199,7 +200,10 @@ export function MessageList({ folderId }: Props) {
       {selecting ? (
         <BulkActionBar
           folderId={folderId}
-          selected={[...selected]}
+          selected={rows
+            .filter((row) => selected.has(row.uid))
+            .flatMap((row) => (row.threadUids.length ? row.threadUids : [row.uid]))}
+          count={selected.size}
           loaded={rows.length}
           allSelected={selected.size === rows.length}
           onSelectAll={() => setSelected(new Set(rows.map((row) => row.uid)))}

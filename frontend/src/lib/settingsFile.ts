@@ -13,10 +13,10 @@ export type SettingsFile = {
 const DENSITIES: readonly Density[] = ['comfortable', 'compact']
 
 export function buildSettingsFile(settings: Settings): SettingsFile {
-  const { fromName, signature, loadRemoteImages, density } = settings
+  const { fromName, signature, loadRemoteImages, density, threads } = settings
   return {
     version: SETTINGS_FILE_VERSION,
-    settings: { fromName, signature, loadRemoteImages, density },
+    settings: { fromName, signature, loadRemoteImages, density, threads },
   }
 }
 
@@ -66,5 +66,9 @@ export function parseSettingsFile(text: string): FileSettings {
     )
   }
 
-  return { fromName, signature, loadRemoteImages, density }
+  // Added after the first exports went out, so it may be missing
+  const threads = settings.threads ?? true
+  if (typeof threads !== 'boolean') throw new Error('"threads" must be true or false')
+
+  return { fromName, signature, loadRemoteImages, density, threads }
 }

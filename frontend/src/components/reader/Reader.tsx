@@ -1,165 +1,195 @@
 import {
   ActionIcon,
-  Alert,
-  Avatar,
-  Box,
-  Button,
   Center,
+  Divider,
   Group,
+  Paper,
   ScrollArea,
   Skeleton,
   Stack,
   Text,
   Title,
-  Tooltip,
 } from '@mantine/core'
-import { IconArrowLeft, IconPhotoOff } from '@tabler/icons-react'
+import { IconArrowLeft } from '@tabler/icons-react'
 import { useNavigate, useParams } from '@tanstack/react-router'
-import { useEffect, useState } from 'react'
+import { type ReactNode, useEffect, useState } from 'react'
 
 import { useFlagMessages } from '../../api/mutations'
-import { useMessage } from '../../api/queries'
-import type { Address } from '../../api/types'
-import { displayName, formatFullDate, initials } from '../../lib/format'
-import { AttachmentList } from './AttachmentList'
-import { HtmlBody } from './HtmlBody'
+import { useMessage, useThread } from '../../api/queries'
+import { useSettings } from '../../api/settings'
+import type { Message, MessageRow } from '../../api/types'
+import { CollapsedMessage, MessageView } from './MessageView'
 import { ReaderToolbar } from './ReaderToolbar'
 
-function addressList(label: string, addresses: Address[]) {
-  if (addresses.length === 0) return null
-  return (
-    <Text size="xs" c="dimmed">
-      {label}{' '}
-      {addresses.map((a, i) => (
-        <span key={a.email}>
-          {i > 0 && ', '}
-          <Tooltip label={a.email} disabled={!a.name}>
-            <span>{displayName(a)}</span>
-          </Tooltip>
-        </span>
-      ))}
+const Loading = () => (
+  <Stack gap="md">
+    <Skeleton height={40} width="40%" />
+    <Skeleton height={200} />
+  </Stack>
+)
+
+const Failed = ({ what }: { what: string }) => (
+  <Center h={200}>
+    <Text c="dimmed" size="sm">
+      Could not load this {what}.
     </Text>
-  )
-}
+  </Center>
+)
 
 export function Reader() {
   const { folderId, uid } = useParams({ from: '/folders/$folderId/$uid' })
+  const { data: settings } = useSettings()
+  const threads = settings?.threads ?? true
+  const thread = useThread(folderId, Number(uid), threads)
+
+  if (threads && thread.isPending) return <Frame folderId={folderId} body={<Loading />} />
+  if (threads && thread.data && thread.data.length > 1) {
+    return <Conversation key={uid} folderId={folderId} rows={thread.data} />
+  }
+  return <Single key={uid} folderId={folderId} uid={Number(uid)} />
+}
+
+/** Common layout: back button on mobile, subject, toolbar, then the content. */
+function Frame({
+  folderId,
+  subject,
+  toolbar,
+  body,
+}: {
+  folderId: string
+  subject?: string
+  toolbar?: ReactNode
+  body: ReactNode
+}) {
   const navigate = useNavigate()
-  const [showImages, setShowImages] = useState<boolean | undefined>(undefined)
-  const { data: message, isPending, isError } = useMessage(folderId, Number(uid), showImages)
-  const flag = useFlagMessages()
-
-  // Opening a message reads it. Done once per message, optimistic in the list.
-  const unread = message !== undefined && !message.seen
-  useEffect(() => {
-    if (unread) {
-      flag.mutate({ folder: folderId, uids: [Number(uid)], seen: true })
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [folderId, uid, unread])
-
-  const back = (
-    <ActionIcon
-      variant="subtle"
-      hiddenFrom="md"
-      aria-label="Back to the list"
-      onClick={() =>
-        void navigate({ to: '/folders/$folderId', params: { folderId }, search: (prev) => prev })
-      }
-    >
-      <IconArrowLeft size={18} />
-    </ActionIcon>
-  )
-
-  if (isPending) {
-    return (
-      <Stack p="lg" gap="md">
-        <Skeleton height={28} width="60%" />
-        <Skeleton height={40} width="40%" />
-        <Skeleton height={200} />
-      </Stack>
-    )
-  }
-
-  if (isError) {
-    return (
-      <Center h="100%">
-        <Text c="dimmed" size="sm">
-          Could not load this message.
-        </Text>
-      </Center>
-    )
-  }
-
-  const from = message.from
-  const fromLabel = displayName(from)
-
   return (
     <ScrollArea h="100%" type="auto">
-      <Stack p={{ base: 'md', md: 'lg' }} gap="md" maw={900}>
+      <Stack p={{ base: 'md', md: 'xl' }} gap="lg" maw={920} mx="auto">
         <Group gap="sm" wrap="nowrap" align="flex-start" justify="space-between">
           <Group gap="sm" wrap="nowrap" align="flex-start" style={{ minWidth: 0 }}>
-            {back}
-            <Title order={3} fw={600} style={{ overflowWrap: 'anywhere' }}>
-              {message.subject || '(no subject)'}
-            </Title>
+            <ActionIcon
+              variant="subtle"
+              color="gray"
+              hiddenFrom="md"
+              aria-label="Back to the list"
+              onClick={() =>
+                void navigate({
+                  to: '/folders/$folderId',
+                  params: { folderId },
+                  search: (prev) => prev,
+                })
+              }
+            >
+              <IconArrowLeft size={18} />
+            </ActionIcon>
+            {subject !== undefined && (
+              <Title order={3} fw={600} style={{ overflowWrap: 'anywhere' }}>
+                {subject || '(no subject)'}
+              </Title>
+            )}
           </Group>
-          <ReaderToolbar message={message} />
+          {toolbar}
         </Group>
-
-        <Group gap="sm" wrap="nowrap" align="flex-start">
-          <Avatar radius="xl" size="md">
-            {initials(fromLabel)}
-          </Avatar>
-          <Stack gap={2} style={{ minWidth: 0, flex: 1 }}>
-            <Group gap="xs" justify="space-between" wrap="nowrap">
-              <Text size="sm" fw={600} truncate>
-                {from?.name ?? from?.email ?? 'Unknown sender'}
-                {from?.name && (
-                  <Text component="span" size="sm" c="dimmed" fw={400}>
-                    {' '}
-                    &lt;{from.email}&gt;
-                  </Text>
-                )}
-              </Text>
-              <Text size="xs" c="dimmed" style={{ whiteSpace: 'nowrap' }}>
-                {message.date ? formatFullDate(message.date) : ''}
-              </Text>
-            </Group>
-            {addressList('To', message.to)}
-            {addressList('Cc', message.cc)}
-          </Stack>
-        </Group>
-
-        {message.hasRemoteImages && !message.remoteImagesLoaded && (
-          <Alert
-            icon={<IconPhotoOff size={16} />}
-            color="gray"
-            variant="light"
-            py="xs"
-            title="Remote images are blocked"
-          >
-            <Group gap="xs">
-              <Text size="sm">This message loads images from the internet.</Text>
-              <Button size="compact-xs" variant="default" onClick={() => setShowImages(true)}>
-                Show images
-              </Button>
-            </Group>
-          </Alert>
-        )}
-
-        <AttachmentList folderId={folderId} uid={message.uid} attachments={message.attachments} />
-
-        <Box>
-          {message.html ? (
-            <HtmlBody html={message.html} remoteImages={message.remoteImagesLoaded} />
-          ) : (
-            <Text size="sm" style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>
-              {message.text ?? ''}
-            </Text>
-          )}
-        </Box>
+        {body}
       </Stack>
     </ScrollArea>
+  )
+}
+
+/** Opening a message reads it, once, optimistic in the list. */
+function useMarkRead(folderId: string, uids: number[]) {
+  const flag = useFlagMessages()
+  const key = uids.join(',')
+  useEffect(() => {
+    if (uids.length > 0) flag.mutate({ folder: folderId, uids, seen: true })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [folderId, key])
+}
+
+function Single({ folderId, uid }: { folderId: string; uid: number }) {
+  const [images, setImages] = useState<boolean | undefined>(undefined)
+  const { data: message, isPending, isError } = useMessage(folderId, uid, images)
+  useMarkRead(folderId, message && !message.seen ? [uid] : [])
+
+  if (isPending) return <Frame folderId={folderId} body={<Loading />} />
+  if (isError) return <Frame folderId={folderId} body={<Failed what="message" />} />
+
+  return (
+    <Frame
+      folderId={folderId}
+      subject={message.subject}
+      toolbar={<ReaderToolbar message={message} />}
+      body={<MessageView message={message} onShowImages={() => setImages(true)} />}
+    />
+  )
+}
+
+function Conversation({ folderId, rows }: { folderId: string; rows: MessageRow[] }) {
+  const latest = rows[rows.length - 1]!
+  const [expanded, setExpanded] = useState<Set<number>>(
+    () => new Set(rows.filter((row, i) => !row.seen || i === rows.length - 1).map((r) => r.uid)),
+  )
+  const { data: latestMessage } = useMessage(folderId, latest.uid, undefined)
+  const uids = rows.map((row) => row.uid)
+  useMarkRead(
+    folderId,
+    rows.filter((row) => !row.seen).map((row) => row.uid),
+  )
+
+  const toggle = (uid: number) =>
+    setExpanded((current) => {
+      const next = new Set(current)
+      if (next.has(uid)) next.delete(uid)
+      else next.add(uid)
+      return next
+    })
+
+  return (
+    <Frame
+      folderId={folderId}
+      subject={latest.subject}
+      toolbar={latestMessage && <ReaderToolbar message={latestMessage} uids={uids} />}
+      body={
+        <Stack gap={0}>
+          <Text size="xs" c="dimmed" mb="sm">
+            {rows.length} messages
+          </Text>
+          {rows.map((row, i) => (
+            <div key={row.uid}>
+              {i > 0 && <Divider my="sm" />}
+              {expanded.has(row.uid) ? (
+                <ExpandedMessage folderId={folderId} row={row} onCollapse={() => toggle(row.uid)} />
+              ) : (
+                <CollapsedMessage row={row} onExpand={() => toggle(row.uid)} />
+              )}
+            </div>
+          ))}
+        </Stack>
+      }
+    />
+  )
+}
+
+function ExpandedMessage({
+  folderId,
+  row,
+  onCollapse,
+}: {
+  folderId: string
+  row: MessageRow
+  onCollapse: () => void
+}) {
+  const [images, setImages] = useState<boolean | undefined>(undefined)
+  const { data: message, isPending, isError } = useMessage(folderId, row.uid, images)
+  if (isPending) return <Loading />
+  if (isError) return <Failed what="message" />
+  return (
+    <Paper p={0} bg="transparent">
+      <MessageView
+        message={message as Message}
+        onShowImages={() => setImages(true)}
+        onCollapse={onCollapse}
+      />
+    </Paper>
   )
 }
