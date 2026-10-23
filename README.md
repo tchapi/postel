@@ -65,14 +65,18 @@ The forward-auth middleware must pass `Remote-User`, `Remote-Email` and
 
 ## Running it
 
+Each release publishes `ghcr.io/tchapi/webmail` for amd64 and arm64, tagged with its version (`0.1.0`), its minor line (`0.1`) and `latest`.
+
 ```sh
-docker build -t webmail .
 docker run --rm -p 8080:8080 \
   -e APP_SECRET=change-me \
   -e TRUSTED_PROXIES=172.16.0.0/12 \
   -e IMAP_HOST=mail -e IMAP_MASTER_PASSWORD=... \
-  webmail
+  -v webmail-data:/app/var/data \
+  ghcr.io/tchapi/webmail:0.1
 ```
+
+`docker build -t webmail .` builds the same image from source.
 
 `compose.yaml` does the same with variables from a `.env` file.
 
