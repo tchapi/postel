@@ -107,6 +107,45 @@ final class Mailbox
         }
     }
 
+    /**
+     * Conversations as UID lists, from the server's REFERENCES threading.
+     *
+     * @return list<list<int>>
+     */
+    public function threads(string $search = 'ALL'): array
+    {
+        $threads = [];
+        foreach ($this->command('UID THREAD', 'REFERENCES UTF-8 '.$search)->tokenized('THREAD') as $row) {
+            foreach (array_slice($row, 2) as $thread) {
+                $uids = self::flatten(is_array($thread) ? $thread : [$thread]);
+                if ([] !== $uids) {
+                    $threads[] = $uids;
+                }
+            }
+        }
+
+        return $threads;
+    }
+
+    /**
+     * @param array<mixed> $tree
+     *
+     * @return list<int>
+     */
+    private static function flatten(array $tree): array
+    {
+        $uids = [];
+        foreach ($tree as $node) {
+            if (is_array($node)) {
+                $uids = [...$uids, ...self::flatten($node)];
+            } elseif (is_string($node) && is_numeric($node)) {
+                $uids[] = (int) $node;
+            }
+        }
+
+        return $uids;
+    }
+
     public static function quote(string $value): string
     {
         return '"'.addcslashes($value, '"\\').'"';

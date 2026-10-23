@@ -8,6 +8,9 @@ use DateTimeImmutable;
 
 final readonly class MessageRow
 {
+    /**
+     * @param list<int> $threadUids every message of the conversation in this folder, oldest first
+     */
     public function __construct(
         public int $uid,
         public string $folder,
@@ -19,6 +22,8 @@ final readonly class MessageRow
         public bool $flagged,
         public bool $hasAttachments,
         public int $size,
+        public int $threadSize = 1,
+        public array $threadUids = [],
     ) {
     }
 }

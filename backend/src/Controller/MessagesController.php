@@ -38,21 +38,25 @@ final class MessagesController
             throw new BadRequestHttpException('Unknown sort');
         }
 
-        $page = $this->list->page(
-            $user,
-            $folder,
-            $request->query->getInt('page', 1),
-            $request->query->getInt('perPage', 50),
-            $sort,
-            'asc' !== $request->query->getString('order', 'desc'),
-            SearchCriteria::build(
-                $request->query->getString('q'),
-                $request->query->getBoolean('unread'),
-                $request->query->getBoolean('flagged'),
-            ),
+        $search = SearchCriteria::build(
+            $request->query->getString('q'),
+            $request->query->getBoolean('unread'),
+            $request->query->getBoolean('flagged'),
         );
+        $page = $request->query->getInt('page', 1);
+        $perPage = $request->query->getInt('perPage', 50);
 
-        return $this->json($page);
+        if ($request->query->getBoolean('threads')) {
+            return $this->json($this->list->threads($user, $folder, $page, $perPage, $search));
+        }
+
+        return $this->json($this->list->page($user, $folder, $page, $perPage, $sort, 'asc' !== $request->query->getString('order', 'desc'), $search));
+    }
+
+    #[Route('/{uid}/thread', methods: ['GET'], requirements: ['uid' => '\d+'])]
+    public function thread(#[CurrentUser] RemoteUser $user, string $folder, int $uid): JsonResponse
+    {
+        return JsonResponse::fromJsonString($this->serializer->serialize($this->list->thread($user, $folder, $uid), 'json', ['datetime_format' => DateTimeInterface::RFC3339]));
     }
 
     #[Route('/{uid}', methods: ['GET'], requirements: ['uid' => '\d+'])]

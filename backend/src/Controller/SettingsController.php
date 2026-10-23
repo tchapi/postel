@@ -40,6 +40,7 @@ final class SettingsController
             'signature' => $settings->signature,
             'loadRemoteImages' => $settings->loadRemoteImages,
             'density' => $settings->density,
+            'threads' => $settings->threads,
             'updatedAt' => $settings->updatedAt?->format(DateTimeInterface::RFC3339),
         ]);
     }

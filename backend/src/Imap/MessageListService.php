@@ -55,28 +55,132 @@ final class MessageListService
                 return new MessagePage([], count($uids), $page, $perPage);
             }
 
-            $response = $mailbox->command('UID FETCH', sprintf(
-                '%s (UID FLAGS INTERNALDATE RFC822.SIZE BODYSTRUCTURE PREVIEW BODY.PEEK[HEADER.FIELDS (%s)])',
-                Mailbox::set($slice),
-                self::HEADER_FIELDS,
-            ));
+            $rows = $this->rows($mailbox, $folder, $slice);
 
-            $rows = [];
-            foreach ($response->tokenized('FETCH') as $tokens) {
-                $item = FetchItem::fromTokens($tokens);
-                $rows[$item->uid()] = $this->row($item, $folder);
+            return new MessagePage(array_values(array_filter(array_map(static fn (int $uid) => $rows[$uid] ?? null, $slice))), count($uids), $page, $perPage);
+        });
+    }
+
+    /**
+     * One row per conversation, newest conversation first. The row is the
+     * newest message of the conversation, unread if any of it is, starred if
+     * any of it is.
+     */
+    public function threads(RemoteUser $user, string $folder, int $page, int $perPage, string $search = 'ALL'): MessagePage
+    {
+        $perPage = max(1, min(self::MAX_PER_PAGE, $perPage));
+        $page = max(1, $page);
+
+        return Mailbox::open($this->clients, $user, $folder, true, function (Mailbox $mailbox) use ($folder, $page, $perPage, $search): MessagePage {
+            $rank = array_flip($mailbox->sort('REVERSE DATE', $search));
+            $threads = [];
+            foreach ($mailbox->threads($search) as $members) {
+                $members = array_values(array_filter($members, static fn (int $uid) => isset($rank[$uid])));
+                if ([] === $members) {
+                    continue;
+                }
+                usort($members, static fn (int $a, int $b) => $rank[$b] <=> $rank[$a]);
+                $threads[] = $members;
+            }
+            // Newest conversation first: the one whose newest message ranks best.
+            usort($threads, static fn (array $a, array $b) => $rank[$a[count($a) - 1]] <=> $rank[$b[count($b) - 1]]);
+
+            $slice = array_slice($threads, ($page - 1) * $perPage, $perPage);
+            if ([] === $slice) {
+                return new MessagePage([], count($threads), $page, $perPage);
             }
 
-            // Back in the server's sort order: FETCH answers in sequence order.
-            $ordered = [];
-            foreach ($slice as $uid) {
-                if (isset($rows[$uid])) {
-                    $ordered[] = $rows[$uid];
+            $latest = array_map(static fn (array $members) => $members[count($members) - 1], $slice);
+            $rows = $this->rows($mailbox, $folder, $latest);
+            $flags = $this->flags($mailbox, array_merge(...$slice));
+
+            $items = [];
+            foreach ($slice as $members) {
+                $row = $rows[$members[count($members) - 1]] ?? null;
+                if (null === $row) {
+                    continue;
+                }
+                $memberFlags = array_map(static fn (int $uid) => $flags[$uid] ?? [], $members);
+                $items[] = new MessageRow(
+                    uid: $row->uid,
+                    folder: $row->folder,
+                    from: $row->from,
+                    subject: $row->subject,
+                    snippet: $row->snippet,
+                    date: $row->date,
+                    seen: [] === array_filter($memberFlags, static fn (array $f) => !in_array('\seen', $f, true)),
+                    flagged: [] !== array_filter($memberFlags, static fn (array $f) => in_array('\flagged', $f, true)),
+                    hasAttachments: $row->hasAttachments,
+                    size: $row->size,
+                    threadSize: count($members),
+                    threadUids: $members,
+                );
+            }
+
+            return new MessagePage($items, count($threads), $page, $perPage);
+        });
+    }
+
+    /**
+     * The conversation a message belongs to, oldest first.
+     *
+     * @return list<MessageRow>
+     */
+    public function thread(RemoteUser $user, string $folder, int $uid): array
+    {
+        return Mailbox::open($this->clients, $user, $folder, true, function (Mailbox $mailbox) use ($folder, $uid): array {
+            $members = [$uid];
+            foreach ($mailbox->threads('ALL') as $thread) {
+                if (in_array($uid, $thread, true)) {
+                    $members = $thread;
+                    break;
                 }
             }
+            // Same order as the threaded list, so its newest message is our last one.
+            $rank = array_flip($mailbox->sort('REVERSE DATE', 'UID '.Mailbox::set($members)));
+            $rows = array_values($this->rows($mailbox, $folder, $members));
+            usort($rows, static fn (MessageRow $a, MessageRow $b) => ($rank[$b->uid] ?? 0) <=> ($rank[$a->uid] ?? 0));
 
-            return new MessagePage($ordered, count($uids), $page, $perPage);
+            return $rows;
         });
+    }
+
+    /**
+     * @param list<int> $uids
+     *
+     * @return array<int, MessageRow>
+     */
+    private function rows(Mailbox $mailbox, string $folder, array $uids): array
+    {
+        $response = $mailbox->command('UID FETCH', sprintf(
+            '%s (UID FLAGS INTERNALDATE RFC822.SIZE BODYSTRUCTURE PREVIEW BODY.PEEK[HEADER.FIELDS (%s)])',
+            Mailbox::set($uids),
+            self::HEADER_FIELDS,
+        ));
+
+        $rows = [];
+        foreach ($response->tokenized('FETCH') as $tokens) {
+            $item = FetchItem::fromTokens($tokens);
+            $rows[$item->uid()] = $this->row($item, $folder);
+        }
+
+        return $rows;
+    }
+
+    /**
+     * @param list<int> $uids
+     *
+     * @return array<int, list<string>> lowercased flags by UID
+     */
+    private function flags(Mailbox $mailbox, array $uids): array
+    {
+        $flags = [];
+        foreach ($mailbox->command('UID FETCH', Mailbox::set($uids).' (UID FLAGS)')->tokenized('FETCH') as $tokens) {
+            $item = FetchItem::fromTokens($tokens);
+            $flags[$item->uid()] = array_map('strtolower', $item->flags());
+        }
+
+        return $flags;
     }
 
     private function row(FetchItem $item, string $folder): MessageRow

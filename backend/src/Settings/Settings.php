@@ -17,17 +17,18 @@ final readonly class Settings
         public ?string $signature,
         public bool $loadRemoteImages,
         public string $density,
+        public bool $threads,
         public ?DateTimeImmutable $updatedAt,
     ) {
     }
 
     public static function defaults(): self
     {
-        return new self(null, null, false, UserSettings::DENSITY_COMFORTABLE, null);
+        return new self(null, null, false, UserSettings::DENSITY_COMFORTABLE, true, null);
     }
 
     public static function fromEntity(UserSettings $entity): self
     {
-        return new self($entity->getFromName(), $entity->getSignature(), $entity->loadsRemoteImages(), $entity->getDensity(), $entity->getUpdatedAt());
+        return new self($entity->getFromName(), $entity->getSignature(), $entity->loadsRemoteImages(), $entity->getDensity(), $entity->groupsThreads(), $entity->getUpdatedAt());
     }
 }

@@ -46,7 +46,7 @@ final class SettingsTest extends WebTestCase
     public function testDefaultsBeforeAnythingIsSaved(): void
     {
         self::assertSame(
-            ['fromName' => null, 'signature' => null, 'loadRemoteImages' => false, 'density' => 'comfortable', 'updatedAt' => null],
+            ['fromName' => null, 'signature' => null, 'loadRemoteImages' => false, 'density' => 'comfortable', 'threads' => true, 'updatedAt' => null],
             $this->request('GET'),
         );
         self::assertResponseIsSuccessful();
@@ -54,12 +54,13 @@ final class SettingsTest extends WebTestCase
 
     public function testSaveAndReadBack(): void
     {
-        $saved = $this->request('PUT', ['fromName' => ' Alice L. ', 'signature' => '<p>Alice</p><script>x()</script>', 'loadRemoteImages' => true, 'density' => 'compact']);
+        $saved = $this->request('PUT', ['fromName' => ' Alice L. ', 'signature' => '<p>Alice</p><script>x()</script>', 'loadRemoteImages' => true, 'density' => 'compact', 'threads' => false]);
         self::assertResponseIsSuccessful();
         self::assertSame('Alice L.', $saved['fromName']);
         self::assertSame('<p>Alice</p>', $saved['signature']);
         self::assertTrue($saved['loadRemoteImages']);
         self::assertSame('compact', $saved['density']);
+        self::assertFalse($saved['threads']);
         self::assertNotNull($saved['updatedAt']);
 
         self::assertSame($saved, $this->request('GET'));

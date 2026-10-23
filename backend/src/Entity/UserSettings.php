@@ -35,6 +35,9 @@ class UserSettings
     #[ORM\Column(length: 20)]
     private string $density = self::DENSITY_COMFORTABLE;
 
+    #[ORM\Column(options: ['default' => true])]
+    private bool $threads = true;
+
     #[ORM\Column]
     private DateTimeImmutable $updatedAt;
 
@@ -69,13 +72,19 @@ class UserSettings
         return $this->density;
     }
 
+    public function groupsThreads(): bool
+    {
+        return $this->threads;
+    }
+
     public function getUpdatedAt(): DateTimeImmutable
     {
         return $this->updatedAt;
     }
 
-    public function update(?string $fromName, ?string $signature, bool $loadRemoteImages, string $density): void
+    public function update(?string $fromName, ?string $signature, bool $loadRemoteImages, string $density, bool $threads): void
     {
+        $this->threads = $threads;
         $this->fromName = null === $fromName || '' === trim($fromName) ? null : trim($fromName);
         $this->signature = null === $signature || '' === trim(strip_tags($signature)) ? null : $signature;
         $this->loadRemoteImages = $loadRemoteImages;

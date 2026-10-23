@@ -12,6 +12,7 @@ use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
 use function array_slice;
+use function count;
 use function sprintf;
 
 use const JSON_THROW_ON_ERROR;
@@ -122,6 +123,32 @@ final class MessagesTest extends WebTestCase
         }
 
         return max($uids);
+    }
+
+    public function testThreadsGroupTheLunchConversation(): void
+    {
+        $page = $this->get('/api/folders/INBOX/messages?threads=1&perPage=100&q=Lunch');
+        $lunch = array_values(array_filter($page['items'], static fn (array $row) => str_contains($row['subject'], 'Lunch?')));
+        self::assertNotEmpty($lunch);
+        self::assertSame(count($lunch[0]['threadUids']), $lunch[0]['threadSize']);
+
+        $thread = $this->get(sprintf('/api/folders/INBOX/messages/%d/thread', $lunch[0]['uid']));
+        self::assertSame($lunch[0]['threadSize'], count($thread));
+        $last = end($thread);
+        self::assertIsArray($last);
+        self::assertSame($lunch[0]['uid'], $last['uid']);
+    }
+
+    public function testThreadedListCountsConversations(): void
+    {
+        $flat = $this->get('/api/folders/INBOX/messages?perPage=1');
+        $threaded = $this->get('/api/folders/INBOX/messages?perPage=50&threads=1');
+
+        self::assertLessThanOrEqual($flat['total'], $threaded['total']);
+        self::assertCount(50, $threaded['items']);
+        foreach ($threaded['items'] as $row) {
+            self::assertContains($row['uid'], $row['threadUids']);
+        }
     }
 
     public function testUnknownFolderIs404(): void

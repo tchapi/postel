@@ -17,6 +17,7 @@ final readonly class SettingsChange
         public bool $loadRemoteImages = false,
         #[Assert\Choice(choices: [UserSettings::DENSITY_COMFORTABLE, UserSettings::DENSITY_COMPACT])]
         public string $density = UserSettings::DENSITY_COMFORTABLE,
+        public bool $threads = true,
     ) {
     }
 }
