@@ -179,6 +179,21 @@ final class MessagesTest extends WebTestCase
         }
     }
 
+    public function testRawSource(): void
+    {
+        $uid = $this->uidOf('<nested@fixtures.webmail>');
+        $server = ['REMOTE_ADDR' => '127.0.0.1', 'HTTP_REMOTE_USER' => 'alice', 'HTTP_REMOTE_EMAIL' => 'alice@example.test'];
+
+        $this->client->request('GET', sprintf('/api/folders/INBOX/messages/%d/raw', $uid), server: $server);
+        self::assertResponseIsSuccessful();
+        self::assertResponseHeaderSame('Content-Type', 'text/plain; charset=utf-8');
+        self::assertStringContainsString('Message-ID: <nested@fixtures.webmail>', (string) $this->client->getResponse()->getContent());
+
+        $this->client->request('GET', sprintf('/api/folders/INBOX/messages/%d/raw?download=1', $uid), server: $server);
+        self::assertResponseHeaderSame('Content-Type', 'message/rfc822');
+        self::assertStringContainsString('.eml', (string) $this->client->getResponse()->headers->get('Content-Disposition'));
+    }
+
     public function testUnknownFolderIs404(): void
     {
         $this->client->request('GET', '/api/folders/Nope/messages', server: [

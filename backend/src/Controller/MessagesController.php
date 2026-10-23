@@ -76,6 +76,26 @@ final class MessagesController
     }
 
     /**
+     * The source of a message: plain text to read, or a .eml file with ?download=1.
+     */
+    #[Route('/{uid}/raw', methods: ['GET'], requirements: ['uid' => '\d+'])]
+    public function raw(#[CurrentUser] RemoteUser $user, string $folder, int $uid, Request $request): Response
+    {
+        $download = $request->query->getBoolean('download');
+        $response = new Response($this->messages->raw($user, $folder, $uid), Response::HTTP_OK, [
+            'Content-Type' => $download ? 'message/rfc822' : 'text/plain; charset=utf-8',
+            'X-Content-Type-Options' => 'nosniff',
+            'Content-Security-Policy' => "default-src 'none'; sandbox",
+            'Cache-Control' => 'private, max-age=3600',
+        ]);
+        if ($download) {
+            $response->headers->set('Content-Disposition', HeaderUtils::makeDisposition(HeaderUtils::DISPOSITION_ATTACHMENT, sprintf('message-%d.eml', $uid)));
+        }
+
+        return $response;
+    }
+
+    /**
      * Served as a download, never rendered in place: a part is untrusted bytes.
      */
     #[Route('/{uid}/parts/{section}', methods: ['GET'], requirements: ['uid' => '\d+', 'section' => '\d+(\.\d+)*'])]

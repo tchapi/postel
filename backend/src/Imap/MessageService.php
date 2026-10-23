@@ -83,6 +83,18 @@ final class MessageService
     }
 
     /**
+     * The message exactly as stored, headers and all.
+     */
+    public function raw(RemoteUser $user, string $folder, int $uid): string
+    {
+        return Mailbox::open($this->clients, $user, $folder, true, function (Mailbox $mailbox) use ($uid): string {
+            $items = $mailbox->command('UID FETCH', sprintf('%d (UID BODY.PEEK[])', $uid))->tokenized('FETCH');
+
+            return $this->single($items, $uid)->section('') ?? throw new NotFoundHttpException(sprintf('No message %d', $uid));
+        });
+    }
+
+    /**
      * One MIME part, transfer encoding removed, as the browser should get it.
      */
     public function part(RemoteUser $user, string $folder, int $uid, string $section): PartContent

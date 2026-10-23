@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Command;
 
 use App\Imap\ImapClientFactory;
+use App\Imap\Mailbox;
 use App\Security\RemoteUser;
 use Carbon\Carbon;
 use DateTimeImmutable;
@@ -20,6 +21,7 @@ use Symfony\Component\DependencyInjection\Attribute\When;
 use Symfony\Component\Mime\Address;
 use Symfony\Component\Mime\Email;
 
+use function array_slice;
 use function count;
 use function sprintf;
 
@@ -70,6 +72,7 @@ final class SeedMailboxCommand extends Command
             ->addOption('login', null, InputOption::VALUE_REQUIRED, 'Mailbox to fill (an IMAP login)', 'alice@example.test')
             ->addOption('count', null, InputOption::VALUE_REQUIRED, 'Number of generated messages', '2000')
             ->addOption('seed', null, InputOption::VALUE_REQUIRED, 'Random seed, for a reproducible mailbox', '42')
+            ->addOption('folders', null, InputOption::VALUE_NONE, 'Only create folders and file existing mail into them')
         ;
     }
 
@@ -84,6 +87,12 @@ final class SeedMailboxCommand extends Command
             return Command::FAILURE;
         }
         mt_srand((int) $input->getOption('seed'));
+
+        if ($input->getOption('folders')) {
+            $this->fileIntoFolders(new RemoteUser($login, $login), $io);
+
+            return Command::SUCCESS;
+        }
 
         $client = $this->clients->forUser(new RemoteUser($login, $login));
         $client->connect();
@@ -159,6 +168,40 @@ final class SeedMailboxCommand extends Command
         $io->success(sprintf('%d messages in the INBOX of %s', $count + count($fixtures), $login));
 
         return Command::SUCCESS;
+    }
+
+    /**
+     * Folders as people have them: an archive, a few topics, one nested level,
+     * each filled with mail moved from the INBOX by subject.
+     */
+    private function fileIntoFolders(RemoteUser $user, SymfonyStyle $io): void
+    {
+        $plan = [
+            'Archive' => ['SUBJECT "Weekly digest"', 400],
+            'Receipts' => ['OR SUBJECT "Invoice" SUBJECT "has shipped"', 120],
+            'Projects' => ['SUBJECT "Quick question"', 40],
+            'Projects.Webmail' => ['SUBJECT "[repo]"', 60],
+            'Projects.Davis' => ['SUBJECT "photos from the weekend"', 25],
+            'Family' => ['FROM "zoe@example.test"', 30],
+            'Travel' => ['SUBJECT "Out of office"', 20],
+        ];
+
+        Mailbox::session($this->clients, $user, static function (Mailbox $mailbox) use ($plan, $io): void {
+            $existing = $mailbox->folders();
+            foreach ($plan as $folder => [$search, $limit]) {
+                if (!isset($existing[$folder])) {
+                    $mailbox->command('CREATE', Mailbox::quote($folder));
+                }
+                $mailbox->command('SUBSCRIBE', Mailbox::quote($folder));
+
+                $mailbox->command('SELECT', '"INBOX"');
+                $uids = array_slice($mailbox->sort('REVERSE DATE', $search), 0, $limit);
+                if ([] !== $uids) {
+                    $mailbox->command('UID MOVE', Mailbox::set($uids).' '.Mailbox::quote($folder));
+                }
+                $io->text(sprintf('%-18s %d messages', $folder, count($uids)));
+            }
+        });
     }
 
     private static function paragraphs(int $n): string
