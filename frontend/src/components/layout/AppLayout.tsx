@@ -3,6 +3,7 @@ import { useDisclosure } from '@mantine/hooks'
 import { Outlet } from '@tanstack/react-router'
 
 import { FolderNav } from '../folders/FolderNav'
+import { SearchBox } from './SearchBox'
 import { UserMenu } from './UserMenu'
 
 export function AppLayout() {
@@ -20,7 +21,10 @@ export function AppLayout() {
             <Burger opened={navOpened} onClick={toggleNav} hiddenFrom="sm" size="sm" />
             <Text fw={600}>Webmail</Text>
           </Group>
-          <UserMenu />
+          <Group gap="sm">
+            <SearchBox />
+            <UserMenu />
+          </Group>
         </Group>
       </AppShell.Header>
 

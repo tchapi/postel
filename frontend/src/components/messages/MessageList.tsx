@@ -1,11 +1,12 @@
 import { Center, Loader, Skeleton, Stack, Text } from '@mantine/core'
 import { useHotkeys } from '@mantine/hooks'
 import { IconMailOff } from '@tabler/icons-react'
-import { useNavigate, useParams } from '@tanstack/react-router'
+import { useNavigate, useParams, useSearch } from '@tanstack/react-router'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { useEffect, useMemo, useRef } from 'react'
 
 import { useMessages } from '../../api/queries'
+import { ListFilters } from './ListFilters'
 import { MessageRow } from './MessageRow'
 
 const ROW_HEIGHT = 72
@@ -15,15 +16,18 @@ type Props = {
 }
 
 export function MessageList({ folderId }: Props) {
-  const { data, isPending, isError, fetchNextPage, hasNextPage, isFetchingNextPage } =
-    useMessages(folderId)
+  const search = useSearch({ from: '/folders/$folderId' })
+  const { data, isPending, isError, fetchNextPage, hasNextPage, isFetchingNextPage } = useMessages(
+    folderId,
+    search,
+  )
   const { uid } = useParams({ strict: false })
   const activeUid = uid === undefined ? null : Number(uid)
   const navigate = useNavigate()
   const scrollRef = useRef<HTMLDivElement>(null)
 
   const rows = useMemo(() => data?.pages.flatMap((page) => page.items) ?? [], [data])
-  const total = data?.pages[0]?.total ?? 0
+  const total = data?.pages[0]?.total
 
   const virtualizer = useVirtualizer({
     count: rows.length,
@@ -44,6 +48,7 @@ export function MessageList({ folderId }: Props) {
     void navigate({
       to: '/folders/$folderId/$uid',
       params: { folderId, uid: String(messageUid) },
+      search: (prev) => prev,
     })
 
   const move = (delta: number) => {
@@ -57,75 +62,85 @@ export function MessageList({ folderId }: Props) {
   useHotkeys([
     ['j', () => move(1)],
     ['k', () => move(-1)],
-    ['Escape', () => void navigate({ to: '/folders/$folderId', params: { folderId } })],
+    [
+      'Escape',
+      () =>
+        void navigate({ to: '/folders/$folderId', params: { folderId }, search: (prev) => prev }),
+    ],
   ])
 
+  const filtered = !!(search.q || search.unread || search.flagged)
+
+  let body
   if (isPending) {
-    return (
+    body = (
       <Stack gap={0}>
         {Array.from({ length: 12 }, (_, i) => (
           <Skeleton key={i} height={ROW_HEIGHT - 16} m={8} />
         ))}
       </Stack>
     )
-  }
-
-  if (isError) {
-    return (
+  } else if (isError) {
+    body = (
       <Center h="100%">
         <Text c="dimmed" size="sm">
           Could not load this folder.
         </Text>
       </Center>
     )
-  }
-
-  if (rows.length === 0) {
-    return (
+  } else if (rows.length === 0) {
+    body = (
       <Center h="100%">
         <Stack align="center" gap="xs">
           <IconMailOff size={28} stroke={1.5} color="var(--mantine-color-dimmed)" />
           <Text c="dimmed" size="sm">
-            Nothing here
+            {filtered ? 'No message matches' : 'Nothing here'}
           </Text>
         </Stack>
       </Center>
     )
+  } else {
+    body = (
+      <div
+        ref={scrollRef}
+        style={{ height: '100%', overflowY: 'auto' }}
+        role="list"
+        aria-label={`${total ?? rows.length} messages`}
+      >
+        <div style={{ height: virtualizer.getTotalSize(), position: 'relative' }}>
+          {items.map((item) => {
+            const row = rows[item.index]!
+            return (
+              <div
+                key={row.uid}
+                role="listitem"
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  width: '100%',
+                  height: item.size,
+                  transform: `translateY(${item.start}px)`,
+                }}
+              >
+                <MessageRow row={row} active={row.uid === activeUid} onOpen={() => open(row.uid)} />
+              </div>
+            )
+          })}
+        </div>
+        {isFetchingNextPage && (
+          <Center p="sm">
+            <Loader size="xs" />
+          </Center>
+        )}
+      </div>
+    )
   }
 
   return (
-    <div
-      ref={scrollRef}
-      style={{ height: '100%', overflowY: 'auto' }}
-      role="list"
-      aria-label={`${total} messages`}
-    >
-      <div style={{ height: virtualizer.getTotalSize(), position: 'relative' }}>
-        {items.map((item) => {
-          const row = rows[item.index]!
-          return (
-            <div
-              key={row.uid}
-              role="listitem"
-              style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                width: '100%',
-                height: item.size,
-                transform: `translateY(${item.start}px)`,
-              }}
-            >
-              <MessageRow row={row} active={row.uid === activeUid} onOpen={() => open(row.uid)} />
-            </div>
-          )
-        })}
-      </div>
-      {isFetchingNextPage && (
-        <Center p="sm">
-          <Loader size="xs" />
-        </Center>
-      )}
-    </div>
+    <Stack gap={0} h="100%">
+      <ListFilters folderId={folderId} total={total} />
+      <div style={{ flex: 1, minHeight: 0 }}>{body}</div>
+    </Stack>
   )
 }

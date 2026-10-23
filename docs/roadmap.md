@@ -19,15 +19,17 @@
 - [x] Reader: headers, sanitized HTML, text fallback, attachments, inline images
 - [x] Remote images blocked by default
 - [x] Dark mode, keyboard navigation (`j`, `k`, `esc`)
-- [ ] Mark as read when opened (needs the flags endpoint, phase 2)
+- [x] Mark as read when opened
 
 ## Phase 2, actions
 
-- [ ] Flags: seen, flagged
-- [ ] Move, archive, junk, trash, with undo
-- [ ] Search (headers first, body later)
-- [ ] Unread polling
-- [ ] Spotlight: search, folder jump, shortcuts
+- [x] Flags: seen, flagged
+- [x] Move, archive, junk, trash, with undo
+- [x] Search on From, To and Subject, unread and starred filters
+- [x] Unread polling (folder counts every 30s)
+- [ ] Bulk selection and actions
+- [ ] Spotlight: folder jump, shortcuts help
+- [ ] Body search once an FTS index is in place on the server
 
 ## Phase 3, compose
 

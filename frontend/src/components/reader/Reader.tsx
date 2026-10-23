@@ -15,13 +15,15 @@ import {
 } from '@mantine/core'
 import { IconArrowLeft, IconPhotoOff } from '@tabler/icons-react'
 import { useNavigate, useParams } from '@tanstack/react-router'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
+import { useFlagMessages } from '../../api/mutations'
 import { useMessage } from '../../api/queries'
 import type { Address } from '../../api/types'
 import { displayName, formatFullDate, initials } from '../../lib/format'
 import { AttachmentList } from './AttachmentList'
 import { HtmlBody } from './HtmlBody'
+import { ReaderToolbar } from './ReaderToolbar'
 
 function addressList(label: string, addresses: Address[]) {
   if (addresses.length === 0) return null
@@ -45,13 +47,25 @@ export function Reader() {
   const navigate = useNavigate()
   const [showImages, setShowImages] = useState(false)
   const { data: message, isPending, isError } = useMessage(folderId, Number(uid), showImages)
+  const flag = useFlagMessages()
+
+  // Opening a message reads it. Done once per message, optimistic in the list.
+  const unread = message !== undefined && !message.seen
+  useEffect(() => {
+    if (unread) {
+      flag.mutate({ folder: folderId, uids: [Number(uid)], seen: true })
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [folderId, uid, unread])
 
   const back = (
     <ActionIcon
       variant="subtle"
       hiddenFrom="md"
       aria-label="Back to the list"
-      onClick={() => void navigate({ to: '/folders/$folderId', params: { folderId } })}
+      onClick={() =>
+        void navigate({ to: '/folders/$folderId', params: { folderId }, search: (prev) => prev })
+      }
     >
       <IconArrowLeft size={18} />
     </ActionIcon>
@@ -83,11 +97,14 @@ export function Reader() {
   return (
     <ScrollArea h="100%" type="auto">
       <Stack p={{ base: 'md', md: 'lg' }} gap="md" maw={900}>
-        <Group gap="sm" wrap="nowrap" align="flex-start">
-          {back}
-          <Title order={3} fw={600} style={{ overflowWrap: 'anywhere' }}>
-            {message.subject || '(no subject)'}
-          </Title>
+        <Group gap="sm" wrap="nowrap" align="flex-start" justify="space-between">
+          <Group gap="sm" wrap="nowrap" align="flex-start" style={{ minWidth: 0 }}>
+            {back}
+            <Title order={3} fw={600} style={{ overflowWrap: 'anywhere' }}>
+              {message.subject || '(no subject)'}
+            </Title>
+          </Group>
+          <ReaderToolbar message={message} />
         </Group>
 
         <Group gap="sm" wrap="nowrap" align="flex-start">
