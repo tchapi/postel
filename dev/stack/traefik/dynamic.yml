@@ -1,0 +1,22 @@
+# Davis runs in its own compose project (dev/davis), so it is routed from here
+# rather than discovered from labels.
+http:
+  routers:
+    # The dashboard sits behind Authelia, like the webmail
+    davis:
+      rule: Host(`dav.localtest.me`)
+      entryPoints: [websecure]
+      tls: {}
+      middlewares: [authelia@docker]
+      service: davis
+    # CalDAV and CardDAV clients only speak Basic: Davis checks them itself
+    davis-dav:
+      rule: Host(`dav.localtest.me`) && (PathPrefix(`/dav`) || PathPrefix(`/.well-known`))
+      entryPoints: [websecure]
+      tls: {}
+      service: davis
+  services:
+    davis:
+      loadBalancer:
+        servers:
+          - url: http://host.docker.internal:9000

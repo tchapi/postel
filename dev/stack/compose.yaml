@@ -6,6 +6,8 @@
 #
 # Then https://mail.localtest.me:8443 (a self-signed certificate, accept it)
 # and log in as alice / alice-password. localtest.me resolves to 127.0.0.1.
+# The Davis dashboard is at https://dav.localtest.me:8443, behind Authelia and
+# then its own admin login (admin / admin-password); /dav stays Basic only.
 # Contacts need DAVIS_APP_ID and DAVIS_APP_SECRET in the environment.
 name: webmail-stack
 
@@ -16,11 +18,13 @@ services:
       - --providers.docker=true
       - --providers.docker.exposedbydefault=false
       - --providers.docker.network=webmail-stack_front
+      - --providers.file.filename=/etc/traefik/dynamic.yml
       - --entrypoints.websecure.address=:443
     ports:
       - "127.0.0.1:8443:443"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./traefik/dynamic.yml:/etc/traefik/dynamic.yml:ro
     networks:
       front:
         # Pinned so the webmail can trust this proxy alone

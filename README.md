@@ -156,7 +156,7 @@ To try the production image as it runs for real, behind Traefik and Authelia, on
 DAVIS_APP_ID=app_... DAVIS_APP_SECRET=... docker compose -f dev/stack/compose.yaml up -d --build
 ```
 
-Then open https://mail.localtest.me:8443 (self-signed certificate) and log in as `alice` / `alice-password`.
+Then open https://mail.localtest.me:8443 (self-signed certificate) and log in as `alice` / `alice-password`. The Davis dashboard is at https://dav.localtest.me:8443, behind the same Authelia login and then its own (`admin` / `admin-password`).
 
 Findings from the technical spikes live in [docs/spikes](docs/spikes).
 
