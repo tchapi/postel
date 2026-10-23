@@ -16,24 +16,23 @@ import {
   UnstyledButton,
 } from '@mantine/core'
 import {
-  IconArchive,
-  IconCode,
-  IconArrowBackUp,
-  IconArrowBackUpDouble,
-  IconArrowForwardUp,
-  IconArrowLeft,
-  IconBan,
-  IconDots,
-  IconDotsVertical,
-  IconFolderShare,
-  IconMail,
-  IconMailOpened,
-  IconPhotoOff,
-  IconStack2,
-  IconStar,
-  IconStarFilled,
-  IconTrash,
-} from '@tabler/icons-react'
+  ArchiveIcon,
+  ArrowLeftIcon,
+  BanIcon,
+  CodeIcon,
+  EllipsisIcon,
+  EllipsisVerticalIcon,
+  FolderInputIcon,
+  ForwardIcon,
+  ImageOffIcon,
+  LayersIcon,
+  MailIcon,
+  MailOpenIcon,
+  ReplyAllIcon,
+  ReplyIcon,
+  StarIcon,
+  Trash2Icon,
+} from 'lucide-react'
 import type { Attachment, Message, RowAction } from '../types'
 import {
   displayName,
@@ -83,9 +82,9 @@ export function Reader(props: ReaderProps) {
       <StateMessage
         icon={
           selectedCount > 1 ? (
-            <IconStack2 size={28} stroke={1.5} />
+            <LayersIcon size={28} strokeWidth={1.5} />
           ) : (
-            <IconMail size={28} stroke={1.5} />
+            <MailIcon size={28} strokeWidth={1.5} />
           )
         }
         title={selectedCount > 1 ? t.nSelected(selectedCount) : t.noMessageSelected}
@@ -120,21 +119,21 @@ export function Reader(props: ReaderProps) {
       {isMobile && message && (
         <Group grow gap={0} className={classes.mobileBar} role="toolbar" aria-label={t.reply}>
           <UnstyledButton className={classes.mobileAction} onClick={() => props.onAction('reply')}>
-            <IconArrowBackUp size={20} stroke={1.75} />
+            <ReplyIcon size={20} strokeWidth={1.75} />
             {t.reply}
           </UnstyledButton>
           <UnstyledButton
             className={classes.mobileAction}
             onClick={() => props.onAction('replyAll')}
           >
-            <IconArrowBackUpDouble size={20} stroke={1.75} />
+            <ReplyAllIcon size={20} strokeWidth={1.75} />
             {t.replyAll}
           </UnstyledButton>
           <UnstyledButton
             className={classes.mobileAction}
             onClick={() => props.onAction('forward')}
           >
-            <IconArrowForwardUp size={20} stroke={1.75} />
+            <ForwardIcon size={20} strokeWidth={1.75} />
             {t.forward}
           </UnstyledButton>
         </Group>
@@ -153,19 +152,19 @@ function ReaderToolbar({ message, isMobile, moveTargets, onAction, onBack }: Rea
       <Menu.Target>
         <ActionIcon size={isMobile ? 44 : 'lg'} aria-label={t.moreActions} disabled={disabled}>
           {isMobile ? (
-            <IconDotsVertical size={20} stroke={1.75} />
+            <EllipsisVerticalIcon size={20} strokeWidth={1.75} />
           ) : (
-            <IconDots size={18} stroke={2} />
+            <EllipsisIcon size={18} strokeWidth={2} />
           )}
         </ActionIcon>
       </Menu.Target>
       <Menu.Dropdown miw={220}>
         {isMobile && (
           <>
-            <Menu.Item leftSection={<IconMail size={16} />} onClick={() => onAction('unread')}>
+            <Menu.Item leftSection={<MailIcon size={16} />} onClick={() => onAction('unread')}>
               {t.markUnread}
             </Menu.Item>
-            <Menu.Item leftSection={<IconBan size={16} />} onClick={() => onAction('junk')}>
+            <Menu.Item leftSection={<BanIcon size={16} />} onClick={() => onAction('junk')}>
               {t.junk}
             </Menu.Item>
             <Menu.Divider />
@@ -174,12 +173,12 @@ function ReaderToolbar({ message, isMobile, moveTargets, onAction, onBack }: Rea
           </>
         )}
         {!isMobile && (
-          <Menu.Item leftSection={<IconMailOpened size={16} />} onClick={() => onAction('read')}>
+          <Menu.Item leftSection={<MailOpenIcon size={16} />} onClick={() => onAction('read')}>
             {t.markRead}
           </Menu.Item>
         )}
         <Menu.Divider />
-        <Menu.Item leftSection={<IconCode size={16} />} onClick={() => onAction('source')}>
+        <Menu.Item leftSection={<CodeIcon size={16} />} onClick={() => onAction('source')}>
           {t.showOriginal}
         </Menu.Item>
       </Menu.Dropdown>
@@ -190,7 +189,7 @@ function ReaderToolbar({ message, isMobile, moveTargets, onAction, onBack }: Rea
     return (
       <Group gap={2} px={4} className={classes.toolbar} role="toolbar" aria-label={t.moreActions}>
         <ActionIcon size={44} aria-label={t.back} onClick={onBack}>
-          <IconArrowLeft size={22} stroke={1.75} />
+          <ArrowLeftIcon size={22} strokeWidth={1.75} />
         </ActionIcon>
         <Box style={{ flex: 1 }} />
         <ActionIcon
@@ -199,7 +198,7 @@ function ReaderToolbar({ message, isMobile, moveTargets, onAction, onBack }: Rea
           onClick={() => onAction('archive')}
           disabled={disabled}
         >
-          <IconArchive size={21} stroke={1.75} />
+          <ArchiveIcon size={21} strokeWidth={1.75} />
         </ActionIcon>
         <ActionIcon
           size={44}
@@ -207,7 +206,7 @@ function ReaderToolbar({ message, isMobile, moveTargets, onAction, onBack }: Rea
           onClick={() => onAction('delete')}
           disabled={disabled}
         >
-          <IconTrash size={21} stroke={1.75} />
+          <Trash2Icon size={21} strokeWidth={1.75} />
         </ActionIcon>
         <ActionIcon
           size={44}
@@ -217,9 +216,9 @@ function ReaderToolbar({ message, isMobile, moveTargets, onAction, onBack }: Rea
           disabled={disabled}
         >
           {flagged ? (
-            <IconStarFilled size={20} style={{ color: 'var(--mail-star)' }} />
+            <StarIcon fill="currentColor" size={20} style={{ color: 'var(--mail-star)' }} />
           ) : (
-            <IconStar size={21} stroke={1.75} />
+            <StarIcon size={21} strokeWidth={1.75} />
           )}
         </ActionIcon>
         {moreMenu}
@@ -244,18 +243,18 @@ function ReaderToolbar({ message, isMobile, moveTargets, onAction, onBack }: Rea
       role="toolbar"
       aria-label={t.moreActions}
     >
-      {btn(t.reply, <IconArrowBackUp size={18} stroke={2} />, 'reply', 'reply')}
-      {btn(t.replyAll, <IconArrowBackUpDouble size={18} stroke={2} />, 'replyAll', 'replyAll')}
-      {btn(t.forward, <IconArrowForwardUp size={18} stroke={2} />, 'forward', 'forward')}
+      {btn(t.reply, <ReplyIcon size={18} strokeWidth={2} />, 'reply', 'reply')}
+      {btn(t.replyAll, <ReplyAllIcon size={18} strokeWidth={2} />, 'replyAll', 'replyAll')}
+      {btn(t.forward, <ForwardIcon size={18} strokeWidth={2} />, 'forward', 'forward')}
       <Divider orientation="vertical" mx={8} my={16} />
-      {btn(t.archive, <IconArchive size={18} stroke={2} />, 'archive', 'archive')}
-      {btn(t.delete, <IconTrash size={18} stroke={2} />, 'delete', 'delete')}
-      {btn(t.junk, <IconBan size={18} stroke={2} />, 'junk')}
+      {btn(t.archive, <ArchiveIcon size={18} strokeWidth={2} />, 'archive', 'archive')}
+      {btn(t.delete, <Trash2Icon size={18} strokeWidth={2} />, 'delete', 'delete')}
+      {btn(t.junk, <BanIcon size={18} strokeWidth={2} />, 'junk')}
       <Menu position="bottom-start">
         <Tooltip label={t.moveTo}>
           <Menu.Target>
             <ActionIcon size="lg" aria-label={t.moveTo} disabled={disabled}>
-              <IconFolderShare size={18} stroke={2} />
+              <FolderInputIcon size={18} strokeWidth={2} />
             </ActionIcon>
           </Menu.Target>
         </Tooltip>
@@ -267,14 +266,14 @@ function ReaderToolbar({ message, isMobile, moveTargets, onAction, onBack }: Rea
       {btn(
         flagged ? t.unstar : t.star,
         flagged ? (
-          <IconStarFilled size={18} style={{ color: 'var(--mail-star)' }} />
+          <StarIcon fill="currentColor" size={18} style={{ color: 'var(--mail-star)' }} />
         ) : (
-          <IconStar size={18} stroke={2} />
+          <StarIcon size={18} strokeWidth={2} />
         ),
         flagged ? 'unstar' : 'star',
         'star',
       )}
-      {btn(t.markUnread, <IconMail size={18} stroke={2} />, 'unread', 'unread')}
+      {btn(t.markUnread, <MailIcon size={18} strokeWidth={2} />, 'unread', 'unread')}
       {moreMenu}
     </Group>
   )
@@ -374,7 +373,7 @@ function ReaderBody({
         <Alert
           variant="default"
           radius="sm"
-          icon={<IconPhotoOff size={18} stroke={2} />}
+          icon={<ImageOffIcon size={18} strokeWidth={2} />}
           className={classes.banner}
           role="status"
         >
@@ -424,7 +423,7 @@ function ReaderBody({
           radius="xl"
           size="compact-xs"
           c="dimmed"
-          leftSection={<IconDots size={14} stroke={2} />}
+          leftSection={<EllipsisIcon size={14} strokeWidth={2} />}
           aria-expanded={showQuoted}
           onClick={() => setShowQuoted((v) => !v)}
           className={classes.quoteToggle}

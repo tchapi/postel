@@ -2,16 +2,16 @@ import type React from 'react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Kbd, ScrollArea, Stack, Tooltip, UnstyledButton } from '@mantine/core'
 import {
-  IconArchive,
-  IconBan,
-  IconFileText,
-  IconFolder,
-  IconInbox,
-  IconLayoutSidebarLeftCollapse,
-  IconPencil,
-  IconSend,
-  IconTrash,
-} from '@tabler/icons-react'
+  ArchiveIcon,
+  BanIcon,
+  FileTextIcon,
+  FolderIcon,
+  InboxIcon,
+  PanelLeftCloseIcon,
+  SendIcon,
+  SquarePenIcon,
+  Trash2Icon,
+} from 'lucide-react'
 import type { Folder, FolderRole } from '../types'
 import { useI18n } from '../lib/i18n'
 import { ErrorState, FolderNavSkeleton } from './States'
@@ -20,12 +20,12 @@ import classes from './FolderNav.module.css'
 
 const ROLE_ORDER: FolderRole[] = ['inbox', 'drafts', 'sent', 'junk', 'trash', 'archive']
 const ROLE_ICON = {
-  inbox: IconInbox,
-  drafts: IconFileText,
-  sent: IconSend,
-  junk: IconBan,
-  trash: IconTrash,
-  archive: IconArchive,
+  inbox: InboxIcon,
+  drafts: FileTextIcon,
+  sent: SendIcon,
+  junk: BanIcon,
+  trash: Trash2Icon,
+  archive: ArchiveIcon,
 } as const
 
 export function sortFolders(folders: Folder[]): { system: Folder[]; custom: Folder[] } {
@@ -133,7 +133,7 @@ export function FolderNav({
     <div className={classes.composeWrap}>
       <Tooltip label={t.compose} position="right" disabled={!collapsed}>
         <UnstyledButton className={classes.compose} onClick={onCompose} aria-label={t.compose}>
-          <IconPencil size={18} stroke={1.75} className={classes.icon} />
+          <SquarePenIcon size={18} strokeWidth={1.75} className={classes.icon} />
           <span className={`${classes.label} ${classes.fade}`}>{t.compose}</span>
           <Kbd size="xs" className={`${classes.composeKbd} ${classes.fade}`} aria-hidden>
             {SHORTCUTS.compose.keys.map(keyLabel).join(' ')}
@@ -159,7 +159,7 @@ export function FolderNav({
   const { system, custom } = sortFolders(folders)
 
   const renderLink = (f: Folder, depth = 0): React.ReactNode => {
-    const Icon = f.role ? ROLE_ICON[f.role] : IconFolder
+    const Icon = f.role ? ROLE_ICON[f.role] : FolderIcon
     const count = badgeCount(f)
     const active = f.id === activeId
     const strong = active || (f.unread > 0 && f.role !== 'drafts' && f.role !== 'sent')
@@ -179,7 +179,7 @@ export function FolderNav({
           >
             <span className={classes.iconWrap}>
               {f.role ? (
-                <Icon size={18} stroke={1.75} className={classes.icon} />
+                <Icon size={18} strokeWidth={1.75} className={classes.icon} />
               ) : (
                 <Monogram name={label(f)} />
               )}
@@ -238,9 +238,9 @@ export function FolderNav({
               aria-label={collapsed ? t.expandFolders : t.collapseFolders}
               aria-expanded={!collapsed}
             >
-              <IconLayoutSidebarLeftCollapse
+              <PanelLeftCloseIcon
                 size={18}
-                stroke={1.75}
+                strokeWidth={1.75}
                 className={`${classes.icon} ${classes.turn}`}
               />
               <span className={`${classes.label} ${classes.fade}`}>{t.collapse}</span>

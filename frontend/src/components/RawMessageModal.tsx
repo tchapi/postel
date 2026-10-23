@@ -1,5 +1,5 @@
 import { Button, CopyButton, Group, Loader, Modal, ScrollArea, Text } from '@mantine/core'
-import { IconCheck, IconCopy, IconDownload } from '@tabler/icons-react'
+import { CheckIcon, CopyIcon, DownloadIcon } from 'lucide-react'
 
 import { formatSize } from '../lib/format'
 import { useI18n } from '../lib/i18n'
@@ -30,7 +30,7 @@ export function RawMessageModal({ opened, onClose, status, source, downloadUrl }
           download
           variant="default"
           size="xs"
-          leftSection={<IconDownload size={14} />}
+          leftSection={<DownloadIcon size={14} />}
         >
           {t.downloadEml}
         </Button>
@@ -40,7 +40,7 @@ export function RawMessageModal({ opened, onClose, status, source, downloadUrl }
               variant="default"
               size="xs"
               disabled={!source}
-              leftSection={copied ? <IconCheck size={14} /> : <IconCopy size={14} />}
+              leftSection={copied ? <CheckIcon size={14} /> : <CopyIcon size={14} />}
               onClick={copy}
             >
               {copied ? t.copied : t.copy}

@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from 'react'
 import { Group, Text } from '@mantine/core'
 import { Spotlight } from '@mantine/spotlight'
-import { IconClock, IconFolder, IconSearch } from '@tabler/icons-react'
+import { ClockIcon, FolderIcon, SearchIcon } from 'lucide-react'
 import { useI18n } from '../lib/i18n'
 import type { ShortcutId } from '../lib/shortcuts'
 import { KeyCombo } from './ShortcutTooltip'
@@ -48,13 +48,13 @@ export function SearchSpotlight({
     >
       <Spotlight.Search
         placeholder={t.searchPlaceholder}
-        leftSection={<IconSearch size={18} stroke={1.75} />}
+        leftSection={<SearchIcon size={18} strokeWidth={1.75} />}
         aria-label={t.searchMail}
       />
       <Spotlight.ActionsList>
         {q && (
           <Spotlight.Action
-            leftSection={<IconSearch size={16} stroke={1.75} />}
+            leftSection={<SearchIcon size={16} strokeWidth={1.75} />}
             label={t.searchFor(query.trim())}
             rightSection={<KeyCombo id="open" />}
             onClick={() => onSearch(query.trim())}
@@ -65,7 +65,7 @@ export function SearchSpotlight({
             {recentItems.map((r) => (
               <Spotlight.Action
                 key={r}
-                leftSection={<IconClock size={16} stroke={1.75} />}
+                leftSection={<ClockIcon size={16} strokeWidth={1.75} />}
                 label={r}
                 onClick={() => onSearch(r)}
               />
@@ -77,7 +77,7 @@ export function SearchSpotlight({
             {folderItems.map((f) => (
               <Spotlight.Action
                 key={f.id}
-                leftSection={f.icon ?? <IconFolder size={16} stroke={1.75} />}
+                leftSection={f.icon ?? <FolderIcon size={16} strokeWidth={1.75} />}
                 label={f.label}
                 rightSection={
                   <Group gap={10} wrap="nowrap">

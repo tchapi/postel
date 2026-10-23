@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { Box, Button, Group, Skeleton, Stack, Text } from '@mantine/core'
 import { useReducedMotion } from '@mantine/hooks'
-import { IconAlertCircle, IconRefresh } from '@tabler/icons-react'
+import { CircleAlertIcon, RefreshCwIcon } from 'lucide-react'
 import { useI18n } from '../lib/i18n'
 
 /** One line of text + icon. No illustrations. */
@@ -44,11 +44,14 @@ export function ErrorState({
   const { t } = useI18n()
   return (
     <Box role="alert" h="100%">
-      <StateMessage icon={<IconAlertCircle size={compact ? 20 : 24} stroke={1.5} />} title={title}>
+      <StateMessage
+        icon={<CircleAlertIcon size={compact ? 20 : 24} strokeWidth={1.5} />}
+        title={title}
+      >
         <Button
           variant="default"
           size={compact ? 'xs' : 'sm'}
-          leftSection={<IconRefresh size={15} stroke={1.75} />}
+          leftSection={<RefreshCwIcon size={15} strokeWidth={1.75} />}
           onClick={onRetry}
         >
           {t.retry}

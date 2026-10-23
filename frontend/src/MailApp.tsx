@@ -4,15 +4,15 @@ import { useLocalStorage, useMediaQuery, useNetwork } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
 import { spotlight } from '@mantine/spotlight'
 import {
-  IconAdjustmentsHorizontal,
-  IconAlertCircle,
-  IconCheck,
-  IconKeyboard,
-  IconMoon,
-  IconPencil,
-  IconSend,
-  IconWifiOff,
-} from '@tabler/icons-react'
+  CheckIcon,
+  CircleAlertIcon,
+  KeyboardIcon,
+  MoonIcon,
+  SendIcon,
+  SlidersHorizontalIcon,
+  SquarePenIcon,
+  WifiOffIcon,
+} from 'lucide-react'
 import { rawUrl, realUid } from './api/mailHooks'
 import { useMailHooks } from './hooks'
 import type {
@@ -244,7 +244,7 @@ export function MailApp({
             )}
           </Group>
         ),
-        icon: <IconCheck size={18} />,
+        icon: <CheckIcon size={18} />,
         color: 'gray',
         autoClose: 6000,
       })
@@ -255,7 +255,7 @@ export function MailApp({
     () =>
       notifications.show({
         color: 'red',
-        icon: <IconAlertCircle size={18} />,
+        icon: <CircleAlertIcon size={18} />,
         message: t.actionFailed,
       }),
     [t],
@@ -268,7 +268,7 @@ export function MailApp({
       notifications.show({
         id: 'offline',
         message: t.offline,
-        icon: <IconWifiOff size={18} />,
+        icon: <WifiOffIcon size={18} />,
         color: 'gray',
         autoClose: false,
         withCloseButton: false,
@@ -381,7 +381,7 @@ export function MailApp({
     notifications.show({
       id,
       message: render(),
-      icon: <IconSend size={18} />,
+      icon: <SendIcon size={18} />,
       color: 'gray',
       autoClose: false,
     })
@@ -392,7 +392,7 @@ export function MailApp({
         notifications.update({
           id,
           message: render(),
-          icon: <IconSend size={18} />,
+          icon: <SendIcon size={18} />,
           color: 'gray',
           autoClose: false,
         })
@@ -405,7 +405,7 @@ export function MailApp({
           notifications.update({
             id,
             message: t.sent,
-            icon: <IconCheck size={18} />,
+            icon: <CheckIcon size={18} />,
             color: 'gray',
             autoClose: 3000,
           }),
@@ -414,7 +414,7 @@ export function MailApp({
           notifications.update({
             id,
             message: t.sendFailed,
-            icon: <IconAlertCircle size={18} />,
+            icon: <CircleAlertIcon size={18} />,
             color: 'red',
             autoClose: 6000,
           })
@@ -744,7 +744,7 @@ export function MailApp({
           style={{ zIndex: 150 }}
           onClick={() => openCompose('new')}
         >
-          <IconPencil size={24} stroke={1.75} />
+          <SquarePenIcon size={24} strokeWidth={1.75} />
         </Button>
       )}
 
@@ -778,23 +778,23 @@ export function MailApp({
           {
             id: 'compose',
             label: t.compose,
-            icon: <IconPencil size={16} stroke={1.75} />,
+            icon: <SquarePenIcon size={16} strokeWidth={1.75} />,
             shortcut: 'compose',
           },
           {
             id: 'theme',
             label: computed === 'dark' ? t.lightTheme : t.darkTheme,
-            icon: <IconMoon size={16} stroke={1.75} />,
+            icon: <MoonIcon size={16} strokeWidth={1.75} />,
           },
           {
             id: 'settings',
             label: t.settings,
-            icon: <IconAdjustmentsHorizontal size={16} stroke={1.75} />,
+            icon: <SlidersHorizontalIcon size={16} strokeWidth={1.75} />,
           },
           {
             id: 'shortcuts',
             label: t.shortcuts,
-            icon: <IconKeyboard size={16} stroke={1.75} />,
+            icon: <KeyboardIcon size={16} strokeWidth={1.75} />,
             shortcut: 'help',
           },
         ]}

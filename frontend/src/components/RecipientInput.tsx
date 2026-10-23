@@ -1,7 +1,7 @@
 import { useId, useState, type ReactNode } from 'react'
 import { Avatar, Combobox, Group, Pill, PillsInput, Stack, Text, useCombobox } from '@mantine/core'
 import { useDebouncedValue } from '@mantine/hooks'
-import { IconPlus } from '@tabler/icons-react'
+import { PlusIcon } from 'lucide-react'
 import type { Addr, Contact } from '../types'
 import { displayName, initials } from '../lib/format'
 import { useI18n } from '../lib/i18n'
@@ -168,7 +168,7 @@ export function RecipientInput({
             {canAddTyped && (
               <Combobox.Option value="__typed">
                 <Group gap={10} wrap="nowrap">
-                  <IconPlus size={16} stroke={1.75} />
+                  <PlusIcon size={16} strokeWidth={1.75} />
                   <Text size="sm">{t.addAddress(typed.map((a) => a.email).join(', '))}</Text>
                 </Group>
               </Combobox.Option>

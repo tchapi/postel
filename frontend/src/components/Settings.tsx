@@ -22,7 +22,7 @@ import { useDebouncedCallback } from '@mantine/hooks'
 import { Link, RichTextEditor } from '@mantine/tiptap'
 import { useEditor } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
-import { IconArrowLeft } from '@tabler/icons-react'
+import { ArrowLeftIcon } from 'lucide-react'
 import type { Settings as SettingsData } from '../types'
 import { useI18n } from '../lib/i18n'
 import { buildSettingsFile, parseSettingsFile, SETTINGS_FILE_NAME } from '../lib/settingsFile'
@@ -168,7 +168,7 @@ export function Settings({
       {isMobile && (
         <Group gap={4} px={4} className={classes.mobileHeader}>
           <ActionIcon size={44} aria-label={t.back} onClick={onClose}>
-            <IconArrowLeft size={22} stroke={1.75} />
+            <ArrowLeftIcon size={22} strokeWidth={1.75} />
           </ActionIcon>
           <Title order={1} size="h2">
             {t.settings}

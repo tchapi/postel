@@ -1,21 +1,14 @@
 import { ActionIcon, Button, Group, Paper, Progress, Stack, Text, Tooltip } from '@mantine/core'
-import {
-  IconDownload,
-  IconEye,
-  IconFile,
-  IconFileTypePdf,
-  IconPhoto,
-  IconX,
-} from '@tabler/icons-react'
+import { DownloadIcon, EyeIcon, FileIcon, FileTextIcon, ImageIcon, XIcon } from 'lucide-react'
 import type { Attachment } from '../types'
 import { formatSize } from '../lib/format'
 import { useI18n } from '../lib/i18n'
 import classes from './AttachmentList.module.css'
 
-function FileIcon({ mime }: { mime: string }) {
-  if (mime.startsWith('image/')) return <IconPhoto size={18} stroke={1.75} />
-  if (mime === 'application/pdf') return <IconFileTypePdf size={18} stroke={1.75} />
-  return <IconFile size={18} stroke={1.75} />
+function MimeIcon({ mime }: { mime: string }) {
+  if (mime.startsWith('image/')) return <ImageIcon size={18} strokeWidth={1.75} />
+  if (mime === 'application/pdf') return <FileTextIcon size={18} strokeWidth={1.75} />
+  return <FileIcon size={18} strokeWidth={1.75} />
 }
 
 export type UploadItem = {
@@ -59,7 +52,7 @@ export function AttachmentList(props: ReadProps | ComposeProps) {
           {files.map((a) => (
             <Paper key={a.id} withBorder radius="sm" className={classes.chip}>
               <span className={classes.icon}>
-                <FileIcon mime={a.mime} />
+                <MimeIcon mime={a.mime} />
               </span>
               <Text size="sm" truncate maw={260}>
                 {a.name}
@@ -75,7 +68,7 @@ export function AttachmentList(props: ReadProps | ComposeProps) {
                   rel="noopener noreferrer"
                   aria-label={t.preview(a.name)}
                 >
-                  <IconEye size={16} stroke={1.75} />
+                  <EyeIcon size={16} strokeWidth={1.75} />
                 </ActionIcon>
               </Tooltip>
               <Tooltip label={t.download(a.name)}>
@@ -85,7 +78,7 @@ export function AttachmentList(props: ReadProps | ComposeProps) {
                   download={a.name}
                   aria-label={t.download(a.name)}
                 >
-                  <IconDownload size={16} stroke={1.75} />
+                  <DownloadIcon size={16} strokeWidth={1.75} />
                 </ActionIcon>
               </Tooltip>
             </Paper>
@@ -110,7 +103,7 @@ export function AttachmentList(props: ReadProps | ComposeProps) {
             data-failed={failed || undefined}
           >
             <span className={classes.icon}>
-              <FileIcon mime={f.mime} />
+              <MimeIcon mime={f.mime} />
             </span>
             <Text size="sm" truncate className={classes.name}>
               {f.name}
@@ -154,7 +147,7 @@ export function AttachmentList(props: ReadProps | ComposeProps) {
                 aria-label={f.status === 'uploading' ? t.cancelUpload : t.remove(f.name)}
                 onClick={() => props.onRemove(f.key)}
               >
-                <IconX size={14} stroke={2} />
+                <XIcon size={14} strokeWidth={2} />
               </ActionIcon>
             </Tooltip>
           </Paper>

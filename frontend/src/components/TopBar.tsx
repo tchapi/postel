@@ -12,16 +12,16 @@ import {
   UnstyledButton,
 } from '@mantine/core'
 import {
-  IconAdjustmentsHorizontal,
-  IconKeyboard,
-  IconLogout,
-  IconMail,
-  IconMenu2,
-  IconMoon,
-  IconPencil,
-  IconSearch,
-  IconSun,
-} from '@tabler/icons-react'
+  KeyboardIcon,
+  LogOutIcon,
+  MailIcon,
+  MenuIcon,
+  MoonIcon,
+  SearchIcon,
+  SlidersHorizontalIcon,
+  SquarePenIcon,
+  SunIcon,
+} from 'lucide-react'
 import { useI18n } from '../lib/i18n'
 import { initials } from '../lib/format'
 import { KeyCombo, ShortcutTooltip } from './ShortcutTooltip'
@@ -65,24 +65,24 @@ export function TopBar(p: TopBarProps) {
           </Text>
         </Box>
         <Menu.Divider />
-        <Menu.Item leftSection={<IconAdjustmentsHorizontal size={16} />} onClick={p.onSettings}>
+        <Menu.Item leftSection={<SlidersHorizontalIcon size={16} />} onClick={p.onSettings}>
           {t.settings}
         </Menu.Item>
         <Menu.Item
-          leftSection={p.isDark ? <IconSun size={16} /> : <IconMoon size={16} />}
+          leftSection={p.isDark ? <SunIcon size={16} /> : <MoonIcon size={16} />}
           onClick={p.onToggleTheme}
         >
           {p.isDark ? t.lightTheme : t.darkTheme}
         </Menu.Item>
         <Menu.Item
-          leftSection={<IconKeyboard size={16} />}
+          leftSection={<KeyboardIcon size={16} />}
           rightSection={<KeyCombo id="help" />}
           onClick={p.onShortcuts}
         >
           {t.shortcuts}
         </Menu.Item>
         <Menu.Divider />
-        <Menu.Item leftSection={<IconLogout size={16} />} onClick={p.onSignOut}>
+        <Menu.Item leftSection={<LogOutIcon size={16} />} onClick={p.onSignOut}>
           {t.signOut}
         </Menu.Item>
       </Menu.Dropdown>
@@ -98,7 +98,7 @@ export function TopBar(p: TopBarProps) {
           aria-expanded={p.navOpened}
           onClick={p.onNavToggle}
         >
-          <IconMenu2 size={22} stroke={1.75} />
+          <MenuIcon size={22} strokeWidth={1.75} />
         </ActionIcon>
         <Group gap={8} align="baseline" wrap="nowrap" style={{ flex: 1, minWidth: 0 }}>
           <Title order={1} size="h2" lineClamp={1}>
@@ -111,7 +111,7 @@ export function TopBar(p: TopBarProps) {
           )}
         </Group>
         <ActionIcon size={44} aria-label={t.searchMail} onClick={p.onSearch}>
-          <IconSearch size={22} stroke={1.75} />
+          <SearchIcon size={22} strokeWidth={1.75} />
         </ActionIcon>
         {userMenu}
       </Group>
@@ -133,7 +133,7 @@ export function TopBar(p: TopBarProps) {
               : t.openFolders
           }
         >
-          <IconMenu2 size={18} stroke={2} />
+          <MenuIcon size={18} strokeWidth={2} />
         </ActionIcon>
         {p.layout === 'desktop' && <Brand />}
       </Group>
@@ -142,7 +142,7 @@ export function TopBar(p: TopBarProps) {
         onClick={p.onSearch}
         aria-label={t.searchMail}
       >
-        <IconSearch size={16} stroke={1.75} />
+        <SearchIcon size={16} strokeWidth={1.75} />
         <span className={classes.searchLabel}>{t.searchMail}</span>
         <Kbd size="xs">/</Kbd>
       </UnstyledButton>
@@ -152,7 +152,7 @@ export function TopBar(p: TopBarProps) {
         <ShortcutTooltip label={t.compose} shortcut="compose">
           <Button
             radius="xl"
-            leftSection={<IconPencil size={16} stroke={1.75} />}
+            leftSection={<SquarePenIcon size={16} strokeWidth={1.75} />}
             onClick={p.onCompose}
           >
             {t.compose}
@@ -170,7 +170,7 @@ export function Brand() {
   return (
     <Group gap={8} wrap="nowrap">
       <ThemeIcon size={26} radius="md" aria-hidden>
-        <IconMail size={16} stroke={2} />
+        <MailIcon size={16} strokeWidth={2} />
       </ThemeIcon>
       <Text fw={700} fz="md" style={{ letterSpacing: '-0.01em' }}>
         {t.appName}

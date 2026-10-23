@@ -1,5 +1,5 @@
 import { Menu } from '@mantine/core'
-import { IconFolder } from '@tabler/icons-react'
+import { FolderIcon } from 'lucide-react'
 import type { Folder } from '../types'
 
 export type MoveTarget = { id: string; label: string; depth: number }
@@ -34,7 +34,7 @@ export function MoveMenuItems({
       {targets.map((f) => (
         <Menu.Item
           key={f.id}
-          leftSection={<IconFolder size={16} stroke={1.75} />}
+          leftSection={<FolderIcon size={16} strokeWidth={1.75} />}
           style={{ paddingLeft: 12 + f.depth * 16 }}
           onClick={() => onMove(f.id)}
         >

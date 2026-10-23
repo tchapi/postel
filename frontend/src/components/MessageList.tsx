@@ -23,20 +23,20 @@ import {
 } from '@mantine/core'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import {
-  IconArchive,
-  IconArrowBackUp,
-  IconArrowBackUpDouble,
-  IconArrowForwardUp,
-  IconBan,
-  IconFolderShare,
-  IconInbox,
-  IconMail,
-  IconMailOpened,
-  IconRefresh,
-  IconStar,
-  IconTrash,
-  IconX,
-} from '@tabler/icons-react'
+  ArchiveIcon,
+  BanIcon,
+  FolderInputIcon,
+  ForwardIcon,
+  InboxIcon,
+  MailIcon,
+  MailOpenIcon,
+  RefreshCwIcon,
+  ReplyAllIcon,
+  ReplyIcon,
+  StarIcon,
+  Trash2Icon,
+  XIcon,
+} from 'lucide-react'
 import type { BulkAction, Density, MessageRow as Row, RowAction } from '../types'
 import { useElementSize } from '@mantine/hooks'
 import { useI18n } from '../lib/i18n'
@@ -261,13 +261,13 @@ export function MessageList(props: MessageListProps) {
         {onCloseSearch ? (
           <Tooltip label={t.closeSearch}>
             <ActionIcon size="lg" aria-label={t.closeSearch} onClick={onCloseSearch}>
-              <IconX size={18} stroke={1.75} />
+              <XIcon size={18} strokeWidth={1.75} />
             </ActionIcon>
           </Tooltip>
         ) : (
           <Tooltip label={t.refresh}>
             <ActionIcon size="lg" aria-label={t.refresh} onClick={() => void onRefresh()}>
-              <IconRefresh size={18} stroke={1.75} />
+              <RefreshCwIcon size={18} strokeWidth={1.75} />
             </ActionIcon>
           </Tooltip>
         )}
@@ -278,7 +278,7 @@ export function MessageList(props: MessageListProps) {
   if (status === 'pending') body = <ListSkeleton rowHeight={rowHeight} />
   else if (status === 'error') body = <ErrorState title={t.loadError} onRetry={onRetry} />
   else if (!rows.length)
-    body = <StateMessage icon={<IconInbox size={24} stroke={1.5} />} title={emptyLabel} />
+    body = <StateMessage icon={<InboxIcon size={24} strokeWidth={1.5} />} title={emptyLabel} />
   else
     body = (
       <div style={{ height: virtualizer.getTotalSize(), position: 'relative' }}>
@@ -359,7 +359,11 @@ export function MessageList(props: MessageListProps) {
           className={classes.pull}
           style={{ height: refreshing ? 44 : pull, marginTop: topInset }}
         >
-          {refreshing ? <Loader size={14} color="gray" /> : <IconRefresh size={16} stroke={2} />}
+          {refreshing ? (
+            <Loader size={14} color="gray" />
+          ) : (
+            <RefreshCwIcon size={16} strokeWidth={2} />
+          )}
           <Text size="sm" c="dimmed">
             {pull >= PULL_TRIGGER || refreshing ? t.releaseToRefresh : t.pullToRefresh}
           </Text>
@@ -411,21 +415,21 @@ export function MessageList(props: MessageListProps) {
                 {t.open}
               </Menu.Item>
               <Menu.Item
-                leftSection={<IconArrowBackUp size={16} />}
+                leftSection={<ReplyIcon size={16} />}
                 onClick={() => menuRun('reply')}
                 rightSection={<KeyCombo id="reply" />}
               >
                 {t.reply}
               </Menu.Item>
               <Menu.Item
-                leftSection={<IconArrowBackUpDouble size={16} />}
+                leftSection={<ReplyAllIcon size={16} />}
                 onClick={() => menuRun('replyAll')}
                 rightSection={<KeyCombo id="replyAll" />}
               >
                 {t.replyAll}
               </Menu.Item>
               <Menu.Item
-                leftSection={<IconArrowForwardUp size={16} />}
+                leftSection={<ForwardIcon size={16} />}
                 onClick={() => menuRun('forward')}
                 rightSection={<KeyCombo id="forward" />}
               >
@@ -435,12 +439,12 @@ export function MessageList(props: MessageListProps) {
             </>
           )}
           {menu && !menu.row.seen ? (
-            <Menu.Item leftSection={<IconMailOpened size={16} />} onClick={() => menuRun('read')}>
+            <Menu.Item leftSection={<MailOpenIcon size={16} />} onClick={() => menuRun('read')}>
               {t.markRead}
             </Menu.Item>
           ) : (
             <Menu.Item
-              leftSection={<IconMail size={16} />}
+              leftSection={<MailIcon size={16} />}
               onClick={() => menuRun('unread')}
               rightSection={<KeyCombo id="unread" />}
             >
@@ -448,7 +452,7 @@ export function MessageList(props: MessageListProps) {
             </Menu.Item>
           )}
           <Menu.Item
-            leftSection={<IconStar size={16} />}
+            leftSection={<StarIcon size={16} />}
             onClick={() => menuRun(menu?.row.flagged ? 'unstar' : 'star')}
             rightSection={<KeyCombo id="star" />}
           >
@@ -456,7 +460,7 @@ export function MessageList(props: MessageListProps) {
           </Menu.Item>
           <Menu.Divider />
           <Menu.Item
-            leftSection={<IconArchive size={16} />}
+            leftSection={<ArchiveIcon size={16} />}
             onClick={() => menuRun('archive')}
             rightSection={<KeyCombo id="archive" />}
           >
@@ -464,19 +468,19 @@ export function MessageList(props: MessageListProps) {
           </Menu.Item>
           <Menu.Sub>
             <Menu.Sub.Target>
-              <Menu.Sub.Item leftSection={<IconFolderShare size={16} />}>{t.moveTo}</Menu.Sub.Item>
+              <Menu.Sub.Item leftSection={<FolderInputIcon size={16} />}>{t.moveTo}</Menu.Sub.Item>
             </Menu.Sub.Target>
             <Menu.Sub.Dropdown>
               <MoveMenuItems targets={moveTargets} onMove={(id) => menuRun({ moveTo: id })} />
             </Menu.Sub.Dropdown>
           </Menu.Sub>
-          <Menu.Item leftSection={<IconBan size={16} />} onClick={() => menuRun('junk')}>
+          <Menu.Item leftSection={<BanIcon size={16} />} onClick={() => menuRun('junk')}>
             {t.junk}
           </Menu.Item>
           <Menu.Divider />
           <Menu.Item
             color="red"
-            leftSection={<IconTrash size={16} />}
+            leftSection={<Trash2Icon size={16} />}
             onClick={() => menuRun('delete')}
             rightSection={<KeyCombo id="delete" />}
           >

@@ -18,15 +18,15 @@ import { Link, RichTextEditor } from '@mantine/tiptap'
 import { useEditor } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import {
-  IconArrowsMaximize,
-  IconArrowsMinimize,
-  IconDots,
-  IconPaperclip,
-  IconSend,
-  IconTrash,
-  IconUpload,
-  IconX,
-} from '@tabler/icons-react'
+  EllipsisIcon,
+  Maximize2Icon,
+  Minimize2Icon,
+  PaperclipIcon,
+  SendIcon,
+  Trash2Icon,
+  UploadIcon,
+  XIcon,
+} from 'lucide-react'
 import type { Addr, ComposeMode, Contact, DraftInput } from '../types'
 import { formatSize, timeAgo } from '../lib/format'
 import { useI18n } from '../lib/i18n'
@@ -239,14 +239,14 @@ export function Composer(props: ComposerProps) {
           <Drawer.Header className={classes.header}>
             {isMobile && (
               <ActionIcon size={44} aria-label={t.closeComposer} onClick={() => onClose(draft())}>
-                <IconX size={22} stroke={1.75} />
+                <XIcon size={22} strokeWidth={1.75} />
               </ActionIcon>
             )}
             <Drawer.Title fw={600} fz="lg" style={{ flex: 1 }}>
               {title}
             </Drawer.Title>
             {isMobile ? (
-              <Button leftSection={<IconSend size={18} stroke={1.75} />} onClick={send}>
+              <Button leftSection={<SendIcon size={18} strokeWidth={1.75} />} onClick={send}>
                 {t.send}
               </Button>
             ) : (
@@ -258,9 +258,9 @@ export function Composer(props: ComposerProps) {
                     onClick={() => setExpanded((v) => !v)}
                   >
                     {expanded ? (
-                      <IconArrowsMinimize size={18} stroke={1.75} />
+                      <Minimize2Icon size={18} strokeWidth={1.75} />
                     ) : (
-                      <IconArrowsMaximize size={18} stroke={1.75} />
+                      <Maximize2Icon size={18} strokeWidth={1.75} />
                     )}
                   </ActionIcon>
                 </Tooltip>
@@ -363,7 +363,7 @@ export function Composer(props: ComposerProps) {
                     radius="xl"
                     size="compact-xs"
                     c="dimmed"
-                    leftSection={<IconDots size={14} stroke={2} />}
+                    leftSection={<EllipsisIcon size={14} strokeWidth={2} />}
                     aria-expanded={showQuoted}
                     onClick={() => setShowQuoted((v) => !v)}
                     className={classes.quoteToggle}
@@ -394,10 +394,10 @@ export function Composer(props: ComposerProps) {
                 >
                   <Group gap={10} justify="center" c="dimmed" mih={36}>
                     <Dropzone.Accept>
-                      <IconUpload size={18} stroke={1.75} />
+                      <UploadIcon size={18} strokeWidth={1.75} />
                     </Dropzone.Accept>
                     <Dropzone.Idle>
-                      <IconPaperclip size={18} stroke={1.75} />
+                      <PaperclipIcon size={18} strokeWidth={1.75} />
                     </Dropzone.Idle>
                     <Text size="sm">{t.dropFiles}</Text>
                   </Group>
@@ -434,13 +434,13 @@ export function Composer(props: ComposerProps) {
             </Text>
             {isMobile ? (
               <ActionIcon size={44} aria-label={t.discard} onClick={() => onDiscard(draftUid)}>
-                <IconTrash size={20} stroke={1.75} />
+                <Trash2Icon size={20} strokeWidth={1.75} />
               </ActionIcon>
             ) : (
               <Button
                 variant="subtle"
                 color="gray"
-                leftSection={<IconTrash size={16} stroke={1.75} />}
+                leftSection={<Trash2Icon size={16} strokeWidth={1.75} />}
                 onClick={() => onDiscard(draftUid)}
               >
                 {t.discard}

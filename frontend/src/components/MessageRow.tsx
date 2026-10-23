@@ -7,13 +7,7 @@ import {
   type PointerEvent,
 } from 'react'
 import { ActionIcon, Badge, Checkbox, Highlight, Text } from '@mantine/core'
-import {
-  IconArchive,
-  IconPaperclip,
-  IconStar,
-  IconStarFilled,
-  IconTrash,
-} from '@tabler/icons-react'
+import { ArchiveIcon, PaperclipIcon, StarIcon, Trash2Icon } from 'lucide-react'
 import type { Density, MessageRow as Row } from '../types'
 import { absoluteDate, displayName, relativeDate } from '../lib/format'
 import { useI18n } from '../lib/i18n'
@@ -88,14 +82,14 @@ function MessageRowImpl({
     <div className={classes.swipeWrap} style={style} data-density={density}>
       {dx > 0 && (
         <div className={`${classes.swipeAction} ${classes.swipeArchive}`} aria-hidden>
-          <IconArchive size={20} stroke={1.75} />
+          <ArchiveIcon size={20} strokeWidth={1.75} />
           {t.archive}
         </div>
       )}
       {dx < 0 && (
         <div className={`${classes.swipeAction} ${classes.swipeDelete}`} aria-hidden>
           {t.delete}
-          <IconTrash size={20} stroke={1.75} />
+          <Trash2Icon size={20} strokeWidth={1.75} />
         </div>
       )}
       <div
@@ -152,9 +146,9 @@ function MessageRowImpl({
               </Badge>
             )}
             {row.hasAttachments && (
-              <IconPaperclip
+              <PaperclipIcon
                 size={16}
-                stroke={1.5}
+                strokeWidth={1.5}
                 className={classes.clip}
                 aria-label={t.hasAttachments}
               />
@@ -188,7 +182,11 @@ function MessageRowImpl({
                 onToggleStar(row)
               }}
             >
-              {row.flagged ? <IconStarFilled size={16} /> : <IconStar size={16} stroke={1.5} />}
+              {row.flagged ? (
+                <StarIcon fill="currentColor" size={16} />
+              ) : (
+                <StarIcon size={16} strokeWidth={1.5} />
+              )}
             </ActionIcon>
           </div>
           <Text span size="sm" c="dimmed" truncate className={classes.snippet}>

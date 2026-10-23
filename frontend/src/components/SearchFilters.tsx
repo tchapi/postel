@@ -1,5 +1,5 @@
 import { Button, Chip, Group, Menu, SegmentedControl, Stack, TextInput } from '@mantine/core'
-import { IconCalendar, IconChevronDown } from '@tabler/icons-react'
+import { CalendarIcon, ChevronDownIcon } from 'lucide-react'
 import type { DatePreset, SearchFilters as Filters } from '../types'
 import { useI18n } from '../lib/i18n'
 
@@ -69,8 +69,8 @@ export function SearchFilters({ value, onChange, compact }: SearchFiltersProps) 
             <Button
               variant="default"
               size="xs"
-              leftSection={<IconCalendar size={15} stroke={1.75} />}
-              rightSection={<IconChevronDown size={14} stroke={2} />}
+              leftSection={<CalendarIcon size={15} strokeWidth={1.75} />}
+              rightSection={<ChevronDownIcon size={14} strokeWidth={2} />}
             >
               {dateLabel}
             </Button>
