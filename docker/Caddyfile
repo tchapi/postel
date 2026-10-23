@@ -1,0 +1,31 @@
+{
+	auto_https off
+	admin off
+}
+
+:8080 {
+	root * /app/public
+	encode zstd gzip
+
+	# Symfony front controller for the API, static assets for everything else.
+	php_fastcgi 127.0.0.1:9000
+	file_server
+
+	# The SPA owns every path that is not a file or the API.
+	@spa {
+		not path /api/*
+		not file
+	}
+	rewrite @spa /index.html
+
+	header {
+		X-Content-Type-Options nosniff
+		Referrer-Policy strict-origin-when-cross-origin
+		-Server
+	}
+
+	# Keep in sync with post_max_size / upload_max_filesize in docker/php.ini.
+	request_body {
+		max_size 50MB
+	}
+}

@@ -1,0 +1,17 @@
+# Runs the production image locally. For development, run the backend and
+# the frontend natively instead, see README.md.
+services:
+  webmail:
+    build: .
+    image: tchapi/webmail:local
+    ports:
+      - "8080:8080"
+    environment:
+      APP_SECRET: ${APP_SECRET:?set a random string}
+      TRUSTED_PROXIES: ${TRUSTED_PROXIES:-127.0.0.1}
+      IMAP_HOST: ${IMAP_HOST:-mail}
+      IMAP_PORT: ${IMAP_PORT:-143}
+      IMAP_ENCRYPTION: ${IMAP_ENCRYPTION:-false}
+      IMAP_MASTER_USER: ${IMAP_MASTER_USER:-webmail}
+      IMAP_MASTER_PASSWORD: ${IMAP_MASTER_PASSWORD:?}
+      MAILER_DSN: ${MAILER_DSN:-smtp://mail:587}
