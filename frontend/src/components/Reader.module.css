@@ -1,5 +1,27 @@
 .root {
+  position: relative;
   min-width: 0;
+}
+
+/* The toolbar floats over the message (6px inset + its height): the message starts below it and scrolls under it */
+.viewport,
+.scrollbar {
+  --bar-space: 50px;
+
+  @media (max-width: $mantine-breakpoint-sm) {
+    --bar-space: 62px;
+  }
+}
+
+.viewport {
+  padding-top: var(--bar-space);
+
+  /* The message fades into the background above the floating bar instead of showing in the gap */
+  mask-image: linear-gradient(to bottom, transparent 4px, #000 calc(var(--bar-space) + 6px));
+}
+
+.scrollbar {
+  margin-top: var(--bar-space);
 }
 
 .toolbar {
@@ -107,23 +129,35 @@
 }
 
 .bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 2;
   flex: none;
+  backdrop-filter: blur(14px) saturate(140%);
   /* Floats in its pane: rounded, a slight shadow, a little deeper once content scrolls under it */
-  position: relative;
-  z-index: 1;
   margin: 6px 6px 0;
   border-radius: var(--mantine-radius-md);
   transition: box-shadow 150ms ease;
 
   @mixin light {
-    background: color-mix(in srgb, var(--mantine-color-gray-1) 55%, var(--mantine-color-body));
+    background: color-mix(
+      in srgb,
+      color-mix(in srgb, var(--mantine-color-gray-1) 55%, var(--mantine-color-body)) 78%,
+      transparent
+    );
     box-shadow:
       0 1px 2px rgb(31 29 26 / 6%),
       0 2px 8px -2px rgb(31 29 26 / 10%);
   }
 
   @mixin dark {
-    background: color-mix(in srgb, var(--mantine-color-dark-8) 55%, var(--mantine-color-body));
+    background: color-mix(
+      in srgb,
+      color-mix(in srgb, var(--mantine-color-dark-8) 55%, var(--mantine-color-body)) 78%,
+      transparent
+    );
     box-shadow:
       0 1px 2px rgb(0 0 0 / 30%),
       0 2px 8px -2px rgb(0 0 0 / 40%);

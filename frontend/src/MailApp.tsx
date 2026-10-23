@@ -630,6 +630,7 @@ export function MailApp({
       onAction={(a, uids) => void runAction(a, uids)}
       onSwipe={(r, a) => void runAction(a, [r.uid])}
       onRefresh={() => actions.refresh(folderId)}
+      topOffset={layout === 'mobile' ? 56 : 0}
     />
   )
 

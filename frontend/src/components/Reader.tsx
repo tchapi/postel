@@ -108,6 +108,7 @@ export function Reader(props: ReaderProps) {
         style={{ flex: 1, minHeight: 0 }}
         type="hover"
         scrollbars="y"
+        classNames={{ viewport: classes.viewport, scrollbar: classes.scrollbar }}
         onScrollPositionChange={({ y }) => setScrolledKey(y > 0 ? messageKey : null)}
       >
         {status === 'pending' && <ReaderSkeleton />}

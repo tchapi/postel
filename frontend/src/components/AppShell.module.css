@@ -156,23 +156,34 @@
 
 /* Phones: the top bar floats over the content like the desktop bars do in their panes */
 .appHeader:global(.mantine-AppShell-header)[data-mobile] {
-  background: var(--mantine-color-body);
+  background: transparent;
+  pointer-events: none;
 }
 
 .floatingBar {
   height: 44px;
   margin: 6px 6px 0;
   border-radius: var(--mantine-radius-md);
+  pointer-events: auto;
+  backdrop-filter: blur(14px) saturate(140%);
 
   @mixin light {
-    background: color-mix(in srgb, var(--mantine-color-gray-1) 55%, var(--mantine-color-body));
+    background: color-mix(
+      in srgb,
+      color-mix(in srgb, var(--mantine-color-gray-1) 55%, var(--mantine-color-body)) 78%,
+      transparent
+    );
     box-shadow:
       0 1px 2px rgb(31 29 26 / 6%),
       0 2px 8px -2px rgb(31 29 26 / 10%);
   }
 
   @mixin dark {
-    background: color-mix(in srgb, var(--mantine-color-dark-8) 55%, var(--mantine-color-body));
+    background: color-mix(
+      in srgb,
+      color-mix(in srgb, var(--mantine-color-dark-8) 55%, var(--mantine-color-body)) 78%,
+      transparent
+    );
     box-shadow:
       0 1px 2px rgb(0 0 0 / 30%),
       0 2px 8px -2px rgb(0 0 0 / 40%);

@@ -146,7 +146,13 @@ export function MailAppShell(p: MailAppShellProps) {
           )}
         </AppShell.Navbar>
       )}
-      <AppShell.Main className={classes.main}>{panes}</AppShell.Main>
+      {/* On phones the list runs under the floating top bar, which tells the list how much room to leave */}
+      <AppShell.Main
+        className={classes.main}
+        style={p.layout === 'mobile' && p.showHeader ? { paddingTop: 0 } : undefined}
+      >
+        {panes}
+      </AppShell.Main>
       {!desktop && (
         <Drawer
           opened={p.drawerOpened}

@@ -6,6 +6,7 @@ import {
   type MouseEvent,
   type ReactNode,
   type TouchEvent,
+  type CSSProperties,
 } from 'react'
 import {
   ActionIcon,
@@ -37,6 +38,7 @@ import {
   IconX,
 } from '@tabler/icons-react'
 import type { BulkAction, Density, MessageRow as Row, RowAction } from '../types'
+import { useElementSize } from '@mantine/hooks'
 import { useI18n } from '../lib/i18n'
 import { KeyCombo } from './ShortcutTooltip'
 import { BulkActionBar } from './BulkActionBar'
@@ -50,6 +52,8 @@ export type MessageListProps = {
   subtitle?: string
   /** Search filter chips etc., rendered under the header. */
   headerExtra?: ReactNode
+  /** Space taken at the top by a bar floating over the list from outside (the phone top bar). */
+  topOffset?: number
   onCloseSearch?: () => void
   rows: Row[]
   total: number
@@ -114,10 +118,14 @@ export function MessageList(props: MessageListProps) {
     onAction,
     onSwipe,
     onRefresh,
+    topOffset = 0,
   } = props
   const { t } = useI18n()
   const viewportRef = useRef<HTMLDivElement>(null)
   const [scrolled, setScrolled] = useState(false)
+  // The header floats over the list: rows start below it and scroll under it
+  const { ref: overlayRef, height: overlayHeight } = useElementSize()
+  const topInset = topOffset + overlayHeight
   const rowHeight = ROW_HEIGHT[density]
   const [menu, setMenu] = useState<ContextMenuState>(null)
   const [pull, setPull] = useState(0)
@@ -131,8 +139,8 @@ export function MessageList(props: MessageListProps) {
     getScrollElement: () => viewportRef.current,
     estimateSize: () => rowHeight,
     overscan: 10,
-    // Room above the first row's highlight and below the last one
-    paddingStart: 6,
+    // Below the floating header, plus room above the first row's highlight
+    paddingStart: topInset + 6,
     paddingEnd: 6,
   })
 
@@ -333,13 +341,15 @@ export function MessageList(props: MessageListProps) {
 
   return (
     <Stack gap={0} h="100%" className={classes.root}>
-      {/* On phones the top bar already names the folder. */}
-      {(!isTouch || selected.size > 0 || onCloseSearch) && (
-        <Box className={classes.header} data-scrolled={scrolled || undefined}>
-          {header}
-        </Box>
-      )}
-      {headerExtra && <Box className={classes.extra}>{headerExtra}</Box>}
+      <div ref={overlayRef} className={classes.overlay} style={{ top: topOffset }}>
+        {/* On phones the top bar already names the folder. */}
+        {(!isTouch || selected.size > 0 || onCloseSearch) && (
+          <Box className={classes.header} data-scrolled={scrolled || undefined}>
+            {header}
+          </Box>
+        )}
+        {headerExtra && <Box className={classes.extra}>{headerExtra}</Box>}
+      </div>
 
       {(pull > 0 || refreshing) && (
         <Group
@@ -347,7 +357,7 @@ export function MessageList(props: MessageListProps) {
           justify="center"
           gap={8}
           className={classes.pull}
-          style={{ height: refreshing ? 44 : pull }}
+          style={{ height: refreshing ? 44 : pull, marginTop: topInset }}
         >
           {refreshing ? <Loader size={14} color="gray" /> : <IconRefresh size={16} stroke={2} />}
           <Text size="sm" c="dimmed">
@@ -358,13 +368,14 @@ export function MessageList(props: MessageListProps) {
 
       <ScrollArea
         viewportRef={viewportRef}
-        style={{ flex: 1, minHeight: 0 }}
         type="auto"
         scrollbars="y"
         onTouchStart={onTouchStart}
         onTouchMove={onTouchMove}
         onTouchEnd={() => void onTouchEnd()}
         classNames={{ viewport: classes.viewport }}
+        styles={{ scrollbar: { marginTop: topInset } }}
+        style={{ flex: 1, minHeight: 0, '--fade-end': `${topInset + 6}px` } as CSSProperties}
         scrollbarSize={8}
         onScrollPositionChange={({ y }) => setScrolled(y > 0)}
         viewportProps={{
