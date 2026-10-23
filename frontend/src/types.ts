@@ -102,4 +102,5 @@ export type DraftInput = {
 export type Undo = () => Promise<void>
 
 export type BulkAction = 'archive' | 'delete' | 'read' | 'unread' | 'star' | 'unstar' | 'junk'
-export type RowAction = BulkAction | 'open' | 'reply' | 'replyAll' | 'forward' | { moveTo: string }
+export type RowAction =
+  BulkAction | 'open' | 'reply' | 'replyAll' | 'forward' | 'source' | { moveTo: string }

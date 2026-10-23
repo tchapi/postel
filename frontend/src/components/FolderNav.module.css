@@ -75,6 +75,20 @@
   display: flex;
 }
 
+.monogram {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 5px;
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+
 .label {
   flex: 1;
   min-width: 0;
@@ -109,8 +123,8 @@
 /* Rail: the count moves to the icon's corner */
 .corner {
   position: absolute;
-  top: -7px;
-  left: 11px;
+  top: -8px;
+  left: 14px;
   min-width: 16px;
   height: 16px;
   padding-inline: 4px;

@@ -40,6 +40,44 @@ export function useFolderLabel() {
   return (f: Folder) => (f.role ? t.folderRole[f.role] : f.name)
 }
 
+// Custom folders all share one icon, which makes the rail useless: each gets a monogram
+// in a colour picked from its name, the same in both widths so it is learnt once.
+const MONOGRAM_COLORS = [
+  'blue',
+  'teal',
+  'grape',
+  'orange',
+  'cyan',
+  'pink',
+  'lime',
+  'indigo',
+  'yellow',
+  'red',
+]
+
+function monogramColor(name: string): string {
+  let hash = 0
+  for (const char of name) hash = (hash * 31 + char.codePointAt(0)!) | 0
+  return MONOGRAM_COLORS[Math.abs(hash) % MONOGRAM_COLORS.length]!
+}
+
+function Monogram({ name }: { name: string }) {
+  const letters = [...name.replace(/[^\p{L}\p{N}]/gu, '')].slice(0, 2).join('') || '·'
+  const color = monogramColor(name)
+  return (
+    <span
+      className={classes.monogram}
+      style={{
+        background: `var(--mantine-color-${color}-light)`,
+        color: `var(--mantine-color-${color}-light-color)`,
+      }}
+      aria-hidden
+    >
+      {letters.charAt(0).toUpperCase() + letters.slice(1).toLowerCase()}
+    </span>
+  )
+}
+
 /** Drafts show their total, every other folder its unread count. */
 function badgeCount(f: Folder): number {
   return f.role === 'drafts' ? f.total : f.unread
@@ -122,7 +160,11 @@ export function FolderNav({
             onClick={() => onSelect(f.id)}
           >
             <span className={classes.iconWrap}>
-              <Icon size={18} stroke={1.75} className={classes.icon} />
+              {f.role ? (
+                <Icon size={18} stroke={1.75} className={classes.icon} />
+              ) : (
+                <Monogram name={label(f)} />
+              )}
               {count > 0 && (
                 <span
                   className={classes.corner}

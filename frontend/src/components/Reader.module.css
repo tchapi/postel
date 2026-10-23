@@ -14,15 +14,23 @@
 }
 
 /* Everything in the reader can be selected and copied: addresses, subject, dates. */
-/* 720px of content plus the 48px gutters: header, banners and body share one column. */
+/*
+ * Text stays in a 720px column for reading; the header's rule runs the full
+ * width of the pane like the toolbar's, instead of stopping mid-air.
+ */
 .body {
-  max-width: 816px;
   user-select: text;
   cursor: auto;
+
+  & > * {
+    max-width: 720px;
+  }
 }
 
-.header {
-  padding-bottom: 20px;
+.body > .header {
+  max-width: none;
+  margin-inline: calc(-1 * var(--reader-gutter));
+  padding: 0 var(--reader-gutter) 20px;
   border-bottom: 1px solid var(--mantine-color-default-border);
 }
 
@@ -59,14 +67,14 @@
   overflow-wrap: anywhere;
 }
 
-/* Message HTML: flush in light mode, on a white sheet in dark mode. We own the chrome, not the content. */
+/* Message HTML: flush with the page, except mail with its own colours in dark mode, which keeps a white sheet. */
 .frame {
   display: block;
   width: 100%;
   border: 0;
   background: transparent;
 
-  @mixin dark {
+  &[data-look='sheet'] {
     border-radius: var(--mantine-radius-sm);
     background: #fff;
     outline: 1px solid var(--mantine-color-dark-4);

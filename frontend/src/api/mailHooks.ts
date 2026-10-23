@@ -48,6 +48,9 @@ const json = (method: string, body: unknown): RequestInit => ({
 
 const folderPath = (folder: string) => `/folders/${encodeURIComponent(folder)}`
 
+export const rawUrl = (ref: MessageRef, download = false) =>
+  `/api${folderPath(ref.folder)}/messages/${realUid(ref.uid)}/raw${download ? '?download=1' : ''}`
+
 export const partUrl = (ref: MessageRef, partId: string, inline: boolean) =>
   `/api${folderPath(ref.folder)}/messages/${realUid(ref.uid)}/parts/${partId}${inline ? '?inline=1' : ''}`
 
@@ -475,6 +478,18 @@ export function createMailHooks(qc: QueryClient): MailHooks {
             `${folderPath(r.folder)}/messages/${realUid(r.uid)}?images=1`,
           )
           return toMessage(dto, r.uid)
+        },
+      }),
+
+    useRawMessage: (ref) =>
+      useQuery({
+        queryKey: ['raw', ref?.folder, ref?.uid],
+        enabled: ref !== null,
+        staleTime: Infinity,
+        queryFn: async () => {
+          const response = await fetch(rawUrl(ref!))
+          if (!response.ok) throw new Error(`raw source: ${response.status}`)
+          return response.text()
         },
       }),
 

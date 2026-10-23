@@ -156,7 +156,16 @@ export const theme = createTheme({
   components: {
     ActionIcon: { defaultProps: { variant: 'subtle', color: 'gray' } },
     Tooltip: { defaultProps: { openDelay: 400, withArrow: false, radius: 'sm' } },
-    Menu: { defaultProps: { shadow: 'md', withinPortal: true } },
+    Menu: {
+      defaultProps: {
+        shadow: 'md',
+        withinPortal: true,
+        // Overlaps the bar it opens from instead of lining up with its bottom edge
+        offset: 4,
+        transitionProps: { transition: 'pop-top-right', duration: 120 },
+      },
+      classNames: { dropdown: 'mail-menu-dropdown' },
+    },
     Notification: { defaultProps: { withBorder: true } },
   },
 })
@@ -178,10 +187,14 @@ export const cssVariablesResolver: CSSVariablesResolver = (t) => ({
     [`--mantine-color-${t.primaryColor}-light-color`]: `var(--mantine-color-${t.primaryColor}-7)`,
     '--mail-star': '#d97706',
     '--mail-control-border': '#8a8681',
+    '--mail-raised': '#ffffff',
+    '--mail-raised-shadow': '0 1px 2px rgb(31 29 26 / 6%), 0 10px 28px -6px rgb(31 29 26 / 18%)',
   },
   dark: {
     '--mantine-color-dimmed': '#a8a39c',
     '--mail-star': '#f5b83d',
     '--mail-control-border': '#8a8681',
+    '--mail-raised': '#363431',
+    '--mail-raised-shadow': '0 1px 2px rgb(0 0 0 / 30%), 0 12px 32px -6px rgb(0 0 0 / 55%)',
   },
 })

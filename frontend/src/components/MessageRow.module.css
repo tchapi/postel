@@ -33,8 +33,9 @@
   grid-template-columns: 20px minmax(0, 1fr);
   column-gap: 8px;
   align-items: start;
-  height: 78px;
-  padding: 11px 10px;
+  /* The list places rows every ROW_HEIGHT px, the divider below takes 1 of them. */
+  height: 85px;
+  padding: 12px 10px 13px;
   background: var(--mantine-color-body);
   cursor: pointer;
   touch-action: pan-y;
@@ -43,8 +44,8 @@
   transition: transform 160ms ease;
 
   [data-density='compact'] & {
-    height: 64px;
-    padding-block: 5px;
+    height: 63px;
+    padding-block: 11px;
   }
 
   @mixin hover {
@@ -83,7 +84,7 @@
   display: none;
   position: absolute;
   left: 3px;
-  top: 18px;
+  top: 19px;
   width: 6px;
   height: 6px;
   border-radius: 50%;
@@ -94,7 +95,7 @@
   }
 
   [data-density='compact'] & {
-    top: 12px;
+    top: 18px;
   }
 }
 
@@ -169,6 +170,12 @@
 
 .snippet {
   display: block;
+  height: 18px;
+  line-height: 18px;
+
+  [data-density='compact'] & {
+    display: none;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

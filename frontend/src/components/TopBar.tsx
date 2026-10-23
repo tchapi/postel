@@ -49,7 +49,7 @@ export function TopBar(p: TopBarProps) {
   const mobile = p.layout === 'mobile'
 
   const userMenu = (
-    <Menu position="bottom-end" width={260}>
+    <Menu offset={12} position="bottom-end" width={260}>
       <Menu.Target>
         <UnstyledButton aria-label={t.accountMenu} className={classes.avatarButton}>
           <Avatar size={32} radius="xl" color="initials" name={p.session.name}>

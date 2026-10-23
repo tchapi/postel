@@ -1,6 +1,6 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Button, Group, Text, useComputedColorScheme, useMantineColorScheme } from '@mantine/core'
-import { useMediaQuery, useNetwork } from '@mantine/hooks'
+import { useLocalStorage, useMediaQuery, useNetwork } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
 import { spotlight } from '@mantine/spotlight'
 import {
@@ -13,7 +13,7 @@ import {
   IconSend,
   IconWifiOff,
 } from '@tabler/icons-react'
-import { realUid } from './api/mailHooks'
+import { rawUrl, realUid } from './api/mailHooks'
 import { useMailHooks } from './hooks'
 import type {
   Attachment,
@@ -30,7 +30,8 @@ import type {
 import { I18nContext, STRINGS } from './lib/i18n'
 import { absoluteDate, displayName } from './lib/format'
 import { useMailShortcuts } from './lib/shortcuts'
-import { MailAppShell, type Layout } from './components/AppShell'
+import { parseLocation, toUrl } from './lib/url'
+import { DEFAULT_NAV, MailAppShell, type Layout } from './components/AppShell'
 import { TopBar } from './components/TopBar'
 import { FolderNav, sortFolders } from './components/FolderNav'
 import { MessageList } from './components/MessageList'
@@ -38,6 +39,7 @@ import { Reader } from './components/Reader'
 import { SearchSpotlight } from './components/SearchSpotlight'
 import { SearchFilters } from './components/SearchFilters'
 import type { ColorSchemeSetting } from './components/Settings'
+import { RawMessageModal } from './components/RawMessageModal'
 import { ShortcutsHelp } from './components/ShortcutsHelp'
 import { EarlierMessage, EarlierMessages } from './components/Conversation'
 import { toMoveTargets } from './components/MoveMenu'
@@ -89,23 +91,37 @@ export function MailApp({
   const isDesktop = useMediaQuery('(min-width: 75em)', true, { getInitialValueInEffect: false })
   const isMobile = useMediaQuery('(max-width: 47.99em)', false, { getInitialValueInEffect: false })
   const layout: Layout = isDesktop ? 'desktop' : isMobile ? 'mobile' : 'tablet'
-  const [navCollapsed, setNavCollapsed] = useState(false)
+  // Layout preferences belong to this screen, so this browser remembers them
+  const [navCollapsed, setNavCollapsed] = useLocalStorage({
+    key: 'webmail.nav-collapsed',
+    defaultValue: false,
+  })
+  const [navWidth, setNavWidth] = useLocalStorage({
+    key: 'webmail.nav-width',
+    defaultValue: DEFAULT_NAV,
+  })
   const [drawerOpened, setDrawerOpened] = useState(false)
-  const [listWidth, setListWidth] = useState(380)
+  const [listWidth, setListWidth] = useLocalStorage({
+    key: 'webmail.list-width',
+    defaultValue: 380,
+  })
 
   /* ---------- theme ---------- */
   const { colorScheme, setColorScheme } = useMantineColorScheme()
   const computed = useComputedColorScheme('light')
 
   /* ---------- navigation state ---------- */
-  const [folderId, setFolderId] = useState('INBOX')
-  const [search, setSearch] = useState<Filters | null>(null)
-  const [activeUid, setActiveUid] = useState<number | null>(null)
-  const [mobileReader, setMobileReader] = useState(false)
+  const [initial] = useState(() => parseLocation(window.location.pathname, window.location.search))
+  const [folderId, setFolderId] = useState(initial.folderId)
+  const [search, setSearch] = useState<Filters | null>(initial.search)
+  const [activeUid, setActiveUid] = useState<number | null>(initial.uid)
+  const [mobileReader, setMobileReader] = useState(initial.uid !== null)
   const [selected, setSelected] = useState<Set<number>>(() => new Set())
   const anchor = useRef<number | null>(null)
-  const [view, setView] = useState<'mail' | 'settings'>('mail')
+  const [view, setView] = useState<'mail' | 'settings'>(initial.view)
   const [helpOpen, setHelpOpen] = useState(false)
+  const [sourceRef, setSourceRef] = useState<MessageRef | null>(null)
+  const sourceQuery = hooks.useRawMessage(sourceRef)
   const [compose, setCompose] = useState<ComposeSession | null>(null)
   const composeKey = useRef(0)
 
@@ -151,12 +167,60 @@ export function MailApp({
         .catch(() => {})
   }, [message, actions])
 
-  // Reset per-folder state.
+  // Reset per-folder state when the folder or search really changes, unless the address
+  // bar changed it: then it brings its own message. Comparing values, not counting runs,
+  // keeps React's double effects in development from eating the message of a shared link.
+  const fromUrl = useRef(false)
+  const shownPlace = useRef(JSON.stringify({ folderId, search }))
   useEffect(() => {
+    const current = JSON.stringify({ folderId, search })
+    if (current === shownPlace.current) return
+    shownPlace.current = current
+    if (fromUrl.current) {
+      fromUrl.current = false
+      return
+    }
     setSelected(new Set())
     setActiveUid(null)
     setMobileReader(false)
   }, [folderId, search])
+
+  // The address bar follows the app: a new place is a new history entry, opening a message replaces it.
+  const lastUrl = useRef(toUrl(initial))
+  useEffect(() => {
+    const url = toUrl({ view, folderId, uid: search ? null : activeUid, search })
+    if (url === lastUrl.current) return
+    const samePlace =
+      url.split('?')[0]!.split('/').slice(0, 3).join('/') ===
+      lastUrl.current.split('?')[0]!.split('/').slice(0, 3).join('/')
+    if (samePlace && !url.startsWith('/search')) window.history.replaceState(null, '', url)
+    else window.history.pushState(null, '', url)
+    lastUrl.current = url
+  }, [view, folderId, activeUid, search])
+
+  // Back and forward: the app follows the address bar.
+  const place = useRef({ folderId, search })
+  useEffect(() => {
+    place.current = { folderId, search }
+  }, [folderId, search])
+  useEffect(() => {
+    const onPop = () => {
+      const location = parseLocation(window.location.pathname, window.location.search)
+      lastUrl.current = toUrl(location)
+      // Only a new folder or search triggers the reset that this flag skips
+      fromUrl.current =
+        location.folderId !== place.current.folderId ||
+        JSON.stringify(location.search) !== JSON.stringify(place.current.search)
+      setMobileReader(location.uid !== null)
+      setView(location.view)
+      setFolderId(location.folderId)
+      setSearch(location.search)
+      setActiveUid(location.uid)
+      setSelected(new Set())
+    }
+    window.addEventListener('popstate', onPop)
+    return () => window.removeEventListener('popstate', onPop)
+  }, [])
 
   /* ---------- feedback ---------- */
   const notifyUndo = useCallback(
@@ -517,7 +581,6 @@ export function MailApp({
     !!message &&
     (settings.remoteImages === 'always' ||
       settings.allowedSenders.includes(message.from.email.toLowerCase()))
-  const activeIndex = activeUid === null ? -1 : rows.findIndex((r) => r.uid === activeUid)
 
   const list = (
     <MessageList
@@ -585,7 +648,6 @@ export function MailApp({
       status={readerRef === null ? 'idle' : messageQuery.status}
       onRetry={() => void messageQuery.refetch()}
       selectedCount={selected.size}
-      position={activeIndex >= 0 ? { index: activeIndex, total } : undefined}
       remoteAllowedByDefault={remoteAllowed}
       isMobile={layout === 'mobile'}
       selfEmail={session.email}
@@ -595,11 +657,10 @@ export function MailApp({
       }
       onAction={(a) => {
         if (!message) return
-        if (a === 'reply' || a === 'replyAll' || a === 'forward') openCompose(a, message)
+        if (a === 'source') setSourceRef({ folder: message.folder, uid: message.uid })
+        else if (a === 'reply' || a === 'replyAll' || a === 'forward') openCompose(a, message)
         else void runAction(a, [message.uid])
       }}
-      onPrev={() => step(-1)}
-      onNext={() => step(1)}
       onBack={() => setMobileReader(false)}
       onAlwaysShowImages={(email) => void actions.allowRemoteImages(email)}
     />
@@ -665,6 +726,8 @@ export function MailApp({
         mobilePane={mobileReader ? 'reader' : 'list'}
         listWidth={listWidth}
         onListWidthChange={setListWidth}
+        navWidth={navWidth}
+        onNavWidthChange={setNavWidth}
       />
 
       {layout === 'mobile' && view === 'mail' && !mobileReader && (
@@ -745,6 +808,14 @@ export function MailApp({
       />
 
       <ShortcutsHelp opened={helpOpen} onClose={() => setHelpOpen(false)} />
+
+      <RawMessageModal
+        opened={sourceRef !== null}
+        onClose={() => setSourceRef(null)}
+        status={sourceRef === null ? 'idle' : sourceQuery.status}
+        source={sourceQuery.data}
+        downloadUrl={sourceRef ? rawUrl(sourceRef, true) : '#'}
+      />
     </I18nContext>
   )
 }

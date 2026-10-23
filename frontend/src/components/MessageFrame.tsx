@@ -33,11 +33,26 @@ export function splitTextQuote(text: string): { body: string; quote: string | nu
   return { body: lines.slice(0, start).join('\n').trimEnd(), quote: lines.slice(start).join('\n') }
 }
 
+/**
+ * True when the mail paints itself: colours or backgrounds set by the sender assume a
+ * white page, so in dark mode it keeps one. Plain mail follows the theme instead.
+ */
+export function htmlHasOwnColors(html: string): boolean {
+  const doc = new DOMParser().parseFromString(html, 'text/html')
+  if (doc.querySelector('[bgcolor], [background], font[color], [color]')) return true
+  return [...doc.querySelectorAll('[style]')].some((el) =>
+    /(^|;)\s*(color|background(-color|-image)?)\s*:/i.test(el.getAttribute('style') ?? ''),
+  )
+}
+
+/** flush: light theme, no frame. sheet: white page for mail that paints itself. dark: plain mail in the dark theme. */
+export type FrameLook = 'flush' | 'sheet' | 'dark'
+
 function buildSrcDoc(
   html: string,
   allowRemote: boolean,
   showQuoted: boolean,
-  sheet: boolean,
+  look: FrameLook,
 ): string {
   const doc = new DOMParser().parseFromString(html, 'text/html')
   doc
@@ -52,9 +67,14 @@ function buildSrcDoc(
   const base = doc.createElement('base')
   base.target = '_blank'
   const style = doc.createElement('style')
+  const dark = look === 'dark'
+  const sheet = look === 'sheet'
   style.textContent = `
-    html { color-scheme: light; }
-    body { margin: 0; padding: ${sheet ? '16px' : '4px 0'}; background: ${sheet ? '#fff' : 'transparent'}; color: #1c1e21;
+    html { color-scheme: ${dark ? 'dark' : 'light'}; }
+    a { color: ${dark ? '#9cc3ff' : '#0b57d0'}; }
+    blockquote { border-left-color: ${dark ? '#4a4744' : '#d0ccc6'}; }
+    hr { border-color: ${dark ? '#4a4744' : '#e0dcd6'}; }
+    body { margin: 0; padding: ${sheet ? '16px' : '4px 0'}; background: ${sheet ? '#fff' : 'transparent'}; color: ${dark ? '#e3dfd9' : '#1c1e21'};
       font: 15px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
       overflow-wrap: anywhere; }
     img { max-width: 100%; height: auto; }
@@ -85,21 +105,25 @@ export function MessageFrame({
   const ref = useRef<HTMLIFrameElement>(null)
   const [height, setHeight] = useState(120)
   // Dark mode shows mail on a white sheet; light mode lets it sit flush with the headers.
-  const sheet = useComputedColorScheme('light') === 'dark'
+  const scheme = useComputedColorScheme('light')
+  const ownColors = useMemo(() => htmlHasOwnColors(html), [html])
+  const look: FrameLook = scheme === 'light' ? 'flush' : ownColors ? 'sheet' : 'dark'
   const srcDoc = useMemo(
-    () => buildSrcDoc(html, allowRemote, showQuoted, sheet),
-    [html, allowRemote, showQuoted, sheet],
+    () => buildSrcDoc(html, allowRemote, showQuoted, look),
+    [html, allowRemote, showQuoted, look],
   )
 
   useEffect(() => {
     const frame = ref.current
     if (!frame) return
     let observer: ResizeObserver | null = null
+    // The body's own height: the document's never goes below the frame's, so a short mail would keep the starting 120px
     const measure = () => {
-      const docEl = frame.contentDocument?.documentElement
-      if (docEl) setHeight(docEl.scrollHeight)
+      const body = frame.contentDocument?.body
+      if (body) setHeight(Math.ceil(body.getBoundingClientRect().height))
     }
     const onLoad = () => {
+      observer?.disconnect()
       measure()
       const body = frame.contentDocument?.body
       if (body) {
@@ -108,6 +132,13 @@ export function MessageFrame({
       }
     }
     frame.addEventListener('load', onLoad)
+    // An inline document can finish loading before this effect runs: then 'load' never comes
+    if (
+      frame.contentDocument?.readyState === 'complete' &&
+      frame.contentDocument.body?.childNodes.length
+    ) {
+      onLoad()
+    }
     return () => {
       frame.removeEventListener('load', onLoad)
       observer?.disconnect()
@@ -119,6 +150,7 @@ export function MessageFrame({
       ref={ref}
       title={title}
       className={classes.frame}
+      data-look={look}
       srcDoc={srcDoc}
       sandbox="allow-same-origin allow-popups allow-popups-to-escape-sandbox"
       referrerPolicy="no-referrer"

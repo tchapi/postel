@@ -163,7 +163,8 @@ export function Settings({
   }
 
   return (
-    <Stack gap={0} h="100%">
+    // Full width so the scrollbar sits at the window's edge, not after the centred column
+    <Stack gap={0} h="100%" style={{ flex: 1, minWidth: 0 }}>
       {isMobile && (
         <Group gap={4} px={4} className={classes.mobileHeader}>
           <ActionIcon size={44} aria-label={t.back} onClick={onClose}>

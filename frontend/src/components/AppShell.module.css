@@ -88,6 +88,11 @@
 /* The width follows the main pane's padding transition instead of jumping. */
 .navbar {
   transition-property: transform, top, height, width;
+
+  &[data-resizing] {
+    transition: none;
+  }
+
   overflow: hidden;
   white-space: nowrap;
 }
@@ -96,4 +101,38 @@
 .appHeader:global(.mantine-AppShell-header) {
   border-bottom: 0;
   box-shadow: inset 0 -1px 0 var(--mantine-color-default-border);
+}
+
+/* Drag the folder pane's edge; double-click puts it back to its default width. */
+.navHandle {
+  position: absolute;
+  top: 0;
+  /* Inside the edge: the pane clips its overflow, so a handle sticking out can't be grabbed */
+  right: 0;
+  bottom: 0;
+  width: 6px;
+  cursor: col-resize;
+  touch-action: none;
+  z-index: 2;
+
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    right: 0;
+    width: 2px;
+    background: transparent;
+    transition: background-color 120ms ease;
+  }
+
+  &:hover::after,
+  &:focus-visible::after,
+  .navbar[data-resizing] &::after {
+    background: var(--mantine-primary-color-filled);
+  }
+
+  &:focus-visible {
+    outline: none;
+  }
 }

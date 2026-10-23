@@ -19,3 +19,19 @@ button:disabled,
 [aria-disabled='true'] {
   cursor: not-allowed;
 }
+
+/* Menus, autocompletes and popovers float above the page: a raised surface and a soft shadow
+   instead of the page colour, so they read as a separate layer. */
+.mail-menu-dropdown,
+.mantine-Combobox-dropdown,
+.mantine-Popover-dropdown {
+  padding: 4px;
+  border: 1px solid var(--mantine-color-default-border);
+  border-radius: var(--mantine-radius-md);
+  background: var(--mail-raised);
+  box-shadow: var(--mail-raised-shadow);
+}
+
+.mail-menu-dropdown .mantine-Menu-item {
+  border-radius: var(--mantine-radius-sm);
+}

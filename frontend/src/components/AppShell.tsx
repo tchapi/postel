@@ -1,4 +1,4 @@
-import { useRef, type KeyboardEvent, type PointerEvent, type ReactNode } from 'react'
+import { useRef, useState, type KeyboardEvent, type PointerEvent, type ReactNode } from 'react'
 import { AppShell, Drawer } from '@mantine/core'
 import { useI18n } from '../lib/i18n'
 import classes from './AppShell.module.css'
@@ -23,7 +23,15 @@ export type MailAppShellProps = {
   mobilePane: 'list' | 'reader'
   listWidth: number
   onListWidthChange: (w: number) => void
+  /** Desktop: width of the expanded folder pane. */
+  navWidth: number
+  onNavWidthChange: (w: number) => void
 }
+
+export const DEFAULT_NAV = 240
+const MIN_NAV = 180
+const MAX_NAV = 360
+const clampNav = (w: number) => Math.min(MAX_NAV, Math.max(MIN_NAV, w))
 
 const MIN_LIST = 300
 const MAX_LIST = 560
@@ -37,6 +45,27 @@ export function MailAppShell(p: MailAppShellProps) {
   const { t } = useI18n()
   const drag = useRef<{ x: number; w: number } | null>(null)
   const desktop = p.layout === 'desktop'
+  const navDrag = useRef<{ x: number; w: number } | null>(null)
+  // No width animation while the pane follows the pointer
+  const [resizingNav, setResizingNav] = useState(false)
+
+  const onNavDown = (e: PointerEvent<HTMLDivElement>) => {
+    e.currentTarget.setPointerCapture(e.pointerId)
+    navDrag.current = { x: e.clientX, w: p.navWidth }
+    setResizingNav(true)
+  }
+  const onNavMove = (e: PointerEvent<HTMLDivElement>) => {
+    if (navDrag.current)
+      p.onNavWidthChange(clampNav(navDrag.current.w + e.clientX - navDrag.current.x))
+  }
+  const onNavUp = () => {
+    navDrag.current = null
+    setResizingNav(false)
+  }
+  const onNavKey = (e: KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === 'ArrowLeft') p.onNavWidthChange(clampNav(p.navWidth - 16))
+    if (e.key === 'ArrowRight') p.onNavWidthChange(clampNav(p.navWidth + 16))
+  }
 
   const onSplitDown = (e: PointerEvent<HTMLDivElement>) => {
     e.currentTarget.setPointerCapture(e.pointerId)
@@ -85,15 +114,38 @@ export function MailAppShell(p: MailAppShellProps) {
     <AppShell
       classNames={{ navbar: classes.navbar, header: classes.appHeader }}
       header={{ height: p.layout === 'mobile' ? 56 : 52, collapsed: !p.showHeader }}
+      transitionDuration={resizingNav ? 0 : 200}
       navbar={{
-        width: p.navCollapsed ? 60 : 240,
+        width: p.navCollapsed ? 60 : p.navWidth,
         breakpoint: 'lg',
         collapsed: { mobile: true, desktop: false },
       }}
       padding={0}
     >
       <AppShell.Header>{p.header}</AppShell.Header>
-      {desktop && <AppShell.Navbar>{p.renderNav(p.navCollapsed)}</AppShell.Navbar>}
+      {desktop && (
+        <AppShell.Navbar data-resizing={resizingNav || undefined}>
+          {p.renderNav(p.navCollapsed)}
+          {!p.navCollapsed && (
+            <div
+              role="separator"
+              aria-orientation="vertical"
+              aria-label={t.resizeFolders}
+              aria-valuenow={p.navWidth}
+              aria-valuemin={MIN_NAV}
+              aria-valuemax={MAX_NAV}
+              tabIndex={0}
+              className={classes.navHandle}
+              onPointerDown={onNavDown}
+              onPointerMove={onNavMove}
+              onPointerUp={onNavUp}
+              onPointerCancel={onNavUp}
+              onDoubleClick={() => p.onNavWidthChange(DEFAULT_NAV)}
+              onKeyDown={onNavKey}
+            />
+          )}
+        </AppShell.Navbar>
+      )}
       <AppShell.Main className={classes.main}>{panes}</AppShell.Main>
       {!desktop && (
         <Drawer

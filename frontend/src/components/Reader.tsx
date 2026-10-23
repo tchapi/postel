@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactNode } from 'react'
+import { useMemo, useState, type CSSProperties, type ReactNode } from 'react'
 import {
   ActionIcon,
   Alert,
@@ -17,13 +17,12 @@ import {
 } from '@mantine/core'
 import {
   IconArchive,
+  IconCode,
   IconArrowBackUp,
   IconArrowBackUpDouble,
   IconArrowForwardUp,
   IconArrowLeft,
   IconBan,
-  IconChevronDown,
-  IconChevronUp,
   IconDots,
   IconDotsVertical,
   IconFolderShare,
@@ -52,7 +51,6 @@ export type ReaderProps = {
   onRetry: () => void
   /** Multi-selection count, shown instead of the empty state. */
   selectedCount: number
-  position?: { index: number; total: number }
   /** Policy says show, or the sender is allow-listed. */
   remoteAllowedByDefault: boolean
   isMobile: boolean
@@ -60,8 +58,6 @@ export type ReaderProps = {
   moveTargets: MoveTarget[]
   urlFor: (a: Attachment, disposition: 'inline' | 'download') => string
   onAction: (action: RowAction) => void
-  onPrev: () => void
-  onNext: () => void
   onBack?: () => void
   onAlwaysShowImages: (senderEmail: string) => void
   /** Earlier messages of the conversation, shown above this one */
@@ -129,17 +125,8 @@ export function Reader(props: ReaderProps) {
   )
 }
 
-function ReaderToolbar({
-  message,
-  position,
-  isMobile,
-  moveTargets,
-  onAction,
-  onPrev,
-  onNext,
-  onBack,
-}: ReaderProps) {
-  const { t, locale } = useI18n()
+function ReaderToolbar({ message, isMobile, moveTargets, onAction, onBack }: ReaderProps) {
+  const { t } = useI18n()
   const flagged = message?.flagged ?? false
   const disabled = !message
 
@@ -173,6 +160,10 @@ function ReaderToolbar({
             {t.markRead}
           </Menu.Item>
         )}
+        <Menu.Divider />
+        <Menu.Item leftSection={<IconCode size={16} />} onClick={() => onAction('source')}>
+          {t.showOriginal}
+        </Menu.Item>
       </Menu.Dropdown>
     </Menu>
   )
@@ -267,25 +258,6 @@ function ReaderToolbar({
       )}
       {btn(t.markUnread, <IconMail size={18} stroke={1.75} />, 'unread', 'unread')}
       {moreMenu}
-      <Box style={{ flex: 1 }} />
-      {position && (
-        <Text size="xs" c="dimmed" mr={4} style={{ whiteSpace: 'nowrap' }}>
-          {t.nOfTotal(
-            new Intl.NumberFormat(locale).format(position.index + 1),
-            new Intl.NumberFormat(locale).format(position.total),
-          )}
-        </Text>
-      )}
-      <ShortcutTooltip label={t.prevMessage} shortcut="prev">
-        <ActionIcon size="lg" aria-label={t.prevMessage} onClick={onPrev}>
-          <IconChevronUp size={18} stroke={1.75} />
-        </ActionIcon>
-      </ShortcutTooltip>
-      <ShortcutTooltip label={t.nextMessage} shortcut="next">
-        <ActionIcon size="lg" aria-label={t.nextMessage} onClick={onNext}>
-          <IconChevronDown size={18} stroke={1.75} />
-        </ActionIcon>
-      </ShortcutTooltip>
     </Group>
   )
 }
@@ -319,7 +291,13 @@ function ReaderBody({
   const ccLine = message.cc.length ? formatAddrList(message.cc) : ''
 
   return (
-    <Stack gap={20} className={classes.body} px={isMobile ? 20 : 48} py={isMobile ? 20 : 32}>
+    <Stack
+      gap={20}
+      className={classes.body}
+      px={isMobile ? 20 : 48}
+      py={isMobile ? 20 : 32}
+      style={{ '--reader-gutter': isMobile ? '20px' : '48px' } as CSSProperties}
+    >
       <Title order={1}>{message.subject}</Title>
 
       {earlier}
@@ -336,17 +314,19 @@ function ReaderBody({
             {initials(message.from)}
           </Avatar>
           <Stack gap={2} style={{ flex: 1, minWidth: 0 }}>
-            <Group gap={12} justify="space-between" align="baseline" wrap="nowrap">
-              <Group gap={6} align="baseline" wrap="nowrap" style={{ minWidth: 0 }}>
-                <Text fw={600} truncate>
-                  {displayName(message.from)}
+            {/* The date follows the sender instead of sitting on the far side of the column */}
+            <Group gap={6} align="baseline" wrap="nowrap" style={{ minWidth: 0 }}>
+              <Text fw={600} truncate style={{ flex: 'none', maxWidth: '50%' }}>
+                {displayName(message.from)}
+              </Text>
+              {message.from.name && (
+                <Text size="sm" c="dimmed" truncate>
+                  &lt;{message.from.email}&gt;
                 </Text>
-                {message.from.name && (
-                  <Text size="sm" c="dimmed" truncate>
-                    &lt;{message.from.email}&gt;
-                  </Text>
-                )}
-              </Group>
+              )}
+              <Text size="sm" c="dimmed" aria-hidden className={classes.date}>
+                ·
+              </Text>
               <Tooltip label={absoluteDate(message.date, locale)}>
                 <Text
                   component="time"
