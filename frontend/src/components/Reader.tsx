@@ -324,37 +324,54 @@ function ReaderBody({
 
       {earlier}
 
-      <Group gap={12} align="flex-start" wrap="nowrap">
-        <Avatar radius="xl" size={40} color="initials" name={displayName(message.from)} aria-hidden>
-          {initials(message.from)}
-        </Avatar>
-        <Stack gap={2} style={{ flex: 1, minWidth: 0 }}>
-          <Group gap={8} align="baseline" wrap="wrap">
-            <Text fw={600}>{displayName(message.from)}</Text>
-            {message.from.name && (
-              <Text size="sm" c="dimmed">
-                {message.from.email}
-              </Text>
-            )}
-          </Group>
-          <Text size="sm" c="dimmed">
-            {t.to} {toLine}
-            {ccLine && ` · ${t.cc} ${ccLine}`}
-          </Text>
-        </Stack>
-        <Tooltip label={absoluteDate(message.date, locale)}>
-          <Text
-            component="time"
-            dateTime={message.date}
-            size="sm"
-            c="dimmed"
-            className={classes.date}
-            tabIndex={0}
+      <header className={classes.header}>
+        <Group gap={12} align="center" wrap="nowrap">
+          <Avatar
+            radius="xl"
+            size={40}
+            color="initials"
+            name={displayName(message.from)}
+            aria-hidden
           >
-            {relativeDate(message.date, locale)}
-          </Text>
-        </Tooltip>
-      </Group>
+            {initials(message.from)}
+          </Avatar>
+          <Stack gap={2} style={{ flex: 1, minWidth: 0 }}>
+            <Group gap={12} justify="space-between" align="baseline" wrap="nowrap">
+              <Group gap={6} align="baseline" wrap="nowrap" style={{ minWidth: 0 }}>
+                <Text fw={600} truncate>
+                  {displayName(message.from)}
+                </Text>
+                {message.from.name && (
+                  <Text size="sm" c="dimmed" truncate>
+                    &lt;{message.from.email}&gt;
+                  </Text>
+                )}
+              </Group>
+              <Tooltip label={absoluteDate(message.date, locale)}>
+                <Text
+                  component="time"
+                  dateTime={message.date}
+                  size="sm"
+                  c="dimmed"
+                  className={classes.date}
+                  tabIndex={0}
+                >
+                  {relativeDate(message.date, locale)}
+                </Text>
+              </Tooltip>
+            </Group>
+            <Text size="sm" c="dimmed" truncate>
+              <span className={classes.fieldLabel}>{t.to}</span> {toLine}
+              {ccLine && (
+                <>
+                  {' · '}
+                  <span className={classes.fieldLabel}>{t.cc}</span> {ccLine}
+                </>
+              )}
+            </Text>
+          </Stack>
+        </Group>
+      </header>
 
       {message.hasRemoteImages && !allowRemote && (
         <Alert
