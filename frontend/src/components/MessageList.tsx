@@ -359,13 +359,13 @@ export function MessageList(props: MessageListProps) {
       <ScrollArea
         viewportRef={viewportRef}
         style={{ flex: 1, minHeight: 0 }}
-        type="hover"
+        type="auto"
         scrollbars="y"
         onTouchStart={onTouchStart}
         onTouchMove={onTouchMove}
         onTouchEnd={() => void onTouchEnd()}
         classNames={{ viewport: classes.viewport }}
-        scrollbarSize={6}
+        scrollbarSize={8}
         onScrollPositionChange={({ y }) => setScrolled(y > 0)}
         viewportProps={{
           role: 'listbox',
