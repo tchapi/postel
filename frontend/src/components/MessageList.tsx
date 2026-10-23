@@ -231,7 +231,6 @@ export function MessageList(props: MessageListProps) {
         count={selected.size}
         allSelected={allSelected}
         moveTargets={moveTargets}
-        onSelectAll={onSelectAll}
         onAction={(a: BulkAction) => onAction(a, [...selected])}
         onMove={(id) => onAction({ moveTo: id }, [...selected])}
         onClear={onClearSelection}
