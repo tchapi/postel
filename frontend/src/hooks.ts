@@ -51,6 +51,8 @@ export interface MailHooks {
   useRecentSearches(): { recent: string[]; push: (q: string) => void }
   useSession(): { name: string; email: string; signOut: () => void }
   useMailActions(): MailActions
+  /** False while the backend does not answer at all: nothing that needs it should be offered. */
+  useServerReachable(): boolean
 }
 
 const MailHooksContext = createContext<MailHooks | null>(null)

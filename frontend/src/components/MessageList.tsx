@@ -52,6 +52,8 @@ export type MessageListProps = {
   subtitle?: string
   /** Search filter chips etc., rendered under the header. */
   headerExtra?: ReactNode
+  /** The backend does not answer at all, rather than this list failing. */
+  unreachable?: boolean
   /** Space taken at the top by a bar floating over the list from outside (the phone top bar). */
   topOffset?: number
   onCloseSearch?: () => void
@@ -119,6 +121,7 @@ export function MessageList(props: MessageListProps) {
     onSwipe,
     onRefresh,
     topOffset = 0,
+    unreachable,
   } = props
   const { t } = useI18n()
   const viewportRef = useRef<HTMLDivElement>(null)
@@ -126,6 +129,7 @@ export function MessageList(props: MessageListProps) {
   // The header floats over the list: rows start below it and scroll under it
   const { ref: overlayRef, height: overlayHeight } = useElementSize()
   const topInset = topOffset + overlayHeight
+  const { ref: areaRef, height: areaHeight } = useElementSize()
   const rowHeight = ROW_HEIGHT[density]
   const [menu, setMenu] = useState<ContextMenuState>(null)
   const [pull, setPull] = useState(0)
@@ -236,7 +240,7 @@ export function MessageList(props: MessageListProps) {
         onClear={onClearSelection}
       />
     ) : (
-      <Group gap={8} wrap="nowrap" h="100%" pl={6} pr={2}>
+      <Group gap={8} wrap="nowrap" h="100%" pl={12} pr={2}>
         {!isTouch && (
           <Checkbox
             size="xs"
@@ -273,11 +277,22 @@ export function MessageList(props: MessageListProps) {
       </Group>
     )
 
+  // Below the floating header, centred in what is left of the pane
+  const state = (node: ReactNode) => (
+    <Box pt={topInset} h={areaHeight || undefined}>
+      {node}
+    </Box>
+  )
   let body: ReactNode
-  if (status === 'pending') body = <ListSkeleton rowHeight={rowHeight} />
-  else if (status === 'error') body = <ErrorState title={t.loadError} onRetry={onRetry} />
+  if (status === 'pending') body = state(<ListSkeleton rowHeight={rowHeight} />)
+  else if (status === 'error')
+    body = state(
+      <ErrorState title={unreachable ? t.serverUnreachable : t.loadError} onRetry={onRetry} />,
+    )
   else if (!rows.length)
-    body = <StateMessage icon={<InboxIcon size={24} strokeWidth={1.5} />} title={emptyLabel} />
+    body = state(
+      <StateMessage icon={<InboxIcon size={24} strokeWidth={1.5} />} title={emptyLabel} />,
+    )
   else
     body = (
       <div style={{ height: virtualizer.getTotalSize(), position: 'relative' }}>
@@ -370,6 +385,7 @@ export function MessageList(props: MessageListProps) {
       )}
 
       <ScrollArea
+        ref={areaRef}
         viewportRef={viewportRef}
         type="auto"
         scrollbars="y"

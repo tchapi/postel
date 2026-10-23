@@ -21,7 +21,7 @@ import type {
   Settings,
   Undo,
 } from '../types'
-import { api } from './client'
+import { api, serverReachable } from './client'
 import type * as Dto from './dto'
 
 const PAGE = 50
@@ -443,11 +443,12 @@ export function createMailHooks(qc: QueryClient): MailHooks {
       }),
 
     useMessages: ({ folder, search }) => {
-      const threads = useQuery({
+      const settings = useQuery({
         queryKey: settingsQueryKey,
         queryFn: () => api<Dto.Settings>('/settings'),
         select: (dto) => dto.threads,
-      }).data
+      })
+      const threads = settings.data
       const all = search?.scope === 'all'
       const params = searchParams(search, threads ?? false)
       return useInfiniteQuery({
@@ -463,7 +464,8 @@ export function createMailHooks(qc: QueryClient): MailHooks {
         },
         initialPageParam: 1,
         getNextPageParam: (last) => last.nextCursor,
-        enabled: threads !== undefined || search !== null,
+        // Without settings (the server is away) the list still loads, or fails and says so
+        enabled: threads !== undefined || settings.isError || search !== null,
       })
     },
 
@@ -539,6 +541,8 @@ export function createMailHooks(qc: QueryClient): MailHooks {
         push: (q) => recentStore.set([q, ...recent.filter((item) => item !== q)].slice(0, 8)),
       }
     },
+
+    useServerReachable: () => useSyncExternalStore(serverReachable.subscribe, serverReachable.get),
 
     useSession: () => {
       const { data } = useQuery({

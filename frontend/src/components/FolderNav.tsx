@@ -96,6 +96,8 @@ export type FolderNavProps = {
   onToggleCollapsed?: () => void
   /** Desktop: primary Compose action at the top of the sidebar. Omit where Compose lives elsewhere (header, FAB). */
   onCompose?: () => void
+  /** The backend is away: Compose shows, greyed out. */
+  composeDisabled?: boolean
 }
 
 export function FolderNav({
@@ -107,6 +109,7 @@ export function FolderNav({
   onSelect,
   onToggleCollapsed,
   onCompose,
+  composeDisabled,
 }: FolderNavProps) {
   const { t } = useI18n()
   const label = useFolderLabel()
@@ -132,7 +135,12 @@ export function FolderNav({
   const compose = onCompose ? (
     <div className={classes.composeWrap}>
       <Tooltip label={t.compose} position="right" disabled={!collapsed}>
-        <UnstyledButton className={classes.compose} onClick={onCompose} aria-label={t.compose}>
+        <UnstyledButton
+          className={classes.compose}
+          onClick={onCompose}
+          disabled={composeDisabled}
+          aria-label={t.compose}
+        >
           <SquarePenIcon size={18} strokeWidth={1.75} className={classes.icon} />
           <span className={`${classes.label} ${classes.fade}`}>{t.compose}</span>
           <Kbd size="xs" className={`${classes.composeKbd} ${classes.fade}`} aria-hidden>

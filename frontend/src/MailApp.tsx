@@ -82,6 +82,8 @@ export function MailApp({
   const session = hooks.useSession()
   const actions = hooks.useMailActions()
   const foldersQuery = hooks.useFolders()
+  // Nothing to send to while the backend is away: Compose comes back with it
+  const reachable = hooks.useServerReachable()
 
   const t = STRINGS[settings.language]
   const locale = settings.language === 'fr' ? 'fr-FR' : 'en-GB'
@@ -283,6 +285,7 @@ export function MailApp({
   /* ---------- compose ---------- */
   const openCompose = useCallback(
     (mode: ComposeMode, source?: Message, draft?: DraftInput) => {
+      if (!reachable) return
       composeKey.current += 1
       const empty: DraftInput = {
         to: [],
@@ -342,7 +345,7 @@ export function MailApp({
         },
       })
     },
-    [session.email, locale],
+    [session.email, locale, reachable],
   )
 
   const [pendingCompose, setPendingCompose] = useState<{ mode: ComposeMode; uid: number } | null>(
@@ -584,6 +587,7 @@ export function MailApp({
 
   const list = (
     <MessageList
+      unreachable={!reachable}
       title={search ? t.resultsFor(search.query) : folderTitle}
       subtitle={
         search
@@ -698,6 +702,7 @@ export function MailApp({
             }
             onSearch={() => spotlight.open()}
             onCompose={() => openCompose('new')}
+            composeDisabled={!reachable}
             session={session}
             isDark={computed === 'dark'}
             onToggleTheme={toggleTheme}
@@ -719,6 +724,7 @@ export function MailApp({
             onSelect={goFolder}
             onToggleCollapsed={layout === 'desktop' ? () => setNavCollapsed((v) => !v) : undefined}
             onCompose={layout === 'desktop' ? () => openCompose('new') : undefined}
+            composeDisabled={!reachable}
           />
         )}
         list={list}
@@ -742,6 +748,7 @@ export function MailApp({
           p={0}
           radius="xl"
           style={{ zIndex: 150 }}
+          disabled={!reachable}
           onClick={() => openCompose('new')}
         >
           <SquarePenIcon size={24} strokeWidth={1.75} />
@@ -775,12 +782,16 @@ export function MailApp({
         recent={recent}
         folders={allFolders.map((f) => ({ id: f.id, label: labelOf(f), unread: f.unread }))}
         commands={[
-          {
-            id: 'compose',
-            label: t.compose,
-            icon: <SquarePenIcon size={16} strokeWidth={1.75} />,
-            shortcut: 'compose',
-          },
+          ...(reachable
+            ? [
+                {
+                  id: 'compose',
+                  label: t.compose,
+                  icon: <SquarePenIcon size={16} strokeWidth={1.75} />,
+                  shortcut: 'compose' as const,
+                },
+              ]
+            : []),
           {
             id: 'theme',
             label: computed === 'dark' ? t.lightTheme : t.darkTheme,

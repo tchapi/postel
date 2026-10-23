@@ -183,6 +183,11 @@
     outline: 2px solid var(--mantine-primary-color-filled);
     outline-offset: 2px;
   }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
 }
 
 /* Kbd sits on the filled accent button: translucent white keeps it legible on every accent. */

@@ -35,6 +35,9 @@
 
 .pill {
   font-size: var(--mantine-font-size-sm);
+  /* Mantine's default pill is the body colour in our dark palette */
+  background: light-dark(var(--mantine-color-gray-1), var(--mantine-color-dark-5));
+  color: var(--mantine-color-text);
 }
 
 .editor {

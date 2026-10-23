@@ -36,6 +36,7 @@ export type TopBarProps = {
   onNavToggle: () => void
   onSearch: () => void
   onCompose: () => void
+  composeDisabled?: boolean
   session: { name: string; email: string }
   isDark: boolean
   onToggleTheme: () => void
@@ -153,6 +154,7 @@ export function TopBar(p: TopBarProps) {
           <Button
             radius="xl"
             leftSection={<SquarePenIcon size={16} strokeWidth={1.75} />}
+            disabled={p.composeDisabled}
             onClick={p.onCompose}
           >
             {t.compose}

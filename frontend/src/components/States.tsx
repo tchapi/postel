@@ -71,19 +71,12 @@ const widths = [
 export function ListSkeleton({ rowHeight, rows = 8 }: { rowHeight: number; rows?: number }) {
   const reduced = useReducedMotion()
   return (
-    <Box aria-busy="true" aria-live="polite">
+    // Placed like the rows: their text starts 44px in, they have no dividers
+    <Box aria-busy="true" aria-live="polite" pt={6}>
       {Array.from({ length: rows }, (_, i) => {
         const w = widths[i % widths.length]!
         return (
-          <Stack
-            key={i}
-            gap={8}
-            h={rowHeight}
-            justify="center"
-            pl={38}
-            pr={14}
-            style={{ borderBottom: '1px solid var(--mantine-color-default-border)' }}
-          >
+          <Stack key={i} gap={8} h={rowHeight} justify="center" pl={44} pr={10}>
             <Group justify="space-between" wrap="nowrap">
               <Skeleton h={11} w={w[0]} animate={!reduced} />
               <Skeleton h={10} w={36} animate={!reduced} />
