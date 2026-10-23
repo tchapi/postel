@@ -53,7 +53,10 @@ export type Attachment = {
 export type Message = Omit<MessageRow, 'snippet' | 'hasAttachments'> & {
   to: Address[]
   cc: Address[]
+  bcc: Address[]
   replyTo: Address[]
+  answered: boolean
+  draft: boolean
   messageId: string | null
   html: string | null
   text: string | null

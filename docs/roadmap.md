@@ -33,11 +33,11 @@
 
 ## Phase 3, compose
 
-- [ ] Composer with `@mantine/tiptap`
-- [ ] Reply, reply all, forward with quoting
-- [ ] Attachments upload
-- [ ] Drafts (`APPEND` to Drafts, autosave)
-- [ ] Send through SMTP submission, copy to Sent
+- [x] Composer with `@mantine/tiptap`
+- [x] Reply, reply all, forward with quoting, threading headers
+- [x] Attachments upload, carried over on forward and draft edits
+- [x] Drafts (`APPEND` to Drafts, autosave every 30s, edit from the Drafts folder)
+- [x] Send through SMTP submission with the master user, copy to Sent
 - [ ] Signatures and settings (SQLite)
 - [ ] Contacts autocomplete from Davis
 

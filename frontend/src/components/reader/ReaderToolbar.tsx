@@ -2,8 +2,12 @@ import { ActionIcon, Group, Kbd, Menu, Tooltip } from '@mantine/core'
 import { useHotkeys } from '@mantine/hooks'
 import {
   IconArchive,
+  IconArrowBackUp,
+  IconArrowBackUpDouble,
+  IconArrowForwardUp,
   IconBan,
   IconFolderSymlink,
+  IconPencil,
   IconMailOpened,
   IconStar,
   IconStarFilled,
@@ -12,9 +16,18 @@ import {
 import { useNavigate } from '@tanstack/react-router'
 
 import { useDeleteMessages, useFlagMessages, useMoveMessages } from '../../api/mutations'
-import { useFolders } from '../../api/queries'
+import { useFolders, useMe } from '../../api/queries'
 import type { FolderRole, Message } from '../../api/types'
 import { flattenFolders, folderByRole } from '../../lib/folders'
+import {
+  forwardHtml,
+  forwardSubject,
+  replyAllRecipients,
+  replyHtml,
+  replyRecipients,
+  replySubject,
+} from '../../lib/quote'
+import { useComposer } from '../compose/ComposerContext'
 
 type Props = {
   message: Message
@@ -31,6 +44,8 @@ type Action = {
 
 export function ReaderToolbar({ message }: Props) {
   const { data: folders } = useFolders()
+  const { data: me } = useMe()
+  const composer = useComposer()
   const navigate = useNavigate()
   const flag = useFlagMessages()
   const move = useMoveMessages()
@@ -55,7 +70,67 @@ export function ReaderToolbar({ message }: Props) {
   const inTrash = folderByRole(folders, 'trash')?.id === folder
   const inJunk = folderByRole(folders, 'junk')?.id === folder
 
+  const ref = { folder, uid: message.uid }
+  const compose: Action[] = message.draft
+    ? [
+        {
+          label: 'Edit draft',
+          key: 'Enter',
+          icon: IconPencil,
+          run: () =>
+            composer.open({
+              to: message.to,
+              cc: message.cc,
+              bcc: message.bcc,
+              subject: message.subject,
+              html: message.html ?? undefined,
+              attachmentsFrom: ref,
+              carried: message.attachments,
+              replaces: ref,
+            }),
+        },
+      ]
+    : [
+        {
+          label: 'Reply',
+          key: 'r',
+          icon: IconArrowBackUp,
+          run: () =>
+            composer.open({
+              to: replyRecipients(message),
+              subject: replySubject(message.subject),
+              html: replyHtml(message),
+              inReplyTo: ref,
+            }),
+        },
+        {
+          label: 'Reply all',
+          key: 'a',
+          icon: IconArrowBackUpDouble,
+          run: () =>
+            composer.open({
+              ...replyAllRecipients(message, me?.email ?? ''),
+              subject: replySubject(message.subject),
+              html: replyHtml(message),
+              inReplyTo: ref,
+            }),
+        },
+        {
+          label: 'Forward',
+          key: 'f',
+          icon: IconArrowForwardUp,
+          run: () =>
+            composer.open({
+              subject: forwardSubject(message.subject),
+              html: forwardHtml(message),
+              forwardOf: ref,
+              carried: message.attachments,
+            }),
+        },
+      ]
+
   const actions: Action[] = [
+    ...compose,
     {
       label: inTrash ? 'Delete forever' : 'Delete',
       key: '#',
