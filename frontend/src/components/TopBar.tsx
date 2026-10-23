@@ -135,16 +135,7 @@ export function TopBar(p: TopBarProps) {
         >
           <IconMenu2 size={18} stroke={1.75} />
         </ActionIcon>
-        {p.layout === 'desktop' && (
-          <Group gap={8} wrap="nowrap">
-            <ThemeIcon size={26} radius="md" aria-hidden>
-              <IconMail size={16} stroke={2} />
-            </ThemeIcon>
-            <Text fw={700} fz="md" style={{ letterSpacing: '-0.01em' }}>
-              {t.appName}
-            </Text>
-          </Group>
-        )}
+        {p.layout === 'desktop' && <Brand />}
       </Group>
       <UnstyledButton
         className={classes.searchTrigger}
@@ -169,6 +160,21 @@ export function TopBar(p: TopBarProps) {
         </ShortcutTooltip>
       )}
       {userMenu}
+    </Group>
+  )
+}
+
+/** Logo and app name: the top bar on desktop, the folder drawer elsewhere. */
+export function Brand() {
+  const { t } = useI18n()
+  return (
+    <Group gap={8} wrap="nowrap">
+      <ThemeIcon size={26} radius="md" aria-hidden>
+        <IconMail size={16} stroke={2} />
+      </ThemeIcon>
+      <Text fw={700} fz="md" style={{ letterSpacing: '-0.01em' }}>
+        {t.appName}
+      </Text>
     </Group>
   )
 }

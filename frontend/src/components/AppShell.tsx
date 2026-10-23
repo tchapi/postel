@@ -1,6 +1,7 @@
 import { useRef, useState, type KeyboardEvent, type PointerEvent, type ReactNode } from 'react'
 import { AppShell, Drawer } from '@mantine/core'
 import { useI18n } from '../lib/i18n'
+import { Brand } from './TopBar'
 import classes from './AppShell.module.css'
 
 export type Layout = 'desktop' | 'tablet' | 'mobile'
@@ -159,7 +160,8 @@ export function MailAppShell(p: MailAppShellProps) {
           onClose={p.onDrawerClose}
           size={p.layout === 'mobile' ? 304 : 280}
           withCloseButton
-          title={t.folders}
+          title={<Brand />}
+          aria-label={t.folders}
           padding={0}
           classNames={{
             content: classes.drawerContent,
