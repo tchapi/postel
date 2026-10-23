@@ -1,0 +1,31 @@
+From: Carol <carol@example.test>
+To: alice@example.test
+Subject: Invitation: Coffee @ Thu 16 Oct 2026 10:00
+Date: Wed, 08 Oct 2026 11:00:00 +0200
+Message-ID: <ical-invite@fixtures.webmail>
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="alt"
+
+--alt
+Content-Type: text/plain; charset=utf-8
+
+Coffee on Thursday at 10?
+--alt
+Content-Type: text/calendar; charset=utf-8; method=REQUEST
+Content-Transfer-Encoding: 7bit
+
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//fixtures//webmail//EN
+METHOD:REQUEST
+BEGIN:VEVENT
+UID:coffee-1@fixtures.webmail
+DTSTAMP:20261008T090000Z
+DTSTART:20261016T080000Z
+DTEND:20261016T083000Z
+SUMMARY:Coffee
+ORGANIZER;CN=Carol:mailto:carol@example.test
+ATTENDEE;CN=Alice;RSVP=TRUE:mailto:alice@example.test
+END:VEVENT
+END:VCALENDAR
+--alt--

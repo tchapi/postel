@@ -1,0 +1,36 @@
+# A throwaway docker-mailserver for local development and the IMAP spikes.
+#
+#   docker compose -f dev/mailserver/compose.yaml up -d
+#
+# Account:      alice@example.test / alice-password
+# Master user:  webmail / master-password   (login as alice@example.test*webmail)
+# IMAP:         127.0.0.1:1143 (plain), SMTP submission: 127.0.0.1:1587
+services:
+  mailserver:
+    image: ghcr.io/docker-mailserver/docker-mailserver:15.1.0
+    container_name: webmail-dev-mailserver
+    hostname: mail.example.test
+    ports:
+      - "127.0.0.1:1143:143"
+      - "127.0.0.1:1587:587"
+    environment:
+      LOG_LEVEL: warn
+      SSL_TYPE: ""
+      PERMIT_DOCKER: connected-networks
+      SPOOF_PROTECTION: 0
+      ENABLE_AMAVIS: 0
+      ENABLE_CLAMAV: 0
+      ENABLE_RSPAMD: 0
+      ENABLE_SPAMASSASSIN: 0
+      ENABLE_OPENDKIM: 0
+      ENABLE_OPENDMARC: 0
+      ENABLE_POLICYD_SPF: 0
+      ENABLE_FAIL2BAN: 0
+      ENABLE_UPDATE_CHECK: 0
+    volumes:
+      - ./config:/tmp/docker-mailserver
+    healthcheck:
+      test: ["CMD-SHELL", "ss -lntp | grep -q ':143 '"]
+      interval: 5s
+      timeout: 3s
+      retries: 20

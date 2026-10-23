@@ -1,0 +1,23 @@
+From: Frank <frank@example.test>
+To: alice@example.test
+Subject: Re: Re: Re: Re: Lunch?
+Date: Wed, 15 Oct 2026 12:30:00 +0200
+Message-ID: <long-thread@fixtures.webmail>
+In-Reply-To: <thread-3@fixtures.webmail>
+References: <thread-1@fixtures.webmail> <thread-2@fixtures.webmail> <thread-3@fixtures.webmail>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
+
+Works for me, 12:30 then.
+
+On Wed, 15 Oct 2026 at 12:00, Alice <alice@example.test> wrote:
+> 12:30 is fine too.
+>
+> On Wed, 15 Oct 2026 at 11:45, Frank <frank@example.test> wrote:
+>> Could we do 12:30 instead?
+>>
+>> On Wed, 15 Oct 2026 at 11:00, Alice <alice@example.test> wrote:
+>>> Lunch at 12?
+>>>
+>>> --
+>>> Alice

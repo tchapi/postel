@@ -23,7 +23,8 @@
         "symfony/serializer": "7.4.*",
         "symfony/validator": "7.4.*",
         "symfony/yaml": "7.4.*",
-        "webklex/php-imap": "^6.2"
+        "webklex/php-imap": "^6.2",
+        "zbateson/mail-mime-parser": "^4.0"
     },
     "config": {
         "allow-plugins": {

