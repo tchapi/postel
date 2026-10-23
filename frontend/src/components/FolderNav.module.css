@@ -1,5 +1,11 @@
+/*
+ * The pane is 240px wide or a 60px rail. Everything keeps the same 10px gutter
+ * and an icon 11px into its row, so icons never move: only the width animates,
+ * text fades, and the rail's corner badges fade in.
+ */
+
 .root {
-  background: var(--mantine-color-body);
+  overflow: hidden;
 
   @mixin light {
     background: var(--mantine-color-gray-1);
@@ -10,53 +16,229 @@
   }
 }
 
+.fade {
+  transition: opacity 120ms ease 60ms;
+
+  .root[data-collapsed] & {
+    opacity: 0;
+    transition-delay: 0ms;
+  }
+}
+
+.icon {
+  flex: none;
+}
+
+/* Rows */
+
 .link {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  height: 36px;
+  padding-inline: calc(11px + var(--depth, 0) * 16px) 10px;
   border-radius: var(--mantine-radius-sm);
-  height: 34px;
-  padding-block: 0;
+  color: var(--mantine-color-text);
+  font-size: var(--mantine-font-size-sm);
+  white-space: nowrap;
+  transition:
+    padding-inline-start 200ms ease,
+    background-color 120ms ease;
+
+  .root[data-collapsed] & {
+    padding-inline-start: 11px;
+  }
+
+  @mixin hover {
+    background: var(--mantine-color-default-hover);
+  }
+
+  &[data-strong] {
+    font-weight: 600;
+  }
+
+  &[data-active] {
+    background: var(--mantine-primary-color-light);
+    color: var(--mantine-primary-color-light-color);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--mantine-primary-color-filled);
+    outline-offset: -2px;
+  }
 }
 
-.sectionLabel {
-  letter-spacing: 0.04em;
+.iconWrap {
+  position: relative;
+  display: flex;
 }
 
-.composeLabel {
+.label {
   flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
   text-align: left;
+}
+
+.count {
+  flex: none;
+  font-size: var(--mantine-font-size-xs);
+  color: var(--mantine-color-dimmed);
+
+  .link[data-strong] & {
+    color: inherit;
+  }
+}
+
+.pill {
+  flex: none;
+  min-width: 22px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--mantine-primary-color-filled);
+  color: var(--mantine-color-white);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 16px;
+  text-align: center;
+}
+
+/* Rail: the count moves to the icon's corner */
+.corner {
+  position: absolute;
+  top: -7px;
+  left: 11px;
+  min-width: 16px;
+  height: 16px;
+  padding-inline: 4px;
+  border-radius: 999px;
+  background: var(--mantine-color-gray-6);
+  color: var(--mantine-color-white);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 16px;
+  text-align: center;
+  opacity: 0;
+  transform: scale(0.6);
+  transition:
+    opacity 120ms ease,
+    transform 120ms ease;
+  pointer-events: none;
+
+  &[data-accent] {
+    background: var(--mantine-primary-color-filled);
+  }
+
+  .root[data-collapsed] & {
+    opacity: 1;
+    transform: scale(1);
+    transition-delay: 80ms;
+  }
+}
+
+/* Compose: a pill that shrinks into a square with the pane */
+
+.composeWrap {
+  flex: none;
+  padding: 10px 10px 4px;
+}
+
+.compose {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  height: 40px;
+  padding-inline: 11px;
+  border-radius: 12px;
+  background: var(--mantine-primary-color-filled);
+  color: var(--mantine-color-white);
+  font-size: var(--mantine-font-size-sm);
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+
+  @mixin hover {
+    background: var(--mantine-primary-color-filled-hover);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--mantine-primary-color-filled);
+    outline-offset: 2px;
+  }
 }
 
 /* Kbd sits on the filled accent button: translucent white keeps it legible on every accent. */
 .composeKbd {
-  border-color: rgba(255, 255, 255, 0.45);
+  flex: none;
+  border-color: rgb(255 255 255 / 45%);
   background: transparent;
   color: var(--mantine-color-white);
 }
 
-.railBadge {
-  font-size: 10px;
-  font-weight: 700;
-  padding-inline: 4px;
+/* Custom folders: a label that becomes a rule */
+
+.section {
+  position: relative;
+  height: 32px;
+  display: flex;
+  align-items: flex-end;
+  padding: 0 0 6px 11px;
 }
 
-.railDivider {
+.sectionLabel {
+  font-size: var(--mantine-font-size-xs);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--mantine-color-dimmed);
+  white-space: nowrap;
+}
+
+.sectionRule {
+  position: absolute;
+  left: 8px;
+  bottom: 11px;
   width: 24px;
   height: 1px;
-  margin: 6px 0;
   background: var(--mantine-color-default-border);
+  opacity: 0;
+  transition: opacity 120ms ease;
+
+  .root[data-collapsed] & {
+    opacity: 1;
+    transition-delay: 80ms;
+  }
 }
 
-.collapse {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  height: 36px;
-  margin: 8px;
-  padding: 0 10px;
-  border-radius: var(--mantine-radius-sm);
-  color: var(--mantine-color-dimmed);
-  font-size: var(--mantine-font-size-sm);
+/* Footer toggle: the icon turns around instead of being swapped */
 
-  @mixin hover {
-    background: var(--mantine-color-default-hover);
+.footer {
+  flex: none;
+  padding: 10px;
+}
+
+.footer .link {
+  color: var(--mantine-color-dimmed);
+}
+
+.turn {
+  transition: transform 200ms ease;
+
+  .root[data-collapsed] & {
+    transform: rotate(180deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fade,
+  .corner,
+  .sectionRule,
+  .turn,
+  .link {
+    transition: none;
   }
 }

@@ -1,19 +1,5 @@
 import type React from 'react'
-import {
-  ActionIcon,
-  Badge,
-  Button,
-  Indicator,
-  Kbd,
-  NavLink,
-  ScrollArea,
-  Stack,
-  Text,
-  Tooltip,
-  UnstyledButton,
-  Group,
-  useMantineTheme,
-} from '@mantine/core'
+import { Kbd, ScrollArea, Stack, Tooltip, UnstyledButton } from '@mantine/core'
 import {
   IconArchive,
   IconBan,
@@ -21,7 +7,6 @@ import {
   IconFolder,
   IconInbox,
   IconLayoutSidebarLeftCollapse,
-  IconLayoutSidebarLeftExpand,
   IconPencil,
   IconSend,
   IconTrash,
@@ -30,7 +15,6 @@ import type { Folder, FolderRole } from '../types'
 import { useI18n } from '../lib/i18n'
 import { ErrorState, FolderNavSkeleton } from './States'
 import { SHORTCUTS, keyLabel } from '../lib/shortcuts'
-import { ShortcutTooltip } from './ShortcutTooltip'
 import classes from './FolderNav.module.css'
 
 const ROLE_ORDER: FolderRole[] = ['inbox', 'drafts', 'sent', 'junk', 'trash', 'archive']
@@ -87,192 +71,117 @@ export function FolderNav({
 }: FolderNavProps) {
   const { t } = useI18n()
   const label = useFolderLabel()
-  // ActionIcon defaults to gray in the theme, so accent-coloured icons must name the primary colour explicitly.
-  const { primaryColor } = useMantineTheme()
 
-  // Rendered above the loading and error states too, so composing never waits on the folder list.
+  // One markup for both widths: icons keep their place, text fades and the pane's width does the rest.
   const compose = onCompose ? (
-    collapsed ? (
-      <Group justify="flex-start" px={10} pt={10} pb={4}>
-        <ShortcutTooltip label={t.compose} shortcut="compose" position="right">
-          <ActionIcon
-            size={40}
-            radius={12}
-            variant="filled"
-            color={primaryColor}
-            aria-label={t.compose}
-            onClick={onCompose}
-          >
-            <IconPencil size={18} stroke={1.75} />
-          </ActionIcon>
-        </ShortcutTooltip>
-      </Group>
-    ) : (
-      <Button
-        radius={12}
-        h={40}
-        mx="xs"
-        mt={10}
-        mb={4}
-        justify="space-between"
-        leftSection={<IconPencil size={18} stroke={1.75} />}
-        rightSection={
-          <Kbd size="xs" className={classes.composeKbd} aria-hidden>
+    <div className={classes.composeWrap}>
+      <Tooltip label={t.compose} position="right" disabled={!collapsed}>
+        <UnstyledButton className={classes.compose} onClick={onCompose} aria-label={t.compose}>
+          <IconPencil size={18} stroke={1.75} className={classes.icon} />
+          <span className={`${classes.label} ${classes.fade}`}>{t.compose}</span>
+          <Kbd size="xs" className={`${classes.composeKbd} ${classes.fade}`} aria-hidden>
             {SHORTCUTS.compose.keys.map(keyLabel).join(' ')}
           </Kbd>
-        }
-        onClick={onCompose}
-        classNames={{ label: classes.composeLabel }}
-      >
-        {t.compose}
-      </Button>
-    )
+        </UnstyledButton>
+      </Tooltip>
+    </div>
   ) : null
 
-  if (status === 'pending')
-    return (
-      <Stack gap={0} h="100%" className={classes.root}>
-        {compose}
-        <FolderNavSkeleton collapsed={collapsed} />
-      </Stack>
-    )
+  const shell = (children: React.ReactNode) => (
+    <Stack gap={0} h="100%" className={classes.root} data-collapsed={collapsed || undefined}>
+      {compose}
+      {children}
+    </Stack>
+  )
+
+  if (status === 'pending') return shell(<FolderNavSkeleton collapsed={collapsed} />)
   if (status === 'error' || !folders)
-    return (
-      <Stack gap={0} h="100%" className={classes.root}>
-        {compose}
-        <ErrorState compact title={collapsed ? '' : t.foldersUnavailable} onRetry={onRetry} />
-      </Stack>
+    return shell(
+      <ErrorState compact title={collapsed ? '' : t.foldersUnavailable} onRetry={onRetry} />,
     )
 
   const { system, custom } = sortFolders(folders)
 
-  const renderLink = (f: Folder): React.ReactNode => {
+  const renderLink = (f: Folder, depth = 0): React.ReactNode => {
     const Icon = f.role ? ROLE_ICON[f.role] : IconFolder
     const count = badgeCount(f)
     const active = f.id === activeId
-
-    if (collapsed) {
-      return (
-        <Tooltip key={f.id} label={count ? `${label(f)} · ${count}` : label(f)} position="right">
-          <Indicator
-            label={count > 99 ? '99+' : count}
-            disabled={!count}
-            size={16}
-            offset={6}
-            color={active || f.role === 'inbox' ? undefined : 'gray'}
-            classNames={{ indicator: classes.railBadge }}
-          >
-            <ActionIcon
-              size={40}
-              variant={active ? 'light' : 'subtle'}
-              color={active ? primaryColor : 'gray'}
-              aria-label={count ? `${label(f)}, ${count}` : label(f)}
-              aria-current={active ? 'page' : undefined}
-              onClick={() => onSelect(f.id)}
-            >
-              <Icon size={20} stroke={1.75} />
-            </ActionIcon>
-          </Indicator>
-        </Tooltip>
-      )
-    }
+    const strong = active || (f.unread > 0 && f.role !== 'drafts' && f.role !== 'sent')
+    const inboxPill = f.role === 'inbox' && f.unread > 0
+    const tooltip = count ? `${label(f)} · ${count}` : label(f)
 
     return (
-      <NavLink
-        key={f.id}
-        component="button"
-        type="button"
-        active={active}
-        aria-current={active ? 'page' : undefined}
-        label={label(f)}
-        fw={active || (f.unread && f.role !== 'drafts' && f.role !== 'sent') ? 600 : 400}
-        leftSection={<Icon size={18} stroke={1.75} />}
-        rightSection={
-          f.role === 'inbox' && f.unread ? (
-            // The Inbox pill replaces the old header "N unread" badge as the app-wide unread signal.
-            <Badge
-              size="sm"
-              radius="xl"
-              variant="filled"
-              miw={22}
-              px={6}
-              aria-label={t.unreadBadge(f.unread)}
-            >
-              {f.unread > 999 ? '999+' : f.unread}
-            </Badge>
-          ) : count ? (
-            <Text
-              span
-              size="xs"
-              fw={f.unread && f.role !== 'drafts' ? 600 : 400}
-              c={active ? undefined : f.unread ? undefined : 'dimmed'}
-            >
-              {count}
-            </Text>
-          ) : undefined
-        }
-        onClick={() => onSelect(f.id)}
-        defaultOpened={!!f.children?.length}
-        disableRightSectionRotation={count > 0}
-        childrenOffset={28}
-        className={classes.link}
-      >
-        {f.children?.length ? f.children.map((c) => renderLink(c)) : undefined}
-      </NavLink>
+      <div key={f.id}>
+        <Tooltip label={tooltip} position="right" disabled={!collapsed}>
+          <UnstyledButton
+            className={classes.link}
+            data-active={active || undefined}
+            data-strong={strong || undefined}
+            aria-current={active ? 'page' : undefined}
+            style={{ '--depth': depth } as React.CSSProperties}
+            onClick={() => onSelect(f.id)}
+          >
+            <span className={classes.iconWrap}>
+              <Icon size={18} stroke={1.75} className={classes.icon} />
+              {count > 0 && (
+                <span
+                  className={classes.corner}
+                  data-accent={inboxPill || active || undefined}
+                  aria-hidden
+                >
+                  {count > 99 ? '99+' : count}
+                </span>
+              )}
+            </span>
+            <span className={`${classes.label} ${classes.fade}`}>{label(f)}</span>
+            {count > 0 && (
+              <span
+                className={`${inboxPill ? classes.pill : classes.count} ${classes.fade}`}
+                aria-label={inboxPill ? t.unreadBadge(f.unread) : undefined}
+              >
+                {inboxPill && f.unread > 999 ? '999+' : count}
+              </span>
+            )}
+          </UnstyledButton>
+        </Tooltip>
+        {f.children?.map((c) => renderLink(c, depth + 1))}
+      </div>
     )
   }
 
-  return (
-    <Stack gap={0} h="100%" className={classes.root} data-collapsed={collapsed || undefined}>
-      {compose}
+  return shell(
+    <>
       <ScrollArea style={{ flex: 1 }} type="hover" scrollbars="y">
-        <Stack
-          gap={2}
-          p={collapsed ? 10 : 'xs'}
-          align={collapsed ? 'flex-start' : 'stretch'}
-          component="nav"
-          aria-label={t.folders}
-        >
+        <Stack gap={2} p={10} component="nav" aria-label={t.folders}>
           {system.map((f) => renderLink(f))}
-          {custom.length > 0 &&
-            (collapsed ? (
-              <div className={classes.railDivider} />
-            ) : (
-              <Text
-                size="xs"
-                fw={700}
-                tt="uppercase"
-                c="dimmed"
-                px={10}
-                pt={14}
-                pb={6}
-                className={classes.sectionLabel}
-              >
-                {t.folders}
-              </Text>
-            ))}
+          {custom.length > 0 && (
+            <div className={classes.section}>
+              <span className={`${classes.sectionLabel} ${classes.fade}`}>{t.folders}</span>
+              <span className={classes.sectionRule} aria-hidden />
+            </div>
+          )}
           {custom.map((f) => renderLink(f))}
         </Stack>
       </ScrollArea>
-      {onToggleCollapsed &&
-        (collapsed ? (
-          <Group justify="flex-start" p={10}>
-            <Tooltip label={t.expandFolders} position="right">
-              <ActionIcon size={40} aria-label={t.expandFolders} onClick={onToggleCollapsed}>
-                <IconLayoutSidebarLeftExpand size={20} stroke={1.75} />
-              </ActionIcon>
-            </Tooltip>
-          </Group>
-        ) : (
-          <UnstyledButton
-            className={classes.collapse}
-            onClick={onToggleCollapsed}
-            aria-label={t.collapseFolders}
-          >
-            <IconLayoutSidebarLeftCollapse size={18} stroke={1.75} />
-            <span>{t.collapse}</span>
-          </UnstyledButton>
-        ))}
-    </Stack>
+      {onToggleCollapsed && (
+        <div className={classes.footer}>
+          <Tooltip label={t.expandFolders} position="right" disabled={!collapsed}>
+            <UnstyledButton
+              className={classes.link}
+              onClick={onToggleCollapsed}
+              aria-label={collapsed ? t.expandFolders : t.collapseFolders}
+              aria-expanded={!collapsed}
+            >
+              <IconLayoutSidebarLeftCollapse
+                size={18}
+                stroke={1.75}
+                className={`${classes.icon} ${classes.turn}`}
+              />
+              <span className={`${classes.label} ${classes.fade}`}>{t.collapse}</span>
+            </UnstyledButton>
+          </Tooltip>
+        </div>
+      )}
+    </>,
   )
 }
