@@ -104,6 +104,8 @@ final class SeedMailboxCommand extends Command
         $progress = new ProgressBar($output, $count);
         $progress->start();
         $now = new DateTimeImmutable();
+        // Earlier messages, so that some of the next ones can answer them
+        $sent = [];
 
         for ($i = 0; $i < $count; ++$i) {
             [$name, $address] = self::SENDERS[mt_rand(0, count(self::SENDERS) - 1)];
@@ -117,6 +119,23 @@ final class SeedMailboxCommand extends Command
                 ->subject($subject)
                 ->text(self::paragraphs(mt_rand(1, 6)))
             ;
+
+            // One in five answers an earlier message, a few minutes to a few days later
+            if ([] !== $sent && mt_rand(1, 100) <= 20) {
+                $parent = $sent[mt_rand(max(0, count($sent) - 50), count($sent) - 1)];
+                $date = $parent['date']->modify(sprintf('+%d minutes', mt_rand(5, 3 * 24 * 60)));
+                $email->date($date)->subject(preg_match('/^Re: /', $parent['subject']) ? $parent['subject'] : 'Re: '.$parent['subject']);
+                $email->getHeaders()->addIdHeader('In-Reply-To', $parent['id']);
+                $email->getHeaders()->addTextHeader('References', trim($parent['references'].' <'.$parent['id'].'>'));
+            }
+            $id = sprintf('seed-%d-%d@example.test', mt_rand(), $i);
+            $email->getHeaders()->addIdHeader('Message-ID', $id);
+            $sent[] = [
+                'id' => $id,
+                'subject' => (string) $email->getSubject(),
+                'date' => $date,
+                'references' => (string) ($email->getHeaders()->get('References')?->getBodyAsString() ?? ''),
+            ];
 
             if (mt_rand(1, 100) <= 70) {
                 $email->html('<p>'.nl2br(htmlspecialchars((string) $email->getTextBody())).'</p>');
