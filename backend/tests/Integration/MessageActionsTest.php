@@ -52,6 +52,12 @@ final class MessageActionsTest extends WebTestCase
 
     protected function tearDown(): void
     {
+        // PHPUnit runs this after a skip in setUp too, when there is no server to clean up
+        if (!isset($this->client)) {
+            parent::tearDown();
+
+            return;
+        }
         foreach (['INBOX', 'Trash'] as $folder) {
             $uids = $this->search($folder, 'HEADER Subject "actions test"');
             if ([] !== $uids) {
