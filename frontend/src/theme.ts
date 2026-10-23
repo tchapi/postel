@@ -149,6 +149,8 @@ export const theme = createTheme({
   },
   // Softer corners: 8px controls, pills for chips and the compose button.
   defaultRadius: 'md',
+  // Checkboxes, radios and switches get the hand like every other control
+  cursorType: 'pointer',
   focusRing: 'auto',
   respectReducedMotion: true,
   components: {

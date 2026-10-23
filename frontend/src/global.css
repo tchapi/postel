@@ -2,3 +2,20 @@
 .mantine-Checkbox-input:not(:checked, :indeterminate) {
   border-color: var(--mail-control-border);
 }
+
+/* Anything that does something on click shows the hand, whatever component it comes from. */
+button:not(:disabled),
+a[href],
+summary,
+label:has(> input:not(:disabled)),
+[role='button']:not([aria-disabled='true']),
+[role='option'],
+[role='menuitem'],
+[role='tab'] {
+  cursor: pointer;
+}
+
+button:disabled,
+[aria-disabled='true'] {
+  cursor: not-allowed;
+}

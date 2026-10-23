@@ -36,8 +36,9 @@
   height: 78px;
   padding: 11px 10px;
   background: var(--mantine-color-body);
-  cursor: default;
+  cursor: pointer;
   touch-action: pan-y;
+  /* A click opens the message; a drag would only select bits of rows */
   user-select: none;
   transition: transform 160ms ease;
 

@@ -12,8 +12,11 @@
   }
 }
 
+/* Everything in the reader can be selected and copied: addresses, subject, dates. */
 .body {
   max-width: 900px;
+  user-select: text;
+  cursor: auto;
 }
 
 .date {
