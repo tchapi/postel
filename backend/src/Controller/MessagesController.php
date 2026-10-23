@@ -9,6 +9,7 @@ use App\Imap\MessageService;
 use App\Imap\SearchCriteria;
 use App\Security\RemoteUser;
 use App\Settings\SettingsService;
+use DateTimeImmutable;
 use DateTimeInterface;
 use Symfony\Component\HttpFoundation\HeaderUtils;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -18,6 +19,8 @@ use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\CurrentUser;
 use Symfony\Component\Serializer\SerializerInterface;
+
+use function sprintf;
 
 #[Route('/api/folders/{folder}/messages', requirements: ['folder' => '[^/]+'])]
 final class MessagesController
@@ -38,11 +41,7 @@ final class MessagesController
             throw new BadRequestHttpException('Unknown sort');
         }
 
-        $search = SearchCriteria::build(
-            $request->query->getString('q'),
-            $request->query->getBoolean('unread'),
-            $request->query->getBoolean('flagged'),
-        );
+        $search = self::criteria($request);
         $page = $request->query->getInt('page', 1);
         $perPage = $request->query->getInt('perPage', 50);
 
@@ -62,11 +61,18 @@ final class MessagesController
     #[Route('/{uid}', methods: ['GET'], requirements: ['uid' => '\d+'])]
     public function get(#[CurrentUser] RemoteUser $user, string $folder, int $uid, Request $request): JsonResponse
     {
-        $images = $request->query->has('images')
-            ? $request->query->getBoolean('images')
-            : $this->settings->get($user)->loadRemoteImages;
+        if ($request->query->has('images')) {
+            return $this->json($this->messages->get($user, $folder, $uid, $request->query->getBoolean('images')));
+        }
 
-        return $this->json($this->messages->get($user, $folder, $uid, $images));
+        // The sender is only known once the message is parsed, so the default may take a second pass.
+        $settings = $this->settings->get($user);
+        $message = $this->messages->get($user, $folder, $uid, $settings->loadRemoteImages);
+        if (!$message->remoteImagesLoaded && $message->hasRemoteImages && $settings->allowsRemoteImagesFrom($message->from?->email)) {
+            $message = $this->messages->get($user, $folder, $uid, true);
+        }
+
+        return $this->json($message);
     }
 
     /**
@@ -91,6 +97,34 @@ final class MessagesController
         ));
 
         return $response;
+    }
+
+    /**
+     * q, unread, flagged, attachments, since and before (YYYY-MM-DD) into IMAP search keys.
+     */
+    public static function criteria(Request $request): string
+    {
+        $date = static function (string $name) use ($request): ?DateTimeImmutable {
+            $value = $request->query->getString($name);
+            if ('' === $value) {
+                return null;
+            }
+            $date = DateTimeImmutable::createFromFormat('!Y-m-d', $value);
+            if (false === $date) {
+                throw new BadRequestHttpException(sprintf('"%s" must be a YYYY-MM-DD date', $name));
+            }
+
+            return $date;
+        };
+
+        return SearchCriteria::build(
+            $request->query->getString('q'),
+            $request->query->getBoolean('unread'),
+            $request->query->getBoolean('flagged'),
+            $request->query->getBoolean('attachments'),
+            $date('since'),
+            $date('before'),
+        );
     }
 
     private function json(object $payload): JsonResponse

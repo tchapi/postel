@@ -121,6 +121,65 @@ final class MessageListService
         });
     }
 
+    /**
+     * Search every folder but Trash and Junk, newest first. Each folder only
+     * has to give its first page × perPage matches to serve that page.
+     */
+    public function searchAll(RemoteUser $user, int $page, int $perPage, string $search): MessagePage
+    {
+        $perPage = max(1, min(self::MAX_PER_PAGE, $perPage));
+        $page = max(1, $page);
+        $depth = $page * $perPage;
+
+        return Mailbox::session($this->clients, $user, function (Mailbox $mailbox) use ($page, $perPage, $depth, $search): MessagePage {
+            $total = 0;
+            $candidates = [];
+            foreach ($mailbox->folders() as $folder => $flags) {
+                $role = FolderRole::detect($folder, $flags);
+                $noSelect = [] !== array_intersect(array_map('strtolower', $flags), ['\\noselect', '\\nonexistent']);
+                if ($noSelect || FolderRole::Trash === $role || FolderRole::Junk === $role) {
+                    continue;
+                }
+                $mailbox->examine($folder);
+                $uids = $mailbox->sort('REVERSE DATE', $search);
+                $total += count($uids);
+                $top = array_slice($uids, 0, $depth);
+                if ([] === $top) {
+                    continue;
+                }
+                foreach ($mailbox->command('UID FETCH', Mailbox::set($top).' (UID INTERNALDATE BODY.PEEK[HEADER.FIELDS (DATE)])')->tokenized('FETCH') as $tokens) {
+                    $item = FetchItem::fromTokens($tokens);
+                    $date = $this->parser->parseHeaders($item->section('HEADER.FIELDS (DATE)') ?? '')->date() ?? self::internalDate($item->string('INTERNALDATE'));
+                    $candidates[] = ['folder' => $folder, 'uid' => $item->uid(), 'at' => $date?->getTimestamp() ?? 0];
+                }
+            }
+
+            usort($candidates, static fn (array $a, array $b) => [$b['at'], $a['folder'], $b['uid']] <=> [$a['at'], $b['folder'], $a['uid']]);
+            $slice = array_slice($candidates, ($page - 1) * $perPage, $perPage);
+
+            $byFolder = [];
+            foreach ($slice as $hit) {
+                $byFolder[$hit['folder']][] = $hit['uid'];
+            }
+            $rows = [];
+            foreach ($byFolder as $folder => $uids) {
+                $mailbox->examine($folder);
+                foreach ($this->rows($mailbox, $folder, $uids) as $uid => $row) {
+                    $rows[$folder."\0".$uid] = $row;
+                }
+            }
+
+            $items = [];
+            foreach ($slice as $hit) {
+                if (isset($rows[$hit['folder']."\0".$hit['uid']])) {
+                    $items[] = $rows[$hit['folder']."\0".$hit['uid']];
+                }
+            }
+
+            return new MessagePage($items, $total, $page, $perPage);
+        });
+    }
+
     /** Long conversations are cut to their newest messages. */
     public const int MAX_THREAD = 100;
 

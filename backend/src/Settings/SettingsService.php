@@ -31,7 +31,7 @@ final class SettingsService
         $entity = $this->repository->find($user->username) ?? new UserSettings($user->username);
         // The signature ends up in outgoing mail and in the composer, same rules as a received message.
         $signature = null === $change->signature ? null : $this->mail->sanitizeFor('body', $change->signature);
-        $entity->update($change->fromName, $signature, $change->loadRemoteImages, $change->density, $change->threads);
+        $entity->update($change, $signature);
 
         $this->entityManager->persist($entity);
         $this->entityManager->flush();

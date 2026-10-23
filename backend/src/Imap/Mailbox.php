@@ -54,6 +54,54 @@ final class Mailbox
         }
     }
 
+    /**
+     * A session with no folder selected yet, for work that spans folders.
+     *
+     * @template T
+     *
+     * @param callable(Mailbox): T $work
+     *
+     * @return T
+     */
+    public static function session(ImapClientFactory $clients, RemoteUser $user, callable $work): mixed
+    {
+        $client = $clients->forUser($user);
+        $client->connect();
+
+        try {
+            $protocol = $client->getConnection();
+            if (!$protocol instanceof ImapProtocol) {
+                throw new LogicException('IMAP only');
+            }
+
+            return $work(new self($protocol, new RawCommand($protocol)));
+        } finally {
+            $client->disconnect();
+        }
+    }
+
+    public function examine(string $folder): void
+    {
+        $this->select($folder, true);
+    }
+
+    /**
+     * @return array<string, list<string>> folder path => LIST attributes
+     */
+    public function folders(): array
+    {
+        $folders = [];
+        foreach ($this->command('LIST', '"" "*"')->tokenized('LIST') as $row) {
+            $flags = is_array($row[2] ?? null) ? array_values(array_filter($row[2], 'is_string')) : [];
+            $name = $row[4] ?? null;
+            if (is_string($name)) {
+                $folders[$name] = $flags;
+            }
+        }
+
+        return $folders;
+    }
+
     public function command(string $command, string $arguments = ''): ImapResponse
     {
         return $this->commands->run($command, $arguments);

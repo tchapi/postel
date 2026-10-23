@@ -151,6 +151,34 @@ final class MessagesTest extends WebTestCase
         }
     }
 
+    public function testSearchAcrossFolders(): void
+    {
+        $page = $this->get('/api/search?q=Report%20with%20everything&perPage=10');
+
+        self::assertGreaterThanOrEqual(1, $page['total']);
+        self::assertSame('Report with everything in it', $page['items'][0]['subject']);
+        self::assertSame('INBOX', $page['items'][0]['folder']);
+    }
+
+    public function testAttachmentFilter(): void
+    {
+        $page = $this->get('/api/folders/INBOX/messages?attachments=1&perPage=20');
+
+        self::assertNotEmpty($page['items']);
+        foreach ($page['items'] as $row) {
+            self::assertTrue($row['hasAttachments'], $row['subject']);
+        }
+    }
+
+    public function testDateFilter(): void
+    {
+        $page = $this->get('/api/folders/INBOX/messages?since=2026-10-06&before=2026-10-16&q=fixtures&perPage=50');
+
+        foreach ($page['items'] as $row) {
+            self::assertGreaterThanOrEqual('2026-10-05', substr((string) $row['date'], 0, 10));
+        }
+    }
+
     public function testUnknownFolderIs404(): void
     {
         $this->client->request('GET', '/api/folders/Nope/messages', server: [

@@ -41,6 +41,9 @@ final class SettingsController
             'loadRemoteImages' => $settings->loadRemoteImages,
             'density' => $settings->density,
             'threads' => $settings->threads,
+            'language' => $settings->language,
+            'accent' => $settings->accent,
+            'allowedSenders' => $settings->allowedSenders,
             'updatedAt' => $settings->updatedAt?->format(DateTimeInterface::RFC3339),
         ]);
     }

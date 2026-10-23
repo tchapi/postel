@@ -5,12 +5,13 @@ declare(strict_types=1);
 namespace App\Entity;
 
 use App\Repository\UserSettingsRepository;
+use App\Settings\SettingsChange;
 use DateTimeImmutable;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
 /**
- * The few things a user can tune. One row per user, created on first save.
+ * What a user can tune. One row per user, created on first save.
  */
 #[ORM\Entity(repositoryClass: UserSettingsRepository::class)]
 #[ORM\Table(name: 'user_settings')]
@@ -18,6 +19,9 @@ class UserSettings
 {
     public const string DENSITY_COMFORTABLE = 'comfortable';
     public const string DENSITY_COMPACT = 'compact';
+    public const array DENSITIES = [self::DENSITY_COMFORTABLE, self::DENSITY_COMPACT];
+    public const array LANGUAGES = ['en', 'fr'];
+    public const array ACCENTS = ['violet', 'persimmon', 'berry', 'plum', 'ocean', 'jade'];
 
     #[ORM\Id]
     #[ORM\Column(length: 255)]
@@ -37,6 +41,16 @@ class UserSettings
 
     #[ORM\Column(options: ['default' => true])]
     private bool $threads = true;
+
+    #[ORM\Column(length: 5, options: ['default' => 'en'])]
+    private string $language = 'en';
+
+    #[ORM\Column(length: 20, options: ['default' => 'violet'])]
+    private string $accent = 'violet';
+
+    /** @var list<string> */
+    #[ORM\Column(type: Types::JSON, options: ['default' => '[]'])]
+    private array $allowedSenders = [];
 
     #[ORM\Column]
     private DateTimeImmutable $updatedAt;
@@ -77,18 +91,42 @@ class UserSettings
         return $this->threads;
     }
 
+    public function getLanguage(): string
+    {
+        return $this->language;
+    }
+
+    public function getAccent(): string
+    {
+        return $this->accent;
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function getAllowedSenders(): array
+    {
+        return $this->allowedSenders;
+    }
+
     public function getUpdatedAt(): DateTimeImmutable
     {
         return $this->updatedAt;
     }
 
-    public function update(?string $fromName, ?string $signature, bool $loadRemoteImages, string $density, bool $threads): void
+    /**
+     * @param string|null $signature already sanitized
+     */
+    public function update(SettingsChange $change, ?string $signature): void
     {
-        $this->threads = $threads;
-        $this->fromName = null === $fromName || '' === trim($fromName) ? null : trim($fromName);
+        $this->fromName = null === $change->fromName || '' === trim($change->fromName) ? null : trim($change->fromName);
         $this->signature = null === $signature || '' === trim(strip_tags($signature)) ? null : $signature;
-        $this->loadRemoteImages = $loadRemoteImages;
-        $this->density = $density;
+        $this->loadRemoteImages = $change->loadRemoteImages;
+        $this->density = $change->density;
+        $this->threads = $change->threads;
+        $this->language = $change->language;
+        $this->accent = $change->accent;
+        $this->allowedSenders = array_values(array_unique(array_map('strtolower', $change->allowedSenders)));
         $this->updatedAt = new DateTimeImmutable();
     }
 }
