@@ -141,8 +141,9 @@ export const theme = createTheme({
     fontFamily: uiFont,
     fontWeight: '600',
     sizes: {
-      h1: { fontSize: '1.375rem', lineHeight: '1.3' },
-      h2: { fontSize: '1rem', lineHeight: '1.35' },
+      // Figtree reads light at 600: titles go one step up.
+      h1: { fontSize: '1.375rem', lineHeight: '1.3', fontWeight: '700' },
+      h2: { fontSize: '1rem', lineHeight: '1.35', fontWeight: '700' },
       h3: { fontSize: '0.875rem', lineHeight: '1.4' },
     },
   },
@@ -174,9 +175,11 @@ export const cssVariablesResolver: CSSVariablesResolver = (t) => ({
     '--mantine-color-dimmed': '#67625c',
     [`--mantine-color-${t.primaryColor}-light-color`]: `var(--mantine-color-${t.primaryColor}-7)`,
     '--mail-star': '#d97706',
+    '--mail-control-border': '#8a8681',
   },
   dark: {
     '--mantine-color-dimmed': '#a8a39c',
     '--mail-star': '#f5b83d',
+    '--mail-control-border': '#8a8681',
   },
 })

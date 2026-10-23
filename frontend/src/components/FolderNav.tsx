@@ -93,7 +93,7 @@ export function FolderNav({
   // Rendered above the loading and error states too, so composing never waits on the folder list.
   const compose = onCompose ? (
     collapsed ? (
-      <Group justify="center" pt={10} pb={4}>
+      <Group justify="flex-start" px={10} pt={10} pb={4}>
         <ShortcutTooltip label={t.compose} shortcut="compose" position="right">
           <ActionIcon
             size={40}
@@ -185,6 +185,7 @@ export function FolderNav({
         active={active}
         aria-current={active ? 'page' : undefined}
         label={label(f)}
+        fw={active || (f.unread && f.role !== 'drafts' && f.role !== 'sent') ? 600 : 400}
         leftSection={<Icon size={18} stroke={1.75} />}
         rightSection={
           f.role === 'inbox' && f.unread ? (
@@ -228,7 +229,7 @@ export function FolderNav({
         <Stack
           gap={2}
           p={collapsed ? 10 : 'xs'}
-          align={collapsed ? 'center' : 'stretch'}
+          align={collapsed ? 'flex-start' : 'stretch'}
           component="nav"
           aria-label={t.folders}
         >
@@ -255,7 +256,7 @@ export function FolderNav({
       </ScrollArea>
       {onToggleCollapsed &&
         (collapsed ? (
-          <Group justify="center" p={10}>
+          <Group justify="flex-start" p={10}>
             <Tooltip label={t.expandFolders} position="right">
               <ActionIcon size={40} aria-label={t.expandFolders} onClick={onToggleCollapsed}>
                 <IconLayoutSidebarLeftExpand size={20} stroke={1.75} />

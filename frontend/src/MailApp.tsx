@@ -515,7 +515,8 @@ export function MailApp({
   const folderTitle = currentFolder ? labelOf(currentFolder) : ''
   const remoteAllowed =
     !!message &&
-    (settings.remoteImages === 'always' || settings.allowedSenders.includes(message.from.email.toLowerCase()))
+    (settings.remoteImages === 'always' ||
+      settings.allowedSenders.includes(message.from.email.toLowerCase()))
   const activeIndex = activeUid === null ? -1 : rows.findIndex((r) => r.uid === activeUid)
 
   const list = (

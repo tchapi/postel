@@ -1,3 +1,4 @@
+import { useComputedColorScheme } from '@mantine/core'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import classes from './Reader.module.css'
 
@@ -32,7 +33,12 @@ export function splitTextQuote(text: string): { body: string; quote: string | nu
   return { body: lines.slice(0, start).join('\n').trimEnd(), quote: lines.slice(start).join('\n') }
 }
 
-function buildSrcDoc(html: string, allowRemote: boolean, showQuoted: boolean): string {
+function buildSrcDoc(
+  html: string,
+  allowRemote: boolean,
+  showQuoted: boolean,
+  sheet: boolean,
+): string {
   const doc = new DOMParser().parseFromString(html, 'text/html')
   doc
     .querySelectorAll('script, meta[http-equiv], base, link[rel="preload"], link[rel="prefetch"]')
@@ -48,7 +54,7 @@ function buildSrcDoc(html: string, allowRemote: boolean, showQuoted: boolean): s
   const style = doc.createElement('style')
   style.textContent = `
     html { color-scheme: light; }
-    body { margin: 0; padding: 16px; background: #fff; color: #1c1e21;
+    body { margin: 0; padding: ${sheet ? '16px' : '4px 0'}; background: ${sheet ? '#fff' : 'transparent'}; color: #1c1e21;
       font: 15px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
       overflow-wrap: anywhere; }
     img { max-width: 100%; height: auto; }
@@ -78,9 +84,11 @@ export function MessageFrame({
 }) {
   const ref = useRef<HTMLIFrameElement>(null)
   const [height, setHeight] = useState(120)
+  // Dark mode shows mail on a white sheet; light mode lets it sit flush with the headers.
+  const sheet = useComputedColorScheme('light') === 'dark'
   const srcDoc = useMemo(
-    () => buildSrcDoc(html, allowRemote, showQuoted),
-    [html, allowRemote, showQuoted],
+    () => buildSrcDoc(html, allowRemote, showQuoted, sheet),
+    [html, allowRemote, showQuoted, sheet],
   )
 
   useEffect(() => {

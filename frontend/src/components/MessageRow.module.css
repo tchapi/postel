@@ -77,31 +77,27 @@
   justify-content: center;
 }
 
+/* Unread: a dot in the left margin, so the checkbox can stay in place. */
 .dot {
   display: none;
-  width: 8px;
-  height: 8px;
+  position: absolute;
+  left: 3px;
+  top: 18px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
   background: var(--mantine-primary-color-filled);
 
   .row[data-unread] & {
     display: block;
   }
+
+  [data-density='compact'] & {
+    top: 12px;
+  }
 }
 
 .check {
-  display: none;
-}
-
-.row:hover .dot,
-.row[data-selection-mode] .dot,
-.row:focus-within .dot {
-  display: none;
-}
-
-.row:hover .check,
-.row[data-selection-mode] .check,
-.row:focus-within .check {
   display: block;
 }
 

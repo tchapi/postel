@@ -46,15 +46,16 @@
   overflow-wrap: anywhere;
 }
 
-/* Message HTML renders on a light sheet in both themes: we own the chrome, not the content. */
+/* Message HTML: flush in light mode, on a white sheet in dark mode. We own the chrome, not the content. */
 .frame {
   display: block;
   width: 100%;
   border: 0;
-  border-radius: var(--mantine-radius-sm);
-  background: #fff;
+  background: transparent;
 
   @mixin dark {
+    border-radius: var(--mantine-radius-sm);
+    background: #fff;
     outline: 1px solid var(--mantine-color-dark-4);
   }
 }

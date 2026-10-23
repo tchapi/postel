@@ -83,6 +83,7 @@ export function MailAppShell(p: MailAppShellProps) {
 
   return (
     <AppShell
+      classNames={{ navbar: classes.navbar }}
       header={{ height: p.layout === 'mobile' ? 56 : 52, collapsed: !p.showHeader }}
       navbar={{
         width: p.navCollapsed ? 60 : 240,

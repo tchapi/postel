@@ -9,9 +9,11 @@
   }
 }
 
+/* Fills the drawer between header (56) and footer (64), so the editor can take the rest. */
 .form {
   display: flex;
   flex-direction: column;
+  min-height: calc(100dvh - 120px);
 }
 
 .field {
@@ -33,7 +35,17 @@
 }
 
 .editor {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
   border: 0;
+}
+
+.editor :global(.mantine-RichTextEditor-content) {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  cursor: text;
 }
 
 .toolbar {
@@ -43,6 +55,7 @@
 }
 
 .editor :global(.ProseMirror) {
+  flex: 1;
   min-height: 220px;
   padding-inline: 0;
   font-size: 15px;

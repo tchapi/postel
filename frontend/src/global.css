@@ -1,0 +1,4 @@
+/* Unchecked boxes on the default border vanish on the warm surfaces: give them a 3:1 edge. */
+.mantine-Checkbox-input:not(:checked, :indeterminate) {
+  border-color: var(--mail-control-border);
+}

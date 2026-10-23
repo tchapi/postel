@@ -84,3 +84,10 @@
   align-items: center;
   justify-content: center;
 }
+
+/* The width follows the main pane's padding transition instead of jumping. */
+.navbar {
+  transition-property: transform, top, height, width;
+  overflow: hidden;
+  white-space: nowrap;
+}
