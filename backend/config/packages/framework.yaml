@@ -1,0 +1,21 @@
+# see https://symfony.com/doc/current/reference/configuration/framework.html
+framework:
+    secret: "%env(APP_SECRET)%"
+    session: false
+    http_method_override: false
+    handle_all_throwables: true
+
+    # Only the reverse proxy in front of us (Traefik) is allowed to set the
+    # forwarded headers, and the authenticator only trusts Remote-User from it.
+    trusted_proxies: "%env(TRUSTED_PROXIES)%"
+    trusted_headers:
+        [
+            "x-forwarded-for",
+            "x-forwarded-host",
+            "x-forwarded-proto",
+            "x-forwarded-port",
+        ]
+
+when@test:
+    framework:
+        test: true

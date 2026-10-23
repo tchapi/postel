@@ -1,0 +1,20 @@
+security:
+    providers:
+        remote_user:
+            id: App\Security\RemoteUserProvider
+
+    firewalls:
+        dev:
+            pattern: ^/(_profiler|_wdt)/
+            security: false
+        api:
+            pattern: ^/api
+            stateless: true
+            provider: remote_user
+            custom_authenticators:
+                - App\Security\RemoteUserAuthenticator
+            entry_point: App\Security\RemoteUserAuthenticator
+
+    access_control:
+        - { path: ^/api/health, roles: PUBLIC_ACCESS }
+        - { path: ^/api, roles: ROLE_USER }
