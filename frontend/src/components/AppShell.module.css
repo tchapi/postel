@@ -45,7 +45,15 @@
 
 .drawerHeader {
   padding-inline: 20px 12px;
-  border-bottom: 1px solid var(--mantine-color-default-border);
+
+  /* Same surface as the folder list under it: no line, no step */
+  @mixin light {
+    background: var(--mantine-color-gray-1);
+  }
+
+  @mixin dark {
+    background: var(--mantine-color-dark-8);
+  }
 }
 
 .drawerBody {
@@ -143,5 +151,30 @@
 
   &:focus-visible {
     outline: none;
+  }
+}
+
+/* Phones: the top bar floats over the content like the desktop bars do in their panes */
+.appHeader:global(.mantine-AppShell-header)[data-mobile] {
+  background: var(--mantine-color-body);
+}
+
+.floatingBar {
+  height: 44px;
+  margin: 6px 6px 0;
+  border-radius: var(--mantine-radius-md);
+
+  @mixin light {
+    background: color-mix(in srgb, var(--mantine-color-gray-1) 55%, var(--mantine-color-body));
+    box-shadow:
+      0 1px 2px rgb(31 29 26 / 6%),
+      0 2px 8px -2px rgb(31 29 26 / 10%);
+  }
+
+  @mixin dark {
+    background: color-mix(in srgb, var(--mantine-color-dark-8) 55%, var(--mantine-color-body));
+    box-shadow:
+      0 1px 2px rgb(0 0 0 / 30%),
+      0 2px 8px -2px rgb(0 0 0 / 40%);
   }
 }

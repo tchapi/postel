@@ -122,7 +122,7 @@ export function MailAppShell(p: MailAppShellProps) {
       }}
       padding={0}
     >
-      <AppShell.Header>{p.header}</AppShell.Header>
+      <AppShell.Header data-mobile={p.layout === 'mobile' || undefined}>{p.header}</AppShell.Header>
       {desktop && (
         <AppShell.Navbar data-resizing={resizingNav || undefined}>
           {p.renderNav(p.navCollapsed)}

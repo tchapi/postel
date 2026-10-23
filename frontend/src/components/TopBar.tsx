@@ -91,7 +91,7 @@ export function TopBar(p: TopBarProps) {
 
   if (mobile) {
     return (
-      <Group h="100%" gap={4} px={6} wrap="nowrap">
+      <Group gap={4} px={0} wrap="nowrap" className={classes.floatingBar}>
         <ActionIcon
           size={44}
           aria-label={t.openFolders}
