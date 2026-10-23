@@ -1,7 +1,21 @@
 .swipeWrap {
   position: relative;
   overflow: hidden;
-  border-bottom: 1px solid var(--mantine-color-default-border);
+
+  /* Inset divider under the text, hidden next to a highlighted row */
+  &::after {
+    content: '';
+    position: absolute;
+    left: 38px;
+    right: 10px;
+    bottom: 0;
+    height: 1px;
+    background: var(--mantine-color-default-border);
+  }
+
+  &:has(> .row:is([data-active], [data-selected], :hover))::after {
+    opacity: 0;
+  }
 }
 
 .swipeAction {
@@ -33,9 +47,11 @@
   grid-template-columns: 20px minmax(0, 1fr);
   column-gap: 8px;
   align-items: start;
-  /* The list places rows every ROW_HEIGHT px, the divider below takes 1 of them. */
-  height: 85px;
-  padding: 12px 10px 13px;
+  /* A rounded highlight inset in its slot; 4px inline padding keeps the checkbox under the header's */
+  height: calc(100% - 4px);
+  margin: 2px 6px;
+  border-radius: var(--mantine-radius-md);
+  padding: 12px 4px;
   background: var(--mantine-color-body);
   cursor: pointer;
   touch-action: pan-y;
@@ -44,8 +60,7 @@
   transition: transform 160ms ease;
 
   [data-density='compact'] & {
-    height: 63px;
-    padding-block: 11px;
+    padding-block: 9px 10px;
   }
 
   @mixin hover {
@@ -83,7 +98,7 @@
 .dot {
   display: none;
   position: absolute;
-  left: 3px;
+  left: -4px;
   top: 19px;
   width: 6px;
   height: 6px;
@@ -95,7 +110,7 @@
   }
 
   [data-density='compact'] & {
-    top: 18px;
+    top: 16px;
   }
 }
 

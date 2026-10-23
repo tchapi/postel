@@ -19,8 +19,8 @@ import { absoluteDate, displayName, relativeDate } from '../lib/format'
 import { useI18n } from '../lib/i18n'
 import classes from './MessageRow.module.css'
 
-// Including the 1px divider: comfortable is three lines with 12px around, compact two lines with 11px.
-export const ROW_HEIGHT: Record<Density, number> = { comfortable: 86, compact: 64 }
+// Slot per row: the row inset 2px top and bottom, then 12px (comfortable, three lines) or 10px (compact, two) around the text.
+export const ROW_HEIGHT: Record<Density, number> = { comfortable: 88, compact: 64 }
 const SWIPE_THRESHOLD = 96
 
 export type MessageRowProps = {

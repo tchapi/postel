@@ -35,7 +35,13 @@ import {
   IconTrash,
 } from '@tabler/icons-react'
 import type { Attachment, Message, RowAction } from '../types'
-import { absoluteDate, displayName, formatAddrList, initials, relativeDate } from '../lib/format'
+import {
+  displayName,
+  shortAbsoluteDate,
+  formatAddrList,
+  initials,
+  relativeDate,
+} from '../lib/format'
 import { useI18n } from '../lib/i18n'
 import { AttachmentList } from './AttachmentList'
 import { MessageFrame, htmlHasQuote, splitTextQuote } from './MessageFrame'
@@ -298,12 +304,11 @@ function ReaderBody({
       py={isMobile ? 20 : 32}
       style={{ '--reader-gutter': isMobile ? '20px' : '48px' } as CSSProperties}
     >
-      <Title order={1}>{message.subject}</Title>
-
       {earlier}
 
+      {/* Sender first, the date across from it, subject and recipients below, an inset rule to close the block */}
       <header className={classes.header}>
-        <Group gap={12} align="center" wrap="nowrap">
+        <Group gap={12} align="flex-start" wrap="nowrap">
           <Avatar
             radius="xl"
             size={40}
@@ -313,21 +318,19 @@ function ReaderBody({
           >
             {initials(message.from)}
           </Avatar>
-          <Stack gap={2} style={{ flex: 1, minWidth: 0 }}>
-            {/* The date follows the sender instead of sitting on the far side of the column */}
-            <Group gap={6} align="baseline" wrap="nowrap" style={{ minWidth: 0 }}>
-              <Text fw={600} truncate style={{ flex: 'none', maxWidth: '50%' }}>
-                {displayName(message.from)}
-              </Text>
-              {message.from.name && (
-                <Text size="sm" c="dimmed" truncate>
-                  &lt;{message.from.email}&gt;
+          <Stack gap={3} style={{ flex: 1, minWidth: 0 }}>
+            <Group gap={16} justify="space-between" align="baseline" wrap="nowrap">
+              <Group gap={6} align="baseline" wrap="nowrap" style={{ minWidth: 0 }}>
+                <Text fw={700} truncate style={{ flex: 'none', maxWidth: '60%' }}>
+                  {displayName(message.from)}
                 </Text>
-              )}
-              <Text size="sm" c="dimmed" aria-hidden className={classes.date}>
-                ·
-              </Text>
-              <Tooltip label={absoluteDate(message.date, locale)}>
+                {message.from.name && (
+                  <Text size="sm" c="dimmed" truncate>
+                    {message.from.email}
+                  </Text>
+                )}
+              </Group>
+              <Tooltip label={relativeDate(message.date, locale)}>
                 <Text
                   component="time"
                   dateTime={message.date}
@@ -336,19 +339,21 @@ function ReaderBody({
                   className={classes.date}
                   tabIndex={0}
                 >
-                  {relativeDate(message.date, locale)}
+                  {shortAbsoluteDate(message.date, locale)}
                 </Text>
               </Tooltip>
             </Group>
+            <Title order={1} className={classes.subject}>
+              {message.subject}
+            </Title>
             <Text size="sm" c="dimmed" truncate>
-              <span className={classes.fieldLabel}>{t.to}</span> {toLine}
-              {ccLine && (
-                <>
-                  {' · '}
-                  <span className={classes.fieldLabel}>{t.cc}</span> {ccLine}
-                </>
-              )}
+              <span className={classes.fieldLabel}>{t.toLabel}:</span> {toLine}
             </Text>
+            {ccLine && (
+              <Text size="sm" c="dimmed" truncate>
+                <span className={classes.fieldLabel}>{t.ccLabel}:</span> {ccLine}
+              </Text>
+            )}
           </Stack>
         </Group>
       </header>

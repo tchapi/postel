@@ -23,6 +23,17 @@ export function relativeDate(iso: string, locale: string, now = new Date()): str
 }
 
 /** Tooltip date: Friday 23 October 2026 at 09:47 */
+/** "12 October 2026 at 03:13": the reader header's date, readable without a tooltip. */
+export function shortAbsoluteDate(iso: string, locale: string): string {
+  return new Intl.DateTimeFormat(locale, {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(new Date(iso))
+}
+
 export function absoluteDate(iso: string, locale: string): string {
   return new Intl.DateTimeFormat(locale, { dateStyle: 'full', timeStyle: 'short' }).format(
     new Date(iso),

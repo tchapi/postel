@@ -27,11 +27,18 @@
   }
 }
 
+/* The header spans the pane between the gutters; its rule is inset like Apple Mail's, not edge to edge. */
 .body > .header {
   max-width: none;
-  margin-inline: calc(-1 * var(--reader-gutter));
-  padding: 0 var(--reader-gutter) 20px;
+  padding-bottom: 16px;
   border-bottom: 1px solid var(--mantine-color-default-border);
+}
+
+.subject {
+  font-size: 15px;
+  line-height: 1.35;
+  font-weight: 600;
+  overflow-wrap: anywhere;
 }
 
 .fieldLabel {
