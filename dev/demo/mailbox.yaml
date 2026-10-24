@@ -1,0 +1,462 @@
+# A small, believable mailbox for screenshots and demos, loaded with
+#   php bin/console app:dev:seed-demo
+#
+# Dates are relative to the moment the seed runs ("-35 minutes", "yesterday 21:47"),
+# so the list always shows Today and Yesterday. Folders use "/" for nesting.
+# A message with `id` can be answered by another one with `reply_to`: they then
+# share a conversation.
+
+me: [Camille Martin, camille@example.test]
+
+people:
+  lea: [Léa Moreau, lea.moreau@example.test]
+  jonas: [Jonas Weber, jonas@northstudio.example]
+  aicha: [Aïcha Diallo, aicha@northstudio.example]
+  sam: [Sam Okafor, sam.okafor@example.test]
+  nina: [Nina Martin, nina.martin@example.test]
+  mum: [Isabelle Martin, isabelle.martin@example.test]
+  dad: [Pierre Martin, pierre.martin@example.test]
+  marc: [Marc Dubois, marc.dubois@example.test]
+  clinic: [Dr Anaïs Leroy, rdv@cabinet-leroy.example]
+  building: [Résidence Les Tilleuls, gestion@lestilleuls.example]
+  rail: [Rail Express, tickets@rail-express.example]
+  kettle: [The Weekly Kettle, hello@weeklykettle.example]
+  books: [Atelier Papier, orders@atelierpapier.example]
+  forge: [Forgeline, notifications@forgeline.example]
+  energy: [Lumen Energy, billing@lumen-energy.example]
+  gym: [Bloc Up Climbing, hello@blocup.example]
+  hotel: [Hotel Alfama, reservations@hotelalfama.example]
+  airline: [Azul Air, checkin@azulair.example]
+  hr: [North Studio People, people@northstudio.example]
+  lottery: [Prize Department, winner@lucky-cruise.example]
+
+folders: [Archive, Family, Work, Work/Website, Receipts, Travel]
+
+messages:
+
+  # ---- Inbox ----
+
+  - folder: INBOX
+    id: dinner
+    from: lea
+    subject: Dinner on Friday?
+    when: -2 days 18:10
+    text: |
+      Hi Camille!
+
+      It's been ages. Are you free on Friday evening? I'd love to try the new place near Les Halles, they say the fish is wonderful.
+
+      Let me know, I can book a table.
+
+      Léa
+
+  - folder: INBOX
+    reply_to: dinner
+    from: lea
+    subject: "Re: Dinner on Friday?"
+    when: -35 minutes
+    seen: false
+    attachments: [menu.pdf]
+    text: |
+      Perfect! I booked a table for 8pm, under my name. Here is the menu, the dessert list alone is worth the trip.
+
+      See you Friday!
+      Léa
+
+  - folder: INBOX
+    id: mockups
+    from: jonas
+    to: [me, aicha]
+    subject: "Website redesign: first mockups"
+    when: -1 day 10:05
+    flagged: true
+    attachments: [mockups-v1.pdf]
+    text: |
+      Hi Camille,
+
+      Here are the first mockups for the new website: the home page, the project page and the contact form.
+
+      I went with the lighter navigation we talked about. Tell me what you think before Wednesday's review, I'd like to start on the mobile versions next week.
+
+      Thanks,
+      Jonas
+
+  - folder: INBOX
+    reply_to: mockups-reply
+    from: jonas
+    to: [me, aicha]
+    subject: "Re: Website redesign: first mockups"
+    when: -3 hours
+    seen: false
+    attachments: [homepage-v2.png]
+    text: |
+      Good points, thanks. I moved the contact button up and gave the photos more room. Updated home page attached.
+
+      Jonas
+
+  - folder: INBOX
+    from: sam
+    subject: Climbing on Sunday?
+    when: -5 hours
+    seen: false
+    text: |
+      Hey! A few of us are going to the climbing gym on Sunday around 10. The new routes went up on Thursday.
+
+      Want to join? I can bring the spare harness.
+
+      Sam
+
+  - folder: INBOX
+    from: kettle
+    subject: Five soups for the first cold days
+    when: -7 hours
+    html: |
+      <div style="max-width:560px;margin:0 auto;font-family:Georgia,serif;color:#2d2a26">
+        <img src="https://images.weeklykettle.example/header.jpg" alt="The Weekly Kettle" width="560" style="display:block;width:100%">
+        <h1 style="font-size:26px;margin:24px 0 8px">Five soups for the first cold days</h1>
+        <p style="font-size:16px;line-height:1.6">The evenings are getting shorter and the market stalls are full of squash. This week, five soups that take less than forty minutes, from a smoky pumpkin to a green pea and mint.</p>
+        <img src="https://images.weeklykettle.example/pumpkin-soup.jpg" alt="Pumpkin soup" width="560" style="display:block;width:100%;border-radius:8px">
+        <h2 style="font-size:20px;margin:24px 0 8px">1. Smoky pumpkin and paprika</h2>
+        <p style="font-size:16px;line-height:1.6">Roast the pumpkin with garlic and smoked paprika, then blend it with a little stock and a spoon of crème fraîche.</p>
+        <p style="font-size:16px;line-height:1.6"><a href="https://weeklykettle.example/soups" style="color:#b5502f">Read the five recipes</a></p>
+        <p style="font-size:12px;color:#8a847d;margin-top:32px">You receive this because you subscribed to The Weekly Kettle. <a href="https://weeklykettle.example/unsubscribe" style="color:#8a847d">Unsubscribe</a></p>
+      </div>
+
+  - folder: INBOX
+    from: rail
+    subject: "Your tickets: Lyon → Paris, Thursday 14 November"
+    when: yesterday 08:12
+    attachments: [ticket-LYS-PAR.pdf]
+    text: |
+      Hello Camille,
+
+      Thank you for travelling with Rail Express. Your tickets are attached.
+
+      Thursday 14 November
+      Lyon Part-Dieu 07:04 → Paris Gare de Lyon 09:01
+      Coach 12, seat 46, window
+
+      Have a good trip!
+
+  - folder: INBOX
+    from: nina
+    subject: Photos from Mum's birthday
+    when: yesterday 21:47
+    flagged: true
+    attachments: [IMG_2041.jpg, IMG_2056.jpg, IMG_2073.jpg]
+    text: |
+      Here are my favourites from Sunday. Mum loved the cake, she already asked for the recipe twice.
+
+      The one with Dad and the candles is my favourite, I'll print it for the hallway.
+
+      Nina
+
+  - folder: INBOX
+    from: clinic
+    subject: "Reminder: your appointment on Tuesday at 9:30"
+    when: -2 days 09:00
+    text: |
+      Hello,
+
+      This is a reminder of your appointment with Dr Anaïs Leroy on Tuesday at 9:30.
+
+      If you can't make it, please let us know at least 24 hours before, by replying to this message.
+
+      Cabinet Leroy
+
+  - folder: INBOX
+    from: building
+    subject: Water shut-off on Thursday morning
+    when: -2 days 14:20
+    text: |
+      Dear residents,
+
+      The water will be shut off on Thursday from 8:00 to 12:00 while the plumbers replace the main valve in the basement.
+
+      We apologise for the inconvenience.
+
+      The management
+
+  - folder: INBOX
+    from: jonas
+    subject: "Invitation: Design review, Wednesday 14:00"
+    when: -3 days 11:00
+    invite:
+      title: Design review
+      start: next wednesday 14:00
+      minutes: 60
+      location: Meeting room 2
+    text: |
+      Let's go through the website mockups together, with Aïcha.
+
+  - folder: INBOX
+    from: books
+    subject: Your order is on its way
+    when: -3 days 16:30
+    text: |
+      Hello Camille,
+
+      Good news: your order #4821 has left our workshop.
+
+      - The Design of Everyday Things, Don Norman
+      - A5 dot grid notebook, sage green
+
+      It should arrive within two days. Happy reading!
+
+      Atelier Papier
+
+  - folder: INBOX
+    from: marc
+    subject: Moving boxes
+    when: -4 days 19:02
+    text: |
+      Hi Camille,
+
+      We finally moved in! If you still need boxes for your own move, we have about twenty in good shape. Come and pick them up whenever you want.
+
+      Marc
+
+  # ---- Family ----
+
+  - folder: Family
+    id: lunch
+    from: mum
+    subject: Lunch on Sunday?
+    when: -5 days 12:30
+    text: |
+      Hello darling,
+
+      Would you like to come for lunch on Sunday? Nina and Tom are coming too. Your father wants to make his famous roast.
+
+      Kisses,
+      Mum
+
+  - folder: Family
+    from: dad
+    subject: Tomato seedlings
+    when: -20 days 08:15
+    attachments: [seedlings.jpg]
+    text: |
+      The seedlings are doing well, look! I'll keep a few for your balcony.
+
+      Dad
+
+  - folder: Family
+    id: present
+    from: nina
+    subject: Mum's birthday present
+    when: -12 days 20:05
+    text: |
+      I was thinking we could give Mum a weekend in Annecy, the three of us? I found a nice guest house by the lake.
+
+      Nina
+
+  # ---- Work ----
+
+  - folder: Work
+    from: jonas
+    subject: Standup notes, Monday
+    when: -6 days 09:45
+    text: |
+      Notes from this morning:
+
+      - Website: mockups for review on Wednesday (Camille, Jonas)
+      - Brand colours: final palette approved (Aïcha)
+      - Photos for the project pages: shoot planned next week
+
+      Jonas
+
+  - folder: Work
+    from: aicha
+    subject: "Brand colours: final palette"
+    when: -8 days 15:20
+    attachments: [palette.png]
+    text: |
+      Hi both,
+
+      Here is the final palette, with the warmer grey we agreed on. I'll share the full guidelines on Friday.
+
+      Aïcha
+
+  - folder: Work
+    from: hr
+    subject: Your holiday request is approved
+    when: -10 days 11:00
+    text: |
+      Hello Camille,
+
+      Your holiday request from 23 to 30 December has been approved. Enjoy your time off!
+
+      North Studio People
+
+  - folder: Work/Website
+    from: forge
+    subject: "[website] Merge request !42: New header and navigation"
+    when: -4 days 17:12
+    text: |
+      Jonas Weber opened merge request !42 in northstudio/website:
+
+      New header and navigation
+
+      - Lighter menu, with the contact button on the right
+      - Sticky header on mobile
+
+  - folder: Work/Website
+    from: forge
+    subject: "[website] Pipeline passed for main"
+    when: -4 days 17:31
+    text: |
+      The pipeline for main passed in 3 minutes 12 seconds.
+
+  # ---- Receipts ----
+
+  - folder: Receipts
+    from: books
+    subject: "Invoice for order #4821"
+    when: -3 days 16:31
+    attachments: [invoice-4821.pdf]
+    text: |
+      Thank you for your order. Your invoice is attached.
+
+      Total: 31.90 €
+
+  - folder: Receipts
+    from: energy
+    subject: Your October bill is ready
+    when: -9 days 07:00
+    attachments: [bill-october.pdf]
+    text: |
+      Hello Camille,
+
+      Your bill for October is ready: 42.17 €, paid by direct debit on 15 November.
+
+      Lumen Energy
+
+  - folder: Receipts
+    from: gym
+    subject: Your membership is renewed
+    when: -14 days 10:00
+    text: |
+      Thanks for climbing with us for another year! Your membership is renewed until next November.
+
+      See you on the wall,
+      Bloc Up
+
+  # ---- Travel ----
+
+  - folder: Travel
+    from: hotel
+    subject: "Your booking is confirmed: 27 to 31 December"
+    when: -15 days 13:40
+    attachments: [booking-AL-5521.pdf]
+    text: |
+      Olá Camille,
+
+      Your booking at Hotel Alfama is confirmed: 4 nights, from 27 to 31 December, double room with a view of the river.
+
+      We look forward to welcoming you in Lisbon.
+
+  - folder: Travel
+    from: airline
+    subject: Your flight to Lisbon on 27 December
+    when: -16 days 18:00
+    text: |
+      Your booking is confirmed.
+
+      Lyon (LYS) 10:15 → Lisbon (LIS) 11:20
+      Booking reference: K7PQ2M
+
+      Check-in opens 24 hours before departure.
+
+  # ---- Sent ----
+
+  - folder: Sent
+    reply_to: dinner
+    from: me
+    to: [lea]
+    subject: "Re: Dinner on Friday?"
+    when: -2 days 20:31
+    text: |
+      Yes! Friday works for me. Book it, I'll be there.
+
+      Camille
+
+  - folder: Sent
+    id: mockups-reply
+    reply_to: mockups
+    from: me
+    to: [jonas, aicha]
+    subject: "Re: Website redesign: first mockups"
+    when: -1 day 16:40
+    text: |
+      They look great, Jonas. Two things before Wednesday: the contact button gets lost at the bottom, and the project photos could be bigger.
+
+      Camille
+
+  - folder: Sent
+    reply_to: lunch
+    from: me
+    to: [mum]
+    subject: "Re: Lunch on Sunday?"
+    when: -5 days 13:02
+    text: |
+      Yes, I'll be there! I'll bring dessert.
+
+      Camille
+
+  - folder: Sent
+    reply_to: present
+    from: me
+    to: [nina]
+    subject: "Re: Mum's birthday present"
+    when: -12 days 21:30
+    text: |
+      Great idea! Count me in, I can take care of the train tickets.
+
+      Camille
+
+  # ---- Drafts ----
+
+  - folder: Drafts
+    from: me
+    to: [lea]
+    subject: Lisbon, ideas for December
+    when: -1 day 22:10
+    draft: true
+    text: |
+      Hi Léa,
+
+      Since you were in Lisbon last year: any address we shouldn't miss? So far we have the Alfama, the tram 28 and
+
+  # ---- Archive ----
+
+  - folder: Archive
+    from: gym
+    subject: Welcome to Bloc Up!
+    when: -40 days 10:00
+    text: |
+      Welcome to the club! Your first session includes a short introduction with one of our coaches.
+
+  - folder: Archive
+    from: building
+    subject: Your lease renewal
+    when: -60 days 09:30
+    attachments: [lease-renewal.pdf]
+    text: |
+      Please find attached your lease renewal for next year. Kindly return it signed before the end of the month.
+
+  - folder: Archive
+    from: lea
+    subject: Wedding photos
+    when: -90 days 19:00
+    text: |
+      The photographer sent everything, the link works for a month. There is a great one of you dancing with Grandpa!
+
+  # ---- Junk ----
+
+  - folder: Junk
+    from: lottery
+    subject: YOU HAVE WON A CRUISE!!!
+    when: -3 days 03:12
+    text: |
+      Congratulations!!! You have been selected to win a luxury cruise. Click here to claim your prize before midnight!!!

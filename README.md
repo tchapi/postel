@@ -293,6 +293,15 @@ dev/davis/seed.sh
 docker exec -u www-data postel-dev-davis sh -c 'cd /var/www/davis && APP_ENV=prod bin/console davis:app-key:create postel --all-users'
 ```
 
+For screenshots and demos, a second account, `camille@example.test`, gets a small mailbox that reads like a real one (35 messages, with conversations, attachments, an invitation and a newsletter), and matching Davis contacts:
+
+```sh
+cd backend && php bin/console app:dev:seed-demo
+dev/davis/seed-demo.sh
+```
+
+The messages are in [`dev/demo/mailbox.yaml`](dev/demo/mailbox.yaml), dated relative to when the seed runs, so run it again before taking screenshots. To use the app as Camille, set `DEV_USER=camille`, `DEV_EMAIL=camille@example.test` and `DEV_NAME=Camille Martin` in `frontend/.env.local`, and restart `npm run dev`.
+
 Then point the backend at them in `backend/.env.local`:
 
 ```sh

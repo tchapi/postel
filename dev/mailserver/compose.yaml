@@ -2,7 +2,8 @@
 #
 #   docker compose -f dev/mailserver/compose.yaml up -d
 #
-# Account:      alice@example.test / alice-password
+# Accounts:     alice@example.test / alice-password   (tests, app:dev:seed-mailbox)
+#               camille@example.test / camille-password   (screenshots, app:dev:seed-demo)
 # Master user:  webmail / master-password   (login as alice@example.test*webmail)
 # IMAP:         127.0.0.1:1143 (plain), SMTP submission: 127.0.0.1:1587
 services:
