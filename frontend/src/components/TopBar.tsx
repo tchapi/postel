@@ -170,11 +170,11 @@ export function TopBar(p: TopBarProps) {
 export function Brand() {
   const { t } = useI18n()
   return (
-    <Group gap={8} wrap="nowrap">
-      <ThemeIcon size={26} radius="md" aria-hidden>
-        <MailIcon size={16} strokeWidth={2} />
+    <Group gap={10} wrap="nowrap">
+      <ThemeIcon size={30} radius="md" aria-hidden>
+        <MailIcon size={18} strokeWidth={2} />
       </ThemeIcon>
-      <Text fw={700} fz="md" style={{ letterSpacing: '-0.01em' }}>
+      <Text fw={700} fz={20} lh={1} style={{ letterSpacing: '-0.02em' }}>
         {t.appName}
       </Text>
     </Group>
