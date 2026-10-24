@@ -50,9 +50,11 @@ Comes as one Docker image (php-fpm and Caddy) for `amd64` and `arm64`, with a sa
 ![Search across folders](_screenshots/search.png)
 ![Writing a message, with recipient suggestions](_screenshots/compose.png)
 
-| Dark mode | Search and command palette |
-|-----------|----------------------------|
-| ![Dark mode](_screenshots/dark.png) | ![Search and command palette](_screenshots/palette.png) |
+| Dark mode | Command palette |
+|-----------|-----------------|
+| ![Dark mode](_screenshots/dark.png) | ![Command palette](_screenshots/palette.png) |
+| **Settings** | **Jump to a folder** |
+| ![Settings](_screenshots/settings.png) | ![Jump to a folder, in dark mode](_screenshots/palette-dark.png) |
 
 # 🔩 Requirements
 
