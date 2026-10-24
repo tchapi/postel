@@ -44,17 +44,13 @@ Comes as one Docker image (php-fpm and Caddy) for `amd64` and `arm64`, with a sa
 
 ✨ Created and maintained by [@tchapi](https://github.com/tchapi). ✨
 
-<!-- Screenshots: add the files to _screenshots/, then uncomment the lines below.
-
-![Inbox, light mode](_screenshots/inbox.png)
-![Reading a conversation](_screenshots/conversation.png)
+![Inbox](_screenshots/inbox.png)
+![Search across folders](_screenshots/search.png)
 ![Writing a message, with recipient suggestions](_screenshots/compose.png)
 
-| Dark mode | On a phone |
-|-----------|------------|
-| ![Dark mode](_screenshots/dark.png) | ![On a phone](_screenshots/mobile.png) |
-
--->
+| Dark mode | Search and command palette |
+|-----------|----------------------------|
+| ![Dark mode](_screenshots/dark.png) | ![Search and command palette](_screenshots/palette.png) |
 
 # 🔩 Requirements
 
