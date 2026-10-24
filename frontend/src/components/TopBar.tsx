@@ -7,14 +7,12 @@ import {
   Kbd,
   Menu,
   Text,
-  ThemeIcon,
   Title,
   UnstyledButton,
 } from '@mantine/core'
 import {
   KeyboardIcon,
   LogOutIcon,
-  MailIcon,
   MenuIcon,
   MoonIcon,
   SearchIcon,
@@ -23,6 +21,7 @@ import {
   SunIcon,
 } from 'lucide-react'
 import { useI18n } from '../lib/i18n'
+import { Logo } from './Logo'
 import { initials } from '../lib/format'
 import { KeyCombo, ShortcutTooltip } from './ShortcutTooltip'
 import classes from './AppShell.module.css'
@@ -171,9 +170,7 @@ export function Brand() {
   const { t } = useI18n()
   return (
     <Group gap={10} wrap="nowrap">
-      <ThemeIcon size={30} radius="md" aria-hidden>
-        <MailIcon size={18} strokeWidth={2} />
-      </ThemeIcon>
+      <Logo size={30} />
       <Text fw={700} fz={20} lh={1} style={{ letterSpacing: '-0.02em' }}>
         {t.appName}
       </Text>
