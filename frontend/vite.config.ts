@@ -8,6 +8,8 @@ export default defineConfig(({ mode }) => {
   return {
     plugins: [react()],
     server: {
+      // mail.localtest.me resolves to 127.0.0.1, for a nicer address in screenshots
+      allowedHosts: ['.localtest.me'],
       // The Symfony app, started with `symfony serve` or `php -S` from backend/.
       // There is no Authelia in front of it here, so the proxy plays its part
       // and asserts the identity itself.
