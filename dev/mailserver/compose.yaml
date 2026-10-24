@@ -1,4 +1,4 @@
-# A throwaway docker-mailserver for local development and the IMAP spikes.
+# A throwaway docker-mailserver for local development and the integration tests.
 #
 #   docker compose -f dev/mailserver/compose.yaml up -d
 #

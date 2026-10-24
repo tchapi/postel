@@ -14,8 +14,8 @@ import type {
 } from './types'
 
 /**
- * Data contract. The real app passes TanStack Query hooks backed by the Symfony IMAP proxy;
- * src/mock/mockHooks.ts implements the same contract in memory.
+ * Data contract between the components and the API, implemented with TanStack Query in
+ * api/mailHooks.ts.
  * Optimistic updates (flags, move, delete) live in the implementation, not in components.
  */
 export interface MailActions {

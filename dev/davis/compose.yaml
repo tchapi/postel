@@ -1,4 +1,4 @@
-# A throwaway Davis (CardDAV/CalDAV) server for local development and spikes.
+# A throwaway Davis (CardDAV/CalDAV) server for local development.
 #
 #   docker compose -f dev/davis/compose.yaml up -d
 #   docker exec -u www-data webmail-dev-davis sh -c 'cd /var/www/davis && APP_ENV=prod bin/console doctrine:migrations:migrate --no-interaction'

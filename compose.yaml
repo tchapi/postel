@@ -1,25 +1,28 @@
-# Runs the production image locally. For development, run the backend and
-# the frontend natively instead, see README.md.
+# A sample setup for the webmail, with the variables in a .env file next to
+# this one. See README.md for each of them.
+#
+# The webmail must only be reachable through your reverse proxy: put it on
+# the proxy's network, and don't publish its port.
 services:
   webmail:
-    build: .
-    image: tchapi/webmail:local
-    ports:
-      - "8080:8080"
+    image: ghcr.io/tchapi/webmail:1
+    restart: unless-stopped
     environment:
       APP_SECRET: ${APP_SECRET:?set a random string}
-      TRUSTED_PROXIES: ${TRUSTED_PROXIES:-127.0.0.1}
+      TRUSTED_PROXIES: ${TRUSTED_PROXIES:?set the address of your reverse proxy}
       IMAP_HOST: ${IMAP_HOST:-mail}
       IMAP_PORT: ${IMAP_PORT:-143}
-      IMAP_ENCRYPTION: ${IMAP_ENCRYPTION:-false}
+      IMAP_ENCRYPTION: ${IMAP_ENCRYPTION:-tls}
       IMAP_MASTER_USER: ${IMAP_MASTER_USER:-webmail}
-      IMAP_MASTER_PASSWORD: ${IMAP_MASTER_PASSWORD:?}
+      IMAP_MASTER_PASSWORD: ${IMAP_MASTER_PASSWORD:?set the Dovecot master password}
+      IMAP_LOGIN_ATTRIBUTE: ${IMAP_LOGIN_ATTRIBUTE:-email}
       SMTP_HOST: ${SMTP_HOST:-mail}
       SMTP_PORT: ${SMTP_PORT:-587}
       SMTP_ENCRYPTION: ${SMTP_ENCRYPTION:-tls}
       DAVIS_URL: ${DAVIS_URL:-}
       DAVIS_APP_ID: ${DAVIS_APP_ID:-}
       DAVIS_APP_SECRET: ${DAVIS_APP_SECRET:-}
+      LOGOUT_URL: ${LOGOUT_URL:-}
     volumes:
       - webmail_data:/app/var/data
 

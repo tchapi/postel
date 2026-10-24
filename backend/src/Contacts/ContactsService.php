@@ -19,7 +19,7 @@ use Symfony\Component\HttpKernel\KernelEvents;
  * Autocomplete reads a local copy of the user's Davis contacts. A CardDAV
  * request costs ~170 ms (Davis checks a bcrypt hash each time), so Davis is
  * only asked whether something changed, at most every few minutes, and after
- * the response has gone out. See docs/spikes/2026-10-23-carddav.md.
+ * the response has gone out. See docs/architecture.md.
  */
 final class ContactsService implements EventSubscriberInterface
 {

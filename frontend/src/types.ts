@@ -1,4 +1,4 @@
-// Data shapes from the brief, plus the few UI-side types the components share.
+// Data shapes the components work with, plus the few UI-side types they share.
 import type { AccentName } from './theme'
 
 export type Addr = { name?: string; email: string }

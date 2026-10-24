@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Security;
 
+use Deprecated;
 use Symfony\Component\Security\Core\User\UserInterface;
 
 /**
@@ -31,6 +32,8 @@ final class RemoteUser implements UserInterface
         return ['ROLE_USER'];
     }
 
+    // Nothing to erase: the proxy holds the credentials. Symfony 7.3 asks empty ones to say so.
+    #[Deprecated]
     public function eraseCredentials(): void
     {
     }

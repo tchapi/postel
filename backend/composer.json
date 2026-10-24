@@ -77,7 +77,7 @@
         ],
         "lint": "php-cs-fixer fix --dry-run --diff",
         "lint:fix": "php-cs-fixer fix",
-        "stan": "phpstan analyse",
+        "stan": "phpstan analyse --memory-limit=512M",
         "test": "phpunit"
     },
     "conflict": {

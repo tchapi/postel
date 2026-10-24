@@ -16,7 +16,7 @@ use function strlen;
  * the socket ourselves, literal by literal, until the tagged status line.
  *
  * webklex's own reader parses responses in a way that mangles ENVELOPE and
- * does not understand sections, see docs/spikes/2026-10-23-imap.md.
+ * does not understand sections, see docs/architecture.md.
  */
 final class RawCommand
 {
