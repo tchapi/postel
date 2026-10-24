@@ -107,6 +107,19 @@ export const ACCENTS = {
     '#7d3a4b',
     '#662d3c',
   ],
+  // Almost no colour, for those who want the app neutral
+  graphite: [
+    '#f7f6f5',
+    '#edebe8',
+    '#dbd7d2',
+    '#c3bdb6',
+    '#aaa39b',
+    '#948c84',
+    '#7a736b',
+    '#69625b',
+    '#57514b',
+    '#46413c',
+  ],
 } satisfies Record<string, MantineColorsTuple>
 
 export type AccentName = keyof typeof ACCENTS

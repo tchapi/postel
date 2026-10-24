@@ -32,7 +32,7 @@ It sits behind your single sign-on (such as [Authelia](https://www.authelia.com/
 
 ### Interface
 
-- Light and dark mode, six accent colours, two densities
+- Light and dark mode, nine accent colours, two densities
 - English and French
 - Three panes on a large screen, two on a tablet, one on a phone, with swipe actions and pull to refresh
 - Keyboard shortcuts for almost everything (press `?` to see them), and a command palette

@@ -21,7 +21,7 @@ class UserSettings
     public const string DENSITY_COMPACT = 'compact';
     public const array DENSITIES = [self::DENSITY_COMFORTABLE, self::DENSITY_COMPACT];
     public const array LANGUAGES = ['en', 'fr'];
-    public const array ACCENTS = ['iris', 'ocean', 'teal', 'sage', 'olive', 'amber', 'clay', 'rose'];
+    public const array ACCENTS = ['iris', 'ocean', 'teal', 'sage', 'olive', 'amber', 'clay', 'rose', 'graphite'];
 
     #[ORM\Id]
     #[ORM\Column(length: 255)]
