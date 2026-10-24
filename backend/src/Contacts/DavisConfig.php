@@ -8,7 +8,7 @@ use App\Security\RemoteUser;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 
 /**
- * Davis is reached with an app key: the webmail logs in as
+ * Davis is reached with an app key: Postel logs in as
  * "<login>*<app id>" with the key's secret and Davis acts as <login>, like
  * the Dovecot master user. App keys came with Davis 5.6, see
  * https://github.com/tchapi/davis/pull/313.

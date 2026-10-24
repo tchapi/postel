@@ -2,7 +2,7 @@ import { ACCENTS } from '../theme'
 import type { Density, Language, Settings } from '../types'
 
 export const SETTINGS_FILE_VERSION = 1
-export const SETTINGS_FILE_NAME = 'webmail-settings.json'
+export const SETTINGS_FILE_NAME = 'postel-settings.json'
 
 /** What travels in the file. Field names are the API's, so files stay stable. */
 type FileSettings = {

@@ -1,4 +1,4 @@
-# The webmail as it runs for real: the production image behind Traefik and
+# Postel as it runs for real: the production image behind Traefik and
 # Authelia forward-auth, on top of the dev mail server and Davis (start those
 # first, see README.md).
 #
@@ -9,7 +9,7 @@
 # The Davis dashboard is at https://dav.localtest.me:8443, behind Authelia and
 # then its own admin login (admin / admin-password); /dav stays Basic only.
 # Contacts need DAVIS_APP_ID and DAVIS_APP_SECRET in the environment.
-name: webmail-stack
+name: postel-stack
 
 services:
   traefik:
@@ -17,7 +17,7 @@ services:
     command:
       - --providers.docker=true
       - --providers.docker.exposedbydefault=false
-      - --providers.docker.network=webmail-stack_front
+      - --providers.docker.network=postel-stack_front
       - --providers.file.filename=/etc/traefik/dynamic.yml
       - --entrypoints.websecure.address=:443
     ports:
@@ -27,7 +27,7 @@ services:
       - ./traefik/dynamic.yml:/etc/traefik/dynamic.yml:ro
     networks:
       front:
-        # Pinned so the webmail can trust this proxy alone
+        # Pinned so Postel can trust this proxy alone
         ipv4_address: 172.31.250.2
 
   authelia:
@@ -46,7 +46,7 @@ services:
       - traefik.http.middlewares.authelia.forwardauth.trustForwardHeader=true
       - traefik.http.middlewares.authelia.forwardauth.authResponseHeaders=Remote-User,Remote-Groups,Remote-Name,Remote-Email
 
-  webmail:
+  postel:
     build: ../..
     environment:
       APP_SECRET: dev-only-app-secret
@@ -62,16 +62,16 @@ services:
       DAVIS_APP_SECRET: ${DAVIS_APP_SECRET:-}
       LOGOUT_URL: https://auth.localtest.me:8443/logout
     volumes:
-      - webmail_data:/app/var/data
+      - postel_data:/app/var/data
     networks:
       - front
     labels:
       - traefik.enable=true
-      - traefik.http.routers.webmail.rule=Host(`mail.localtest.me`)
-      - traefik.http.routers.webmail.entrypoints=websecure
-      - traefik.http.routers.webmail.tls=true
-      - traefik.http.routers.webmail.middlewares=authelia@docker
-      - traefik.http.services.webmail.loadbalancer.server.port=8080
+      - traefik.http.routers.postel.rule=Host(`mail.localtest.me`)
+      - traefik.http.routers.postel.entrypoints=websecure
+      - traefik.http.routers.postel.tls=true
+      - traefik.http.routers.postel.middlewares=authelia@docker
+      - traefik.http.services.postel.loadbalancer.server.port=8080
 
 networks:
   front:
@@ -83,4 +83,4 @@ networks:
 
 volumes:
   authelia_data:
-  webmail_data:
+  postel_data:

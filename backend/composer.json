@@ -89,8 +89,8 @@
             "require": "7.4.*"
         }
     },
-    "name": "tchapi/webmail-backend",
-    "description": "Thin IMAP/SMTP proxy behind the webmail frontend",
+    "name": "tchapi/postel-backend",
+    "description": "The API behind Postel: IMAP, SMTP and CardDAV",
     "require-dev": {
         "friendsofphp/php-cs-fixer": "^3.95",
         "phpstan/phpstan": "^2.3",

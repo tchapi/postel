@@ -2,7 +2,7 @@
 # rather than discovered from labels.
 http:
   routers:
-    # The dashboard sits behind Authelia, like the webmail
+    # The dashboard sits behind Authelia, like Postel
     davis:
       rule: Host(`dav.localtest.me`)
       entryPoints: [websecure]

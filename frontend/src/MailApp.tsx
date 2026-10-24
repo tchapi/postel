@@ -95,16 +95,16 @@ export function MailApp({
   const layout: Layout = isDesktop ? 'desktop' : isMobile ? 'mobile' : 'tablet'
   // Layout preferences belong to this screen, so this browser remembers them
   const [navCollapsed, setNavCollapsed] = useLocalStorage({
-    key: 'webmail.nav-collapsed',
+    key: 'postel.nav-collapsed',
     defaultValue: false,
   })
   const [navWidth, setNavWidth] = useLocalStorage({
-    key: 'webmail.nav-width',
+    key: 'postel.nav-width',
     defaultValue: DEFAULT_NAV,
   })
   const [drawerOpened, setDrawerOpened] = useState(false)
   const [listWidth, setListWidth] = useLocalStorage({
-    key: 'webmail.list-width',
+    key: 'postel.list-width',
     defaultValue: 380,
   })
 

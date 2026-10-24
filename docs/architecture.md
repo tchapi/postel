@@ -1,9 +1,9 @@
 # Architecture
 
-Webmail is a small API in front of an IMAP server, with a single-page frontend, shipped as one container.
+Postel is a small API in front of an IMAP server, with a single-page frontend, shipped as one container.
 
 ```
-browser ──> reverse proxy ──(forward-auth)──> webmail container
+browser ──> reverse proxy ──(forward-auth)──> Postel container
                                                ├── Caddy      static files + FastCGI
                                                └── php-fpm    Symfony API
                                                      ├── IMAP ────> Dovecot   (master user)
@@ -27,15 +27,15 @@ Drafts and sent mail are stored in IMAP. The only local state is a SQLite file w
 
 The container is only reachable through the reverse proxy. The proxy runs forward-auth against an identity provider (Authelia, for instance), which sets `Remote-User`, `Remote-Email` and `Remote-Name` on every request it lets through.
 
-`RemoteUserAuthenticator` turns these headers into the current user, but only when the request comes from a proxy listed in `TRUSTED_PROXIES`. A request from anywhere else is refused, whatever its headers. There is no session and no cookie on the webmail side.
+`RemoteUserAuthenticator` turns these headers into the current user, but only when the request comes from a proxy listed in `TRUSTED_PROXIES`. A request from anywhere else is refused, whatever its headers. There is no session and no cookie on Postel side.
 
 When the identity provider's session ends, API calls get a `401`. The frontend then reloads the page, which goes back through the login page.
 
 ## Access to the mailbox without the user's password
 
-The backend logs into Dovecot as `<login>*<master user>` with the master password ([Dovecot master users](https://doc.dovecot.org/configuration_manual/authentication/master_users/)). Dovecot opens the mailbox of `<login>`, so the webmail never handles the user's own password. SMTP submission uses the same login. `IMAP_LOGIN_ATTRIBUTE` picks which header is the login: `email` for servers whose accounts are full addresses, like docker-mailserver, `username` otherwise.
+The backend logs into Dovecot as `<login>*<master user>` with the master password ([Dovecot master users](https://doc.dovecot.org/configuration_manual/authentication/master_users/)). Dovecot opens the mailbox of `<login>`, so Postel never handles the user's own password. SMTP submission uses the same login. `IMAP_LOGIN_ATTRIBUTE` picks which header is the login: `email` for servers whose accounts are full addresses, like docker-mailserver, `username` otherwise.
 
-Dovecot limits the number of connections per user and IP address (`mail_max_userip_connections`, 10 by default). All the webmail's connections come from the container's address, which is why the app polls for new mail every 30 seconds instead of keeping connections open.
+Dovecot limits the number of connections per user and IP address (`mail_max_userip_connections`, 10 by default). All Postel's connections come from the container's address, which is why the app polls for new mail every 30 seconds instead of keeping connections open.
 
 ## Contacts
 

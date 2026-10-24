@@ -204,7 +204,7 @@ function createStore<T>(key: string, initial: T) {
   }
 }
 
-const recentStore = createStore<string[]>('webmail.recent-searches', [])
+const recentStore = createStore<string[]>('postel.recent-searches', [])
 
 /* ---------- optimistic cache updates ---------- */
 

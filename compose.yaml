@@ -1,11 +1,11 @@
-# A sample setup for the webmail, with the variables in a .env file next to
+# A sample setup for Postel, with the variables in a .env file next to
 # this one. See README.md for each of them.
 #
-# The webmail must only be reachable through your reverse proxy: put it on
+# Postel must only be reachable through your reverse proxy: put it on
 # the proxy's network, and don't publish its port.
 services:
-  webmail:
-    image: ghcr.io/tchapi/webmail:1
+  postel:
+    image: ghcr.io/tchapi/postel:1
     restart: unless-stopped
     environment:
       APP_SECRET: ${APP_SECRET:?set a random string}
@@ -24,7 +24,7 @@ services:
       DAVIS_APP_SECRET: ${DAVIS_APP_SECRET:-}
       LOGOUT_URL: ${LOGOUT_URL:-}
     volumes:
-      - webmail_data:/app/var/data
+      - postel_data:/app/var/data
 
 volumes:
-  webmail_data:
+  postel_data:

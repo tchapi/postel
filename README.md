@@ -1,10 +1,10 @@
-Webmail
+Postel
 ---
 
-[![Build Status](https://github.com/tchapi/webmail/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/tchapi/webmail/actions/workflows/ci.yml)
-[![Publish Docker image](https://github.com/tchapi/webmail/actions/workflows/publish.yml/badge.svg)](https://github.com/tchapi/webmail/actions/workflows/publish.yml)
-[![Latest release](https://img.shields.io/github/v/release/tchapi/webmail?cacheSeconds=3600)](https://github.com/tchapi/webmail/releases)
-[![License](https://img.shields.io/badge/license-MIT-blue)](https://github.com/tchapi/webmail/blob/main/LICENSE)
+[![Build Status](https://github.com/tchapi/postel/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/tchapi/postel/actions/workflows/ci.yml)
+[![Publish Docker image](https://github.com/tchapi/postel/actions/workflows/publish.yml/badge.svg)](https://github.com/tchapi/postel/actions/workflows/publish.yml)
+[![Latest release](https://img.shields.io/github/v/release/tchapi/postel?cacheSeconds=3600)](https://github.com/tchapi/postel/releases)
+[![License](https://img.shields.io/badge/license-MIT-blue)](https://github.com/tchapi/postel/blob/main/LICENSE)
 ![Platform](https://img.shields.io/badge/platform-amd64%20%7C%20arm64-blue?logo=docker)
 ![PHP Version](https://img.shields.io/badge/php-8.4-777BB4?logo=php&logoColor=white)
 [![Sponsor me](https://img.shields.io/badge/sponsor%20me-🙏-blue?logo=paypal)](https://paypal.me/tchap)
@@ -67,8 +67,8 @@ The recommended way is the Docker image, see [Dockerized installation](#-dockeri
 
 Whatever the way, you need to:
 
-1. Create a [Dovecot master user](#dovecot-master-user) for the webmail
-2. Put the webmail behind a [reverse proxy with forward-auth](#-reverse-proxy-and-authentication)
+1. Create a [Dovecot master user](#dovecot-master-user) for Postel
+2. Put Postel behind a [reverse proxy with forward-auth](#-reverse-proxy-and-authentication)
 3. Set the [configuration](#configuration)
 4. Optionally, create a [Davis app key](#davis-app-key) for recipient suggestions
 
@@ -97,7 +97,7 @@ Everything is set with environment variables.
 | `DAVIS_LOGIN_ATTRIBUTE` | `username` | Which header is the Davis login: `username` (`Remote-User`) or `email` (`Remote-Email`) |
 | `LOGOUT_URL` | | Where "Sign out" goes, usually your identity provider's logout page. When empty, it reloads the page |
 | `APP_DATA_DIR` | `/app/var/data` | Where the settings database and the attachments waiting to be sent are kept. Mount a volume there |
-| `DATABASE_URL` | `sqlite:////app/var/data/webmail.db` | The settings database. Any [Doctrine DSN](https://www.doctrine-project.org/projects/doctrine-dbal/en/latest/reference/configuration.html#connecting-using-a-url) works, the SQLite default is fine |
+| `DATABASE_URL` | `sqlite:////app/var/data/postel.db` | The settings database. Any [Doctrine DSN](https://www.doctrine-project.org/projects/doctrine-dbal/en/latest/reference/configuration.html#connecting-using-a-url) works, the SQLite default is fine |
 
 > [!NOTE]
 >
@@ -105,7 +105,7 @@ Everything is set with environment variables.
 
 ## Dovecot master user
 
-The webmail logs into Dovecot as `<user>*<master user>` with the master password, and Dovecot opens the mailbox of `<user>`. This way the webmail never needs the user's own password.
+Postel logs into Dovecot as `<user>*<master user>` with the master password, and Dovecot opens the mailbox of `<user>`. This way Postel never needs the user's own password.
 
 With [docker-mailserver](https://docker-mailserver.github.io/docker-mailserver/latest/config/advanced/dovecot-master-accounts/):
 
@@ -117,48 +117,48 @@ With Dovecot on its own, see [master users](https://doc.dovecot.org/configuratio
 
 > [!CAUTION]
 >
-> The master password opens every mailbox on the server. Keep it out of anything a browser can reach, and make sure the webmail container can only be reached through your reverse proxy.
+> The master password opens every mailbox on the server. Keep it out of anything a browser can reach, and make sure the Postel container can only be reached through your reverse proxy.
 
 The `<user>` part comes from the forward-auth headers: the email (`Remote-Email`) by default, or the username (`Remote-User`) with `IMAP_LOGIN_ATTRIBUTE=username`. It has to match the mailbox login exactly.
 
 ## Davis app key
 
-Recipient suggestions come from the user's [Davis](https://github.com/tchapi/davis) address books, read with an app key: the webmail logs in as `<user>*<app id>` with the key's secret, and Davis acts as `<user>`. It needs Davis 5.6 or later.
+Recipient suggestions come from the user's [Davis](https://github.com/tchapi/davis) address books, read with an app key: Postel logs in as `<user>*<app id>` with the key's secret, and Davis acts as `<user>`. It needs Davis 5.6 or later.
 
 1. Turn app keys on in Davis with `APP_KEYS_ENABLED=true`
-2. Create a key, for all users or only the ones using the webmail:
+2. Create a key, for all users or only the ones using Postel:
 
 ```sh
-docker exec davis bin/console davis:app-key:create webmail --all-users
+docker exec davis bin/console davis:app-key:create postel --all-users
 # or
-docker exec davis bin/console davis:app-key:create webmail --user alice --user bob
+docker exec davis bin/console davis:app-key:create postel --user alice --user bob
 ```
 
 _The **App keys** page of the Davis dashboard does the same._
 
-3. Set `DAVIS_URL`, `DAVIS_APP_ID` and `DAVIS_APP_SECRET` on the webmail
+3. Set `DAVIS_URL`, `DAVIS_APP_ID` and `DAVIS_APP_SECRET` on Postel
 
 > [!NOTE]
 >
 > Davis never creates an account for an app key: each user needs an existing Davis account with the same name. Users without one simply get no suggestions.
 >
-> `--all-users` does not include Davis admins. If an admin uses the webmail, add them with `--user`.
+> `--all-users` does not include Davis admins. If an admin uses Postel, add them with `--user`.
 
-The webmail keeps a copy of the names and addresses in its SQLite file, and checks Davis for changes at most every five minutes. Suggestions never wait for Davis.
+Postel keeps a copy of the names and addresses in its SQLite file, and checks Davis for changes at most every five minutes. Suggestions never wait for Davis.
 
 # 🌐 Reverse proxy and authentication
 
-The webmail has no login page. It relies on a reverse proxy that checks the user with an identity provider (forward-auth), and passes these headers on each request:
+Postel has no login page. It relies on a reverse proxy that checks the user with an identity provider (forward-auth), and passes these headers on each request:
 
   - `Remote-User`: the username
   - `Remote-Email`: the email address
   - `Remote-Name`: the display name (_optional_)
 
-The webmail only trusts these headers when the request comes from an address in `TRUSTED_PROXIES`. When the identity provider's session ends, the webmail gets a `401` on its next request and reloads the page, which brings the login page back.
+Postel only trusts these headers when the request comes from an address in `TRUSTED_PROXIES`. When the identity provider's session ends, Postel gets a `401` on its next request and reloads the page, which brings the login page back.
 
 > [!IMPORTANT]
 >
-> Set `TRUSTED_PROXIES` to your reverse proxy's address only, and don't publish the webmail's port. Anything that can reach the container from a trusted address can choose who it is.
+> Set `TRUSTED_PROXIES` to your reverse proxy's address only, and don't publish Postel's port. Anything that can reach the container from a trusted address can choose who it is.
 
 ## Traefik and Authelia
 
@@ -171,21 +171,21 @@ labels:
   - "traefik.http.middlewares.authelia.forwardauth.authResponseHeaders=Remote-User,Remote-Groups,Remote-Name,Remote-Email"
 ```
 
-On the webmail container:
+On the Postel container:
 
 ```yaml
 labels:
   - "traefik.enable=true"
-  - "traefik.http.routers.webmail.rule=Host(`mail.example.com`)"
-  - "traefik.http.routers.webmail.entrypoints=websecure"
-  - "traefik.http.routers.webmail.tls.certresolver=default"
-  - "traefik.http.routers.webmail.middlewares=authelia@docker"
-  - "traefik.http.services.webmail.loadbalancer.server.port=8080"
+  - "traefik.http.routers.postel.rule=Host(`mail.example.com`)"
+  - "traefik.http.routers.postel.entrypoints=websecure"
+  - "traefik.http.routers.postel.tls.certresolver=default"
+  - "traefik.http.routers.postel.middlewares=authelia@docker"
+  - "traefik.http.services.postel.loadbalancer.server.port=8080"
 ```
 
 > [!TIP]
 >
-> To know Traefik's address for `TRUSTED_PROXIES`, give it a fixed one on the network it shares with the webmail. If the webmail is on several networks with Traefik, tell Traefik which one to use with the `traefik.docker.network` label, otherwise it picks one at random and the requests may not come from the address you trust.
+> To know Traefik's address for `TRUSTED_PROXIES`, give it a fixed one on the network it shares with Postel. If Postel is on several networks with Traefik, tell Traefik which one to use with the `traefik.docker.network` label, otherwise it picks one at random and the requests may not come from the address you trust.
 
 ## Caddy and Authelia
 
@@ -195,7 +195,7 @@ mail.example.com {
         uri /api/authz/forward-auth
         copy_headers Remote-User Remote-Groups Remote-Email Remote-Name
     }
-    reverse_proxy webmail:8080
+    reverse_proxy postel:8080
 }
 ```
 
@@ -204,15 +204,15 @@ mail.example.com {
 The image runs php-fpm and Caddy, and listens on port `8080`. TLS is left to your reverse proxy.
 
 ```sh
-docker run -d --name webmail \
+docker run -d --name postel \
   -e APP_SECRET=change-me \
   -e TRUSTED_PROXIES=172.18.0.2 \
   -e IMAP_HOST=mail \
   -e IMAP_MASTER_PASSWORD=the-master-password \
   -e SMTP_HOST=mail \
   -e LOGOUT_URL=https://auth.example.com/logout \
-  -v webmail-data:/app/var/data \
-  ghcr.io/tchapi/webmail:1.0.0
+  -v postel-data:/app/var/data \
+  ghcr.io/tchapi/postel:1.0.0
 ```
 
 A sample [`compose.yaml`](compose.yaml) is also included. It reads the variables from a `.env` file next to it.
@@ -220,21 +220,21 @@ A sample [`compose.yaml`](compose.yaml) is also included. It reads the variables
 To build the image yourself, from the checked out version:
 
 ```sh
-docker build --tag webmail:latest .
+docker build --tag postel:latest .
 ```
 
 ## Docker images
 
-For each release, an image is built for `amd64` and `arm64` and published in the [GitHub package repository](https://github.com/tchapi/webmail/pkgs/container/webmail).
+For each release, an image is built for `amd64` and `arm64` and published in the [GitHub package repository](https://github.com/tchapi/postel/pkgs/container/webmail).
 
 ### Release images
 
 Each release is tagged with its version, its minor version, its major version, and `latest`:
 
 ```
-docker pull ghcr.io/tchapi/webmail:1.0.0
-docker pull ghcr.io/tchapi/webmail:1.0
-docker pull ghcr.io/tchapi/webmail:1
+docker pull ghcr.io/tchapi/postel:1.0.0
+docker pull ghcr.io/tchapi/postel:1.0
+docker pull ghcr.io/tchapi/postel:1
 ```
 
 ### Edge image
@@ -242,7 +242,7 @@ docker pull ghcr.io/tchapi/webmail:1
 The edge image is built from the tip of the main branch, on demand:
 
 ```
-docker pull ghcr.io/tchapi/webmail:edge
+docker pull ghcr.io/tchapi/postel:edge
 ```
 
 > [!WARNING]
@@ -284,13 +284,13 @@ docker compose -f dev/mailserver/compose.yaml up -d
 cd backend && php bin/console app:dev:seed-mailbox --count=2000
 ```
 
-A throwaway Davis, with 300 contacts for `alice` and an app key for the webmail:
+A throwaway Davis, with 300 contacts for `alice` and an app key for Postel:
 
 ```sh
 docker compose -f dev/davis/compose.yaml up -d
-docker exec -u www-data webmail-dev-davis sh -c 'cd /var/www/davis && APP_ENV=prod bin/console doctrine:migrations:migrate --no-interaction'
+docker exec -u www-data postel-dev-davis sh -c 'cd /var/www/davis && APP_ENV=prod bin/console doctrine:migrations:migrate --no-interaction'
 dev/davis/seed.sh
-docker exec -u www-data webmail-dev-davis sh -c 'cd /var/www/davis && APP_ENV=prod bin/console davis:app-key:create webmail --all-users'
+docker exec -u www-data postel-dev-davis sh -c 'cd /var/www/davis && APP_ENV=prod bin/console davis:app-key:create postel --all-users'
 ```
 
 Then point the backend at them in `backend/.env.local`:
@@ -356,19 +356,19 @@ How the parts fit together is explained in [docs/architecture.md](docs/architect
 
 ### Logs
 
-The container prints everything on its standard output: `docker logs webmail`.
+The container prints everything on its standard output: `docker logs postel`.
 
 ### Every request gets a `401`
 
-The webmail does not trust the request's identity headers. Check that:
+Postel does not trust the request's identity headers. Check that:
 
-  - `TRUSTED_PROXIES` has the address the requests really come from, which is the reverse proxy's address on the network it shares with the webmail
-  - with Traefik, when the webmail is on several networks with it, the `traefik.docker.network` label names the right one
+  - `TRUSTED_PROXIES` has the address the requests really come from, which is the reverse proxy's address on the network it shares with Postel
+  - with Traefik, when Postel is on several networks with it, the `traefik.docker.network` label names the right one
   - the forward-auth passes `Remote-User` and `Remote-Email`
 
 ### "Couldn't load messages", and `Maximum number of connections from user+IP exceeded` in the logs
 
-Dovecot limits the number of connections per user and IP address (`mail_max_userip_connections`, 10 by default), and all the webmail's connections come from the container's address. Many tabs or devices open at once can reach it. Raise the limit in Dovecot's configuration if needed.
+Dovecot limits the number of connections per user and IP address (`mail_max_userip_connections`, 10 by default), and all Postel's connections come from the container's address. Many tabs or devices open at once can reach it. Raise the limit in Dovecot's configuration if needed.
 
 ### The mailbox does not open: `Authentication failed`
 

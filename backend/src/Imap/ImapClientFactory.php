@@ -12,7 +12,7 @@ use Webklex\PHPIMAP\ClientManager;
  * Builds IMAP clients logged in as the user through a Dovecot master user.
  *
  * Dovecot accepts "user*master" with the master password and opens the
- * mailbox of "user", so the webmail never needs the user's own password.
+ * mailbox of "user", so Postel never needs the user's own password.
  * See https://doc.dovecot.org/configuration_manual/authentication/master_users/
  */
 final class ImapClientFactory

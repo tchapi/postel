@@ -2,7 +2,7 @@ import { createContext, use } from 'react'
 import type { Language } from '../types'
 
 const en = {
-  appName: 'Mail',
+  appName: 'Postel',
   searchMail: 'Search mail',
   compose: 'Compose',
   unreadBadge: (n: number) => `${n} unread`,
@@ -234,7 +234,7 @@ const en = {
 export type Strings = typeof en
 
 const fr: Strings = {
-  appName: 'Mail',
+  appName: 'Postel',
   searchMail: 'Rechercher',
   compose: 'Écrire',
   unreadBadge: (n) => `${n} non lus`,

@@ -18,7 +18,7 @@ RUN composer install --no-dev --no-scripts --no-progress --prefer-dist --ignore-
 FROM caddy:2.10.2 AS caddy
 
 FROM php:8.4-fpm-alpine
-LABEL org.opencontainers.image.source="https://github.com/tchapi/webmail"
+LABEL org.opencontainers.image.source="https://github.com/tchapi/postel"
 
 RUN apk add --no-cache supervisor su-exec icu-libs \
     && apk add --no-cache --virtual .build-deps icu-dev $PHPIZE_DEPS \
@@ -28,14 +28,14 @@ RUN apk add --no-cache supervisor su-exec icu-libs \
 COPY --from=caddy /usr/bin/caddy /usr/bin/caddy
 COPY docker/Caddyfile /etc/caddy/Caddyfile
 COPY docker/supervisord.conf /etc/supervisord.conf
-COPY docker/php.ini "$PHP_INI_DIR/conf.d/zz-webmail.ini"
-COPY docker/php-fpm.conf /usr/local/etc/php-fpm.d/zz-webmail.conf
+COPY docker/php.ini "$PHP_INI_DIR/conf.d/zz-postel.ini"
+COPY docker/php-fpm.conf /usr/local/etc/php-fpm.d/zz-postel.conf
 COPY --chmod=755 docker/entrypoint.sh /usr/local/bin/entrypoint.sh
 
 WORKDIR /app
 ENV APP_ENV=prod
 ENV APP_DATA_DIR=/app/var/data
-ENV DATABASE_URL=sqlite:////app/var/data/webmail.db
+ENV DATABASE_URL=sqlite:////app/var/data/postel.db
 COPY --chown=www-data:www-data backend/ ./
 COPY --from=composer --chown=www-data:www-data /app/vendor ./vendor
 COPY --from=frontend --chown=www-data:www-data /app/dist ./public

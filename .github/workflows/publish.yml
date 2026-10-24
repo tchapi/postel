@@ -10,7 +10,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  IMAGE: ghcr.io/tchapi/webmail
+  IMAGE: ghcr.io/tchapi/postel
 
 jobs:
   checks:
