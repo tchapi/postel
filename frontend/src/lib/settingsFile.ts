@@ -1,6 +1,15 @@
 import { ACCENTS } from '../theme'
 import type { Density, Language, Settings } from '../types'
 
+// Accents of exports made before the muted palette, mapped to their closest new one
+const RENAMED_ACCENTS: Record<string, string> = {
+  violet: 'iris',
+  persimmon: 'clay',
+  berry: 'rose',
+  plum: 'rose',
+  jade: 'teal',
+}
+
 export const SETTINGS_FILE_VERSION = 1
 export const SETTINGS_FILE_NAME = 'postel-settings.json'
 
@@ -100,10 +109,14 @@ export function parseSettingsFile(text: string): Partial<Settings> {
     patch.language = settings.language as Language
   }
   if ('accent' in settings) {
-    if (typeof settings.accent !== 'string' || !(settings.accent in ACCENTS)) {
+    const accent =
+      typeof settings.accent === 'string'
+        ? (RENAMED_ACCENTS[settings.accent] ?? settings.accent)
+        : settings.accent
+    if (typeof accent !== 'string' || !(accent in ACCENTS)) {
       throw new Error(`Unknown accent ${JSON.stringify(settings.accent)}`)
     }
-    patch.accent = settings.accent as Settings['accent']
+    patch.accent = accent as Settings['accent']
   }
 
   return patch

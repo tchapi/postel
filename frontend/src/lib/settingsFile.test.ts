@@ -10,7 +10,7 @@ const settings: Settings = {
   density: 'compact',
   threads: false,
   language: 'fr',
-  accent: 'jade',
+  accent: 'teal',
   allowedSenders: ['news@shop.example'],
 }
 
@@ -37,7 +37,7 @@ describe('buildSettingsFile', () => {
         density: 'compact',
         threads: false,
         language: 'fr',
-        accent: 'jade',
+        accent: 'teal',
       },
     })
   })
@@ -56,6 +56,12 @@ describe('parseSettingsFile', () => {
       remoteImages: 'block',
       density: 'comfortable',
     })
+  })
+
+  it('maps the accents of older files to the new ones', () => {
+    expect(parseSettingsFile(file({ accent: 'violet' }))).toMatchObject({ accent: 'iris' })
+    expect(parseSettingsFile(file({ accent: 'jade' }))).toMatchObject({ accent: 'teal' })
+    expect(() => parseSettingsFile(file({ accent: 'neon' }))).toThrow('Unknown accent')
   })
 
   it('drops unknown fields', () => {

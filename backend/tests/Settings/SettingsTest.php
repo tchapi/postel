@@ -46,7 +46,7 @@ final class SettingsTest extends WebTestCase
     public function testDefaultsBeforeAnythingIsSaved(): void
     {
         self::assertSame(
-            ['fromName' => null, 'signature' => null, 'loadRemoteImages' => false, 'density' => 'comfortable', 'threads' => true, 'language' => 'en', 'accent' => 'violet', 'allowedSenders' => [], 'updatedAt' => null],
+            ['fromName' => null, 'signature' => null, 'loadRemoteImages' => false, 'density' => 'comfortable', 'threads' => true, 'language' => 'en', 'accent' => 'iris', 'allowedSenders' => [], 'updatedAt' => null],
             $this->request('GET'),
         );
         self::assertResponseIsSuccessful();
@@ -54,7 +54,7 @@ final class SettingsTest extends WebTestCase
 
     public function testSaveAndReadBack(): void
     {
-        $saved = $this->request('PUT', ['fromName' => ' Alice L. ', 'signature' => '<p>Alice</p><script>x()</script>', 'loadRemoteImages' => true, 'density' => 'compact', 'threads' => false, 'language' => 'fr', 'accent' => 'jade', 'allowedSenders' => ['News@Shop.example', 'news@shop.example']]);
+        $saved = $this->request('PUT', ['fromName' => ' Alice L. ', 'signature' => '<p>Alice</p><script>x()</script>', 'loadRemoteImages' => true, 'density' => 'compact', 'threads' => false, 'language' => 'fr', 'accent' => 'teal', 'allowedSenders' => ['News@Shop.example', 'news@shop.example']]);
         self::assertResponseIsSuccessful();
         self::assertSame('Alice L.', $saved['fromName']);
         self::assertSame('<p>Alice</p>', $saved['signature']);
@@ -62,7 +62,7 @@ final class SettingsTest extends WebTestCase
         self::assertSame('compact', $saved['density']);
         self::assertFalse($saved['threads']);
         self::assertSame('fr', $saved['language']);
-        self::assertSame('jade', $saved['accent']);
+        self::assertSame('teal', $saved['accent']);
         self::assertSame(['news@shop.example'], $saved['allowedSenders']);
         self::assertNotNull($saved['updatedAt']);
 

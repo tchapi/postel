@@ -32,7 +32,7 @@ final readonly class Settings
 
     public static function defaults(): self
     {
-        return new self(null, null, false, UserSettings::DENSITY_COMFORTABLE, true, 'en', 'violet', [], null);
+        return new self(null, null, false, UserSettings::DENSITY_COMFORTABLE, true, 'en', 'iris', [], null);
     }
 
     public static function fromEntity(UserSettings $entity): self

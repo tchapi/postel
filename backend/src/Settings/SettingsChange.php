@@ -24,7 +24,7 @@ final readonly class SettingsChange
         #[Assert\Choice(choices: UserSettings::LANGUAGES)]
         public string $language = 'en',
         #[Assert\Choice(choices: UserSettings::ACCENTS)]
-        public string $accent = 'violet',
+        public string $accent = 'iris',
         #[Assert\Count(max: 1000)]
         #[Assert\All([new Assert\Email(mode: Assert\Email::VALIDATION_MODE_HTML5)])]
         public array $allowedSenders = [],

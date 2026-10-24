@@ -21,7 +21,7 @@ class UserSettings
     public const string DENSITY_COMPACT = 'compact';
     public const array DENSITIES = [self::DENSITY_COMFORTABLE, self::DENSITY_COMPACT];
     public const array LANGUAGES = ['en', 'fr'];
-    public const array ACCENTS = ['violet', 'persimmon', 'berry', 'plum', 'ocean', 'jade'];
+    public const array ACCENTS = ['iris', 'ocean', 'teal', 'sage', 'olive', 'amber', 'clay', 'rose'];
 
     #[ORM\Id]
     #[ORM\Column(length: 255)]
@@ -45,8 +45,8 @@ class UserSettings
     #[ORM\Column(length: 5, options: ['default' => 'en'])]
     private string $language = 'en';
 
-    #[ORM\Column(length: 20, options: ['default' => 'violet'])]
-    private string $accent = 'violet';
+    #[ORM\Column(length: 20, options: ['default' => 'iris'])]
+    private string $accent = 'iris';
 
     /** @var list<string> */
     #[ORM\Column(type: Types::JSON, options: ['default' => '[]'])]
