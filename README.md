@@ -58,13 +58,15 @@ Plain Dovecot: see [master users](https://doc.dovecot.org/configuration_manual/a
 
 ### Davis app key
 
-Contacts come from [Davis](https://github.com/tchapi/davis) over CardDAV, with an app key so the webmail never holds anyone's Davis password ([tchapi/davis#313](https://github.com/tchapi/davis/pull/313), not released yet). Create one for all users, or only the ones using the webmail:
+Contacts come from [Davis](https://github.com/tchapi/davis) 5.6 or later over CardDAV, with an app key so the webmail never holds anyone's Davis password. App keys are off by default: set `APP_KEYS_ENABLED=true` on Davis, then create a key for all users, or only the ones using the webmail (`--user alice --user bob`):
 
 ```sh
-docker exec davis bin/console davis:app-key:create webmail
+docker exec davis bin/console davis:app-key:create webmail --all-users
 ```
 
-Then set `DAVIS_URL`, `DAVIS_APP_ID` and `DAVIS_APP_SECRET`. A user without a Davis account just gets no suggestions.
+The App keys page of the Davis dashboard does the same. Then set `DAVIS_URL`, `DAVIS_APP_ID` and `DAVIS_APP_SECRET`.
+
+The Davis login is the forward-auth username by default (`DAVIS_LOGIN_ATTRIBUTE`), and it has to be an existing Davis account: Davis never creates one for a key. A user without one just gets no suggestions. `--all-users` leaves out Davis admins, name them with `--user` if they use the webmail.
 
 ### Reverse proxy
 
@@ -123,13 +125,13 @@ docker compose -f dev/mailserver/compose.yaml up -d
 cd backend && php bin/console app:dev:seed-mailbox --count=2000
 ```
 
-And a throwaway Davis for contacts, with 300 contacts for `alice` and an app key for the webmail. App keys are not in a Davis release yet, see `dev/davis/compose.yaml` to run the branch:
+And a throwaway Davis for contacts, with 300 contacts for `alice` and an app key for the webmail:
 
 ```sh
 docker compose -f dev/davis/compose.yaml up -d
 docker exec -u www-data webmail-dev-davis sh -c 'cd /var/www/davis && APP_ENV=prod bin/console doctrine:migrations:migrate --no-interaction'
 dev/davis/seed.sh
-docker exec -u www-data webmail-dev-davis sh -c 'cd /var/www/davis && APP_ENV=prod bin/console davis:app-key:create webmail'
+docker exec -u www-data webmail-dev-davis sh -c 'cd /var/www/davis && APP_ENV=prod bin/console davis:app-key:create webmail --all-users'
 ```
 
 Then point the backend at the mail server in `backend/.env.local`:

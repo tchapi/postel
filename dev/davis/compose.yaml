@@ -5,14 +5,10 @@
 #
 # Admin: admin / admin-password at http://127.0.0.1:9000
 # CardDAV user: alice / alice-password, see dev/davis/seed.sh
-#
-# Contacts need app keys (https://github.com/tchapi/davis/pull/313). Until a
-# release has them, build that branch and point DAVIS_IMAGE at it:
-#   docker build -f docker/Dockerfile-standalone -t davis-standalone:app-keys <davis checkout>
-#   DAVIS_IMAGE=davis-standalone:app-keys docker compose -f dev/davis/compose.yaml up -d
+# The webmail's app key: see README.md
 services:
   davis:
-    image: ${DAVIS_IMAGE:-ghcr.io/tchapi/davis-standalone:5.5.1}
+    image: ghcr.io/tchapi/davis-standalone:5.6.1
     container_name: webmail-dev-davis
     ports:
       - "127.0.0.1:9000:9000"
@@ -28,4 +24,5 @@ services:
       CALDAV_ENABLED: "true"
       CARDDAV_ENABLED: "true"
       WEBDAV_ENABLED: "false"
+      APP_KEYS_ENABLED: "true"
       MAILER_DSN: null://null

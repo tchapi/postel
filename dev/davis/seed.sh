@@ -11,7 +11,7 @@ COUNT=${1:-300}
 hash=$(docker exec webmail-dev-davis php -r "echo password_hash('$PASSWORD', PASSWORD_BCRYPT);")
 # The bcrypt hash is full of "$", keep the inner shell from expanding them.
 hash=${hash//\$/\\$}
-docker exec webmail-dev-davis sh -c "cd /var/www/davis && APP_ENV=prod bin/console doctrine:query:sql -q \"
+docker exec -u www-data webmail-dev-davis sh -c "cd /var/www/davis && APP_ENV=prod bin/console doctrine:query:sql -q \"
   INSERT INTO users (username, digesta1) SELECT '$USER', '$hash' WHERE NOT EXISTS (SELECT 1 FROM users WHERE username = '$USER');
   UPDATE users SET digesta1 = '$hash' WHERE username = '$USER';
   INSERT INTO principals (uri, email, displayname, is_main, is_admin) SELECT 'principals/$USER', '$USER@example.test', 'Alice', 1, 0 WHERE NOT EXISTS (SELECT 1 FROM principals WHERE uri = 'principals/$USER');
