@@ -86,14 +86,14 @@ Everything is set with environment variables.
 | `TRUSTED_PROXIES` | | The address(es) of your reverse proxy, comma-separated. Only requests coming from there can say who the user is. **Required**, nobody can log in without it |
 | `IMAP_HOST` | `mail` | IMAP server |
 | `IMAP_PORT` | `143` | IMAP port |
-| `IMAP_ENCRYPTION` | `false` | `false`, `ssl` or `tls` (_STARTTLS_) |
+| `IMAP_ENCRYPTION` | `false` | `false`, `ssl` or `tls` (_implicit TLS, usually port 993_), or `starttls` (_usually port 143_) |
 | `IMAP_VALIDATE_CERT` | `true` | Check the IMAP server's certificate |
 | `IMAP_MASTER_USER` | `webmail` | The Dovecot master user |
 | `IMAP_MASTER_PASSWORD` | | Its password, **required** |
 | `IMAP_LOGIN_ATTRIBUTE` | `email` | Which header is the mailbox login: `email` (`Remote-Email`) or `username` (`Remote-User`) |
 | `SMTP_HOST` | `mail` | SMTP submission server, used with the same master user |
 | `SMTP_PORT` | `587` | Submission port |
-| `SMTP_ENCRYPTION` | `tls` | `false`, `ssl` or `tls` (_STARTTLS_) |
+| `SMTP_ENCRYPTION` | `starttls` | `false`, `ssl` or `tls` (_implicit TLS, usually port 465_), or `starttls` (_usually port 587_) |
 | `SMTP_VALIDATE_CERT` | `true` | Check the SMTP server's certificate |
 | `DAVIS_URL` | | The DAV root of your Davis server, for instance `https://dav.example.com/dav/`. Leave it empty to turn recipient suggestions off |
 | `DAVIS_APP_ID` | | The Davis app key's id (`app_…`) |

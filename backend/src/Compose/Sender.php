@@ -64,7 +64,7 @@ final class Sender
 
     private function transport(RemoteUser $user): EsmtpTransport
     {
-        $implicitTls = 'ssl' === $this->smtp->encryption;
+        $implicitTls = in_array($this->smtp->encryption, ['ssl', 'tls'], true);
         $transport = new EsmtpTransport($this->smtp->host, $this->smtp->port, $implicitTls);
         $transport
             ->setUsername($user->email.'*'.$this->clients->masterUser())
