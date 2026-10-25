@@ -5,11 +5,14 @@ declare(strict_types=1);
 namespace App\Imap;
 
 use App\Imap\Dto\Folder;
+use App\Imap\Exception\ImapCommandFailed;
 use App\Security\RemoteUser;
 
 use function array_slice;
 use function count;
 use function in_array;
+use function is_array;
+use function is_string;
 
 final class FolderService
 {
@@ -77,6 +80,48 @@ final class FolderService
         }
 
         return null;
+    }
+
+    /**
+     * The archive folder, created on first use: archiving must not depend on
+     * the account already having one. It goes next to the other well-known
+     * folders (so under "INBOX." on servers that keep everything there), and
+     * carries the \Archive attribute when the server lets us set it.
+     */
+    public function archive(RemoteUser $user): string
+    {
+        return $this->findByRole($user, FolderRole::Archive) ?? Mailbox::session($this->clients, $user, static function (Mailbox $mailbox): string {
+            $parent = null;
+            $delimiter = '';
+            foreach ($mailbox->command('LIST', '"" "*"')->tokenized('LIST') as $row) {
+                $flags = is_array($row[2] ?? null) ? array_values(array_filter($row[2], 'is_string')) : [];
+                $path = $row[4] ?? null;
+                if (!is_string($path) || !in_array(FolderRole::detect($path, $flags), [FolderRole::Sent, FolderRole::Trash, FolderRole::Drafts, FolderRole::Junk], true)) {
+                    continue;
+                }
+                $delimiter = is_string($row[3] ?? null) ? $row[3] : '';
+                $position = '' === $delimiter ? false : strrpos($path, $delimiter);
+                $parent = false === $position ? null : substr($path, 0, $position);
+                break;
+            }
+            $path = null === $parent ? 'Archive' : $parent.$delimiter.'Archive';
+
+            $specialUse = array_any($mailbox->command('CAPABILITY')->untagged, static fn (string $line): bool => str_contains(strtoupper($line), 'CREATE-SPECIAL-USE'));
+            try {
+                $mailbox->command('CREATE', Mailbox::quote($path).($specialUse ? ' (USE (\Archive))' : ''));
+            } catch (ImapCommandFailed $e) {
+                if (!str_contains(strtoupper($e->text), 'ALREADYEXISTS') && !str_contains(strtolower($e->text), 'already exists')) {
+                    throw $e;
+                }
+            }
+            try {
+                $mailbox->command('SUBSCRIBE', Mailbox::quote($path));
+            } catch (ImapCommandFailed) {
+                // Unsubscribed still works for us, other clients may just not show it
+            }
+
+            return $path;
+        });
     }
 
     /**

@@ -484,7 +484,7 @@ export function MailApp({
       }
       const target =
         action === 'archive'
-          ? roleId('archive')
+          ? await actions.archiveFolder()
           : action === 'junk'
             ? roleId('junk')
             : typeof action === 'object'

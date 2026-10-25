@@ -20,8 +20,17 @@ final class FoldersController
     }
 
     #[Route('/api/folders', methods: ['GET'])]
-    public function __invoke(#[CurrentUser] RemoteUser $user): JsonResponse
+    public function list(#[CurrentUser] RemoteUser $user): JsonResponse
     {
         return JsonResponse::fromJsonString($this->serializer->serialize($this->folders->list($user), 'json'));
+    }
+
+    /**
+     * The archive folder's path, created if the account has none yet.
+     */
+    #[Route('/api/folders/archive', methods: ['POST'])]
+    public function archive(#[CurrentUser] RemoteUser $user): JsonResponse
+    {
+        return new JsonResponse(['id' => $this->folders->archive($user)]);
     }
 }

@@ -17,7 +17,8 @@ use Symfony\Component\Security\Http\Attribute\CurrentUser;
 
 /**
  * Bulk actions on messages. Archive, junk and trash are moves to the folder
- * with that role, the frontend knows which one.
+ * with that role, the frontend knows which one (POST /api/folders/archive
+ * creates the archive folder when there is none).
  */
 #[Route('/api/messages')]
 final class MessageActionsController

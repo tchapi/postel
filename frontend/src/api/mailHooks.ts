@@ -360,6 +360,14 @@ export function createMailHooks(qc: QueryClient): MailHooks {
       }
     },
 
+    async archiveFolder() {
+      const known = roleFolder('archive')
+      if (known) return known
+      const { id } = await api<{ id: string }>('/folders/archive', json('POST', {}))
+      await qc.invalidateQueries({ queryKey: ['folders'] })
+      return id
+    },
+
     async remove(refs) {
       const trash = roleFolder('trash')
       const inTrash = refs.filter((ref) => ref.folder === trash)

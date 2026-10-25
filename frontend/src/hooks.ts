@@ -21,6 +21,8 @@ import type {
 export interface MailActions {
   setFlags(refs: MessageRef[], flags: { seen?: boolean; flagged?: boolean }): Promise<Undo>
   move(refs: MessageRef[], toFolder: string): Promise<Undo>
+  /** The archive folder's id, created on the server when the account has none. */
+  archiveFolder(): Promise<string>
   /** Moves to Trash, or expunges when already in Trash (no undo then). */
   remove(refs: MessageRef[]): Promise<Undo | undefined>
   send(draft: DraftInput): Promise<void>
