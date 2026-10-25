@@ -20,7 +20,7 @@ FROM caddy:2.10.2 AS caddy
 FROM php:8.4-fpm-alpine
 LABEL org.opencontainers.image.source="https://github.com/tchapi/postel"
 
-RUN apk add --no-cache supervisor su-exec icu-libs \
+RUN apk add --no-cache supervisor su-exec icu-libs tzdata \
     && apk add --no-cache --virtual .build-deps icu-dev $PHPIZE_DEPS \
     && docker-php-ext-install -j"$(nproc)" intl opcache \
     && apk del .build-deps
