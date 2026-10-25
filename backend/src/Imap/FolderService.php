@@ -42,7 +42,7 @@ final class FolderService
 
                 $nodes[$path] = [
                     'parent' => count($segments) > 1 ? implode($item['delimiter'], array_slice($segments, 0, -1)) : null,
-                    'name' => end($segments),
+                    'name' => MailboxName::decode(end($segments)),
                     'role' => FolderRole::detect($path, $item['flags']),
                     'unread' => (int) ($status['unseen'] ?? 0),
                     'total' => (int) ($status['messages'] ?? 0),
