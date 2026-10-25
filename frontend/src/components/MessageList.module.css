@@ -79,9 +79,12 @@
   left: 0;
   right: 0;
   z-index: 1;
-  overflow: hidden;
   pointer-events: none;
   color: var(--mantine-color-dimmed);
+  /* Hidden above its slot until a pull moves it down (set from the gesture) */
+  opacity: 0;
+  transform: translate3d(0, -100%, 0);
+  will-change: transform, opacity;
 }
 
 .footer {

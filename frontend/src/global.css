@@ -1,3 +1,10 @@
+/* The app is a fixed-height shell with its own pull to refresh: no page rubber band, and no
+   Safari pull-to-reload under the message list. */
+html,
+body {
+  overscroll-behavior: none;
+}
+
 /* Unchecked boxes on the default border vanish on the warm surfaces: give them a 3:1 edge. */
 .mantine-Checkbox-input:not(:checked, :indeterminate) {
   border-color: var(--mail-control-border);

@@ -5,7 +5,6 @@ import {
   type KeyboardEvent,
   type MouseEvent,
   type ReactNode,
-  type TouchEvent,
   type CSSProperties,
 } from 'react'
 import {
@@ -87,9 +86,15 @@ export type MessageListProps = {
 
 type ContextMenuState = { x: number; y: number; row: Row; uids: number[] } | null
 
+/** Pull distance (after resistance) that triggers a refresh on release. */
 const PULL_TRIGGER = 64
-/** Height the indicator holds while the refresh runs. */
+/** Distance the list holds, and the indicator's height, while the refresh runs. */
 const PULL_HOLD = 44
+/** The pull tends to this, ever slower: a rubber band rather than a hard stop. */
+const PULL_MAX = 120
+const PULL_EASE = 'transform 360ms cubic-bezier(0.22, 1, 0.36, 1), opacity 360ms ease'
+
+type PullPhase = 'idle' | 'pulling' | 'armed' | 'refreshing'
 
 export function MessageList(props: MessageListProps) {
   const {
@@ -134,10 +139,14 @@ export function MessageList(props: MessageListProps) {
   const { ref: areaRef, height: areaHeight } = useElementSize()
   const rowHeight = ROW_HEIGHT[density]
   const [menu, setMenu] = useState<ContextMenuState>(null)
-  const [pull, setPull] = useState(0)
-  const [pulling, setPulling] = useState(false)
-  const [refreshing, setRefreshing] = useState(false)
-  const pullStart = useRef<number | null>(null)
+  const [pullPhase, setPullPhase] = useState<PullPhase>('idle')
+  const pullContentRef = useRef<HTMLDivElement>(null)
+  const pullIndicatorRef = useRef<HTMLDivElement>(null)
+  const pullIconRef = useRef<SVGSVGElement>(null)
+  const onRefreshRef = useRef(onRefresh)
+  useEffect(() => {
+    onRefreshRef.current = onRefresh
+  })
 
   // One extra virtual row for the "loading more" / "end of list" footer.
   const count = rows.length > 0 ? rows.length + 1 : 0
@@ -206,34 +215,134 @@ export function MessageList(props: MessageListProps) {
     setMenu({ x: e.clientX, y: e.clientY, row, uids })
   }
 
-  // Pull to refresh (touch only, list scrolled to top). iOS cancels the touch
-  // rather than ending it when it takes the gesture over, so both settle it.
-  const onTouchStart = (e: TouchEvent) => {
-    if (!isTouch || refreshing) return
-    const atTop = (viewportRef.current?.scrollTop ?? 1) <= 0
-    pullStart.current = atTop ? (e.touches[0]?.clientY ?? null) : null
-    setPulling(pullStart.current !== null)
-  }
-  const onTouchMove = (e: TouchEvent) => {
-    if (pullStart.current === null) return
-    const dy = (e.touches[0]?.clientY ?? 0) - pullStart.current
-    setPull(dy > 0 ? Math.min(dy * 0.5, 96) : 0)
-  }
-  const onTouchEnd = async (cancelled: boolean) => {
-    const trigger = !cancelled && pullStart.current !== null && pull >= PULL_TRIGGER
-    pullStart.current = null
-    setPulling(false)
-    setPull(0)
-    if (!trigger) return
-    setRefreshing(true)
-    try {
-      await onRefresh()
-    } finally {
-      setRefreshing(false)
+  // Pull to refresh (touch only, list scrolled to top). Native listeners: the
+  // move must be cancellable, or Safari runs its own page pull and reload on
+  // top of ours. The end is caught on window, so a pull can never stay stuck.
+  // The drag writes transforms straight to the DOM once per frame; React only
+  // hears about phase changes, so the list never re-renders under the finger.
+  useEffect(() => {
+    const viewport = viewportRef.current
+    if (!isTouch || !viewport) return
+    let startY: number | null = null
+    let startX = 0
+    let offset = 0
+    let frame = 0
+    let busy = false
+    let phase: PullPhase = 'idle'
+
+    const setPhase = (next: PullPhase) => {
+      if (next !== phase) setPullPhase((phase = next))
     }
-  }
-  const pullOffset = refreshing ? PULL_HOLD : pull
-  const pullMotion = pulling ? 'none' : 'height 200ms ease, transform 200ms ease'
+    const paint = (animate: boolean) => {
+      const content = pullContentRef.current
+      const indicator = pullIndicatorRef.current
+      const icon = pullIconRef.current
+      const transition = animate ? PULL_EASE : 'none'
+      if (content) {
+        content.style.transition = transition
+        content.style.transform = offset ? `translate3d(0, ${offset}px, 0)` : ''
+        // No row presses or hovers while the list is being dragged
+        content.style.pointerEvents = startY === null ? '' : 'none'
+      }
+      if (indicator) {
+        indicator.style.transition = transition
+        indicator.style.transform = `translate3d(0, ${offset - PULL_HOLD}px, 0)`
+        indicator.style.opacity = String(Math.min(offset / PULL_TRIGGER, 1))
+      }
+      if (icon) icon.style.transform = `rotate(${(offset / PULL_TRIGGER) * 270}deg)`
+    }
+    const moveTo = (next: number, animate: boolean) => {
+      offset = next
+      if (animate) {
+        cancelAnimationFrame(frame)
+        frame = 0
+        paint(true)
+      } else if (!frame) {
+        frame = requestAnimationFrame(() => {
+          frame = 0
+          paint(false)
+        })
+      }
+    }
+
+    // The pull follows the finger that started it: other fingers are ignored,
+    // and only that finger lifting (or iOS cancelling the touch) ends it.
+    let finger: number | null = null
+    const tracked = (list: TouchList) =>
+      Array.from(list).find((touch) => touch.identifier === finger)
+
+    const onStart = (e: globalThis.TouchEvent) => {
+      if (startY !== null || busy) return
+      const touch = e.touches.length === 1 ? e.touches[0] : undefined
+      if (!touch || viewport.scrollTop > 0) return
+      startY = touch.clientY
+      startX = touch.clientX
+      finger = touch.identifier
+    }
+    const onMove = (e: globalThis.TouchEvent) => {
+      const touch = startY === null ? undefined : tracked(e.touches)
+      if (!touch || startY === null) return
+      const dy = touch.clientY - startY
+      const dx = touch.clientX - startX
+      if (offset === 0) {
+        // Wait for a clear direction before deciding what the finger is doing
+        if (Math.hypot(dx, dy) < 8) return
+        if (dy < 0 || Math.abs(dx) > Math.abs(dy) || viewport.scrollTop > 0) {
+          // Scrolling the list or swiping a row, not pulling
+          startY = finger = null
+          return
+        }
+      }
+      if (e.cancelable) e.preventDefault()
+      const pulled = PULL_MAX * (1 - Math.exp(-Math.max(dy, 0) / (PULL_MAX * 1.6)))
+      setPhase(pulled >= PULL_TRIGGER ? 'armed' : 'pulling')
+      moveTo(pulled, false)
+    }
+    const onEnd = async (e: globalThis.TouchEvent) => {
+      const cancelled = e.type === 'touchcancel'
+      if (startY === null) {
+        // Nothing tracked, yet the list is still pulled: put it back
+        if (!busy && offset > 0) {
+          setPhase('idle')
+          moveTo(0, true)
+        }
+        return
+      }
+      if (!cancelled && !tracked(e.changedTouches)) return
+      startY = finger = null
+      if (cancelled || offset < PULL_TRIGGER) {
+        setPhase('idle')
+        moveTo(0, true)
+        return
+      }
+      busy = true
+      setPhase('refreshing')
+      moveTo(PULL_HOLD, true)
+      try {
+        await onRefreshRef.current()
+      } finally {
+        busy = false
+        setPhase('idle')
+        moveTo(0, true)
+      }
+    }
+    const onEndListener = (e: globalThis.TouchEvent) => void onEnd(e)
+    viewport.addEventListener('touchstart', onStart, { passive: true })
+    viewport.addEventListener('touchmove', onMove, { passive: false })
+    window.addEventListener('touchend', onEndListener)
+    window.addEventListener('touchcancel', onEndListener)
+    return () => {
+      viewport.removeEventListener('touchstart', onStart)
+      viewport.removeEventListener('touchmove', onMove)
+      window.removeEventListener('touchend', onEndListener)
+      window.removeEventListener('touchcancel', onEndListener)
+      cancelAnimationFrame(frame)
+      startY = finger = null
+      offset = 0
+      paint(false)
+      setPhase('idle')
+    }
+  }, [isTouch])
 
   const allSelected = rows.length > 0 && selected.size === rows.length
 
@@ -375,36 +484,26 @@ export function MessageList(props: MessageListProps) {
 
       {isTouch && (
         <Group
+          ref={pullIndicatorRef}
           role="status"
           justify="center"
           gap={8}
           wrap="nowrap"
           className={classes.pull}
-          style={{ top: topInset, height: pullOffset, transition: pullMotion }}
+          style={{ top: topInset, height: PULL_HOLD }}
         >
-          {refreshing ? (
+          {pullPhase === 'refreshing' ? (
             <Loader size={14} color="gray" />
           ) : (
-            pull > 0 && (
-              <RefreshCwIcon
-                size={16}
-                strokeWidth={2}
-                style={{
-                  opacity: Math.min(pull / PULL_TRIGGER, 1),
-                  transform: `rotate(${pull * 4}deg)`,
-                }}
-              />
-            )
+            <RefreshCwIcon ref={pullIconRef} size={16} strokeWidth={2} />
           )}
-          {(pull > 0 || refreshing) && (
-            <Text size="sm" c="dimmed">
-              {refreshing
-                ? t.refreshing
-                : pull >= PULL_TRIGGER
-                  ? t.releaseToRefresh
-                  : t.pullToRefresh}
-            </Text>
-          )}
+          <Text size="sm" c="dimmed">
+            {pullPhase === 'refreshing'
+              ? t.refreshing
+              : pullPhase === 'armed'
+                ? t.releaseToRefresh
+                : t.pullToRefresh}
+          </Text>
         </Group>
       )}
 
@@ -413,10 +512,6 @@ export function MessageList(props: MessageListProps) {
         viewportRef={viewportRef}
         type="auto"
         scrollbars="y"
-        onTouchStart={onTouchStart}
-        onTouchMove={onTouchMove}
-        onTouchEnd={() => void onTouchEnd(false)}
-        onTouchCancel={() => void onTouchEnd(true)}
         classNames={{ viewport: classes.viewport }}
         styles={{ scrollbar: { marginTop: topInset } }}
         style={{ flex: 1, minHeight: 0, '--fade-end': `${topInset + 6}px` } as CSSProperties}
@@ -434,14 +529,7 @@ export function MessageList(props: MessageListProps) {
           onKeyDown: onListKeyDown,
         }}
       >
-        <div
-          style={{
-            transform: pullOffset ? `translateY(${pullOffset}px)` : undefined,
-            transition: pullMotion,
-          }}
-        >
-          {body}
-        </div>
+        <div ref={pullContentRef}>{body}</div>
       </ScrollArea>
 
       <Menu
