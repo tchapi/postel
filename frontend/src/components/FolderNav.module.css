@@ -59,6 +59,11 @@
     font-weight: 600;
   }
 
+  /* Room for the disclosure arrow */
+  &[data-parent] {
+    padding-inline-end: 34px;
+  }
+
   &[data-active] {
     background: var(--mantine-primary-color-light);
     color: var(--mantine-primary-color-light-color);
@@ -67,6 +72,47 @@
   &:focus-visible {
     outline: 2px solid var(--mantine-primary-color-filled);
     outline-offset: -2px;
+  }
+}
+
+/* Subfolders: an arrow at the row's end, beside the count, gone in the rail */
+
+.row {
+  position: relative;
+}
+
+.disclosure {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: var(--mantine-radius-sm);
+  color: var(--mantine-color-dimmed);
+
+  @mixin hover {
+    background: var(--mantine-color-default-hover);
+    color: var(--mantine-color-text);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--mantine-primary-color-filled);
+    outline-offset: -2px;
+  }
+
+  .root[data-collapsed] & {
+    pointer-events: none;
+  }
+
+  svg {
+    transition: transform 150ms ease;
+
+    &[data-open] {
+      transform: rotate(90deg);
+    }
   }
 }
 
@@ -272,7 +318,8 @@
   .corner,
   .sectionRule,
   .turn,
-  .link {
+  .link,
+  .disclosure svg {
     transition: none;
   }
 }

@@ -17,6 +17,8 @@ const en = {
   collapseFolders: 'Collapse folders',
   expandFolders: 'Expand folders',
   collapse: 'Collapse',
+  showSubfolders: (name: string) => `Show folders in ${name}`,
+  hideSubfolders: (name: string) => `Hide folders in ${name}`,
   folderRole: {
     inbox: 'Inbox',
     drafts: 'Drafts',
@@ -252,6 +254,8 @@ const fr: Strings = {
   collapseFolders: 'Réduire les dossiers',
   expandFolders: 'Déplier les dossiers',
   collapse: 'Réduire',
+  showSubfolders: (name: string) => `Afficher les dossiers de ${name}`,
+  hideSubfolders: (name: string) => `Masquer les dossiers de ${name}`,
   folderRole: {
     inbox: 'Boîte de réception',
     drafts: 'Brouillons',

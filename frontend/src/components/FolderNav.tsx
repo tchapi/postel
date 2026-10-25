@@ -1,9 +1,11 @@
 import type React from 'react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Kbd, ScrollArea, Stack, Tooltip, UnstyledButton } from '@mantine/core'
+import { useLocalStorage } from '@mantine/hooks'
 import {
   ArchiveIcon,
   BanIcon,
+  ChevronRightIcon,
   FileTextIcon,
   FolderIcon,
   InboxIcon,
@@ -79,6 +81,14 @@ function Monogram({ name }: { name: string }) {
   )
 }
 
+function hasUnreadBelow(f: Folder): boolean {
+  return (f.children ?? []).some((c) => c.unread > 0 || hasUnreadBelow(c))
+}
+
+function contains(f: Folder, id: string | null): boolean {
+  return (f.children ?? []).some((c) => c.id === id || contains(c, id))
+}
+
 /** Drafts show their total, every other folder its unread count. */
 function badgeCount(f: Folder): number {
   return f.role === 'drafts' ? f.total : f.unread
@@ -113,6 +123,13 @@ export function FolderNav({
 }: FolderNavProps) {
   const { t } = useI18n()
   const label = useFolderLabel()
+  // Folders whose subfolders are hidden, remembered by this browser like the pane's width
+  const [closed, setClosed] = useLocalStorage<string[]>({
+    key: 'webmail.folders-closed',
+    defaultValue: [],
+  })
+  const toggleOpen = (id: string) =>
+    setClosed((ids) => (ids.includes(id) ? ids.filter((i) => i !== id) : [...ids, id]))
 
   // A small shadow over the footer while more folders hide below it
   const viewport = useRef<HTMLDivElement>(null)
@@ -170,17 +187,25 @@ export function FolderNav({
     const Icon = f.role ? ROLE_ICON[f.role] : FolderIcon
     const count = badgeCount(f)
     const active = f.id === activeId
-    const strong = active || (f.unread > 0 && f.role !== 'drafts' && f.role !== 'sent')
+    const hasChildren = (f.children?.length ?? 0) > 0
+    // The open folder never hides: its parents stay open whatever was saved
+    const open = !closed.includes(f.id) || contains(f, activeId)
+    // A closed folder still says when unread mail waits below it
+    const strong =
+      active ||
+      (f.unread > 0 && f.role !== 'drafts' && f.role !== 'sent') ||
+      (!open && hasUnreadBelow(f))
     const inboxPill = f.role === 'inbox' && f.unread > 0
     const tooltip = count ? `${label(f)} · ${count}` : label(f)
 
     return (
-      <div key={f.id}>
+      <div key={f.id} className={classes.row}>
         <Tooltip label={tooltip} position="right" disabled={!collapsed}>
           <UnstyledButton
             className={classes.link}
             data-active={active || undefined}
             data-strong={strong || undefined}
+            data-parent={hasChildren || undefined}
             aria-current={active ? 'page' : undefined}
             style={{ '--depth': depth } as React.CSSProperties}
             onClick={() => onSelect(f.id)}
@@ -212,7 +237,18 @@ export function FolderNav({
             )}
           </UnstyledButton>
         </Tooltip>
-        {f.children?.map((c) => renderLink(c, depth + 1))}
+        {hasChildren && (
+          <UnstyledButton
+            className={`${classes.disclosure} ${classes.fade}`}
+            onClick={() => toggleOpen(f.id)}
+            aria-label={open ? t.hideSubfolders(label(f)) : t.showSubfolders(label(f))}
+            aria-expanded={open}
+            tabIndex={collapsed ? -1 : undefined}
+          >
+            <ChevronRightIcon size={14} strokeWidth={2} data-open={open || undefined} />
+          </UnstyledButton>
+        )}
+        {open && f.children?.map((c) => renderLink(c, depth + 1))}
       </div>
     )
   }
