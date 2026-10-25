@@ -1,4 +1,4 @@
-import { Menu } from '@mantine/core'
+import { Menu, ScrollArea } from '@mantine/core'
 import { FolderIcon } from 'lucide-react'
 import type { Folder } from '../types'
 
@@ -29,8 +29,9 @@ export function MoveMenuItems({
   targets: MoveTarget[]
   onMove: (folderId: string) => void
 }) {
+  // Long folder lists scroll inside the menu instead of running off the screen
   return (
-    <>
+    <ScrollArea.Autosize mah="min(360px, 60dvh)" type="auto" offsetScrollbars>
       {targets.map((f) => (
         <Menu.Item
           key={f.id}
@@ -41,6 +42,6 @@ export function MoveMenuItems({
           {f.label}
         </Menu.Item>
       ))}
-    </>
+    </ScrollArea.Autosize>
   )
 }
