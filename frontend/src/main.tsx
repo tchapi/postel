@@ -45,6 +45,10 @@ function ThemedRoot({ children }: { children: ReactNode }) {
   )
 }
 
+// An app, not a page: no pinch zoom. iOS ignores user-scalable=no for pinches,
+// so its gesture events are refused too.
+document.addEventListener('gesturestart', (e) => e.preventDefault())
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>

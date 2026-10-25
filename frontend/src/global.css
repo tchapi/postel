@@ -5,6 +5,11 @@ body {
   overscroll-behavior: none;
 }
 
+/* No pinch or double-tap zoom anywhere; scrolling still works */
+html {
+  touch-action: pan-x pan-y;
+}
+
 /* Unchecked boxes on the default border vanish on the warm surfaces: give them a 3:1 edge. */
 .mantine-Checkbox-input:not(:checked, :indeterminate) {
   border-color: var(--mail-control-border);
