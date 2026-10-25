@@ -33,16 +33,76 @@ export function splitTextQuote(text: string): { body: string; quote: string | nu
   return { body: lines.slice(0, start).join('\n').trimEnd(), quote: lines.slice(start).join('\n') }
 }
 
+const COLOR_DECL = /(^|;)\s*(color|background(?:-color|-image)?)\s*:\s*([^;]*)/gi
+
+/** [r, g, b], or null when the value is not a plain colour we can judge. */
+function parseColor(value: string): [number, number, number] | null {
+  const v = value
+    .replace(/!important/i, '')
+    .trim()
+    .toLowerCase()
+  if (v === 'black' || v === 'windowtext') return [0, 0, 0]
+  if (v === 'white' || v === 'window') return [255, 255, 255]
+  const hex = /^#([0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})$/.exec(v)?.[1]
+  if (hex) {
+    const full = hex.length <= 4 ? [...hex].map((c) => c + c).join('') : hex
+    return [0, 2, 4].map((i) => parseInt(full.slice(i, i + 2), 16)) as [number, number, number]
+  }
+  const rgb = /^rgba?\(\s*(\d+)[\s,]+(\d+)[\s,]+(\d+)/.exec(v)
+  return rgb ? [Number(rgb[1]), Number(rgb[2]), Number(rgb[3])] : null
+}
+
+const grey = ([r, g, b]: [number, number, number]) => Math.max(r, g, b) - Math.min(r, g, b) < 24
+
+/**
+ * Colours a mail client writes by default: dark grey text, a white or see-through
+ * background. They say nothing about the mail, and in dark mode they give way to the theme.
+ */
+function isNeutral(property: string, value: string): boolean {
+  const v = value
+    .replace(/!important/i, '')
+    .trim()
+    .toLowerCase()
+  if (['inherit', 'initial', 'unset', 'currentcolor', 'none'].includes(v)) return true
+  if (property === 'background-image') return false
+  if (property !== 'color' && v === 'transparent') return true
+  const c = parseColor(v)
+  if (!c || !grey(c)) return false
+  return property === 'color' ? Math.max(...c) <= 96 : Math.min(...c) >= 250
+}
+
 /**
  * True when the mail paints itself: colours or backgrounds set by the sender assume a
- * white page, so in dark mode it keeps one. Plain mail follows the theme instead.
+ * white page, so in dark mode it keeps one. Plain mail follows the theme instead,
+ * and so does mail whose only colours are the neutral defaults its client wrote.
  */
 export function htmlHasOwnColors(html: string): boolean {
   const doc = new DOMParser().parseFromString(html, 'text/html')
-  if (doc.querySelector('[bgcolor], [background], font[color], [color]')) return true
+  if (doc.querySelector('[background]')) return true
+  for (const el of doc.querySelectorAll('[bgcolor]'))
+    if (!isNeutral('background-color', el.getAttribute('bgcolor')!)) return true
+  for (const el of doc.querySelectorAll('font[color], [color]'))
+    if (!isNeutral('color', el.getAttribute('color')!)) return true
   return [...doc.querySelectorAll('[style]')].some((el) =>
-    /(^|;)\s*(color|background(-color|-image)?)\s*:/i.test(el.getAttribute('style') ?? ''),
+    [...(el.getAttribute('style') ?? '').matchAll(COLOR_DECL)].some(
+      (m) => !isNeutral(m[2]!.toLowerCase(), m[3]!),
+    ),
   )
+}
+
+/** Drops the neutral colours so the dark theme shows through. */
+function dropNeutralColors(doc: Document) {
+  doc.querySelectorAll('[bgcolor]').forEach((el) => el.removeAttribute('bgcolor'))
+  doc.querySelectorAll('font[color], [color]').forEach((el) => el.removeAttribute('color'))
+  doc.querySelectorAll('[style]').forEach((el) => {
+    const style = el.getAttribute('style')!
+    el.setAttribute(
+      'style',
+      style.replace(COLOR_DECL, (decl, sep: string, prop: string, value: string) =>
+        isNeutral(prop.toLowerCase(), value) ? sep : decl,
+      ),
+    )
+  })
 }
 
 /** flush: light theme, no frame. sheet: white page for mail that paints itself. dark: plain mail in the dark theme. */
@@ -58,6 +118,8 @@ function buildSrcDoc(
   doc
     .querySelectorAll('script, meta[http-equiv], base, link[rel="preload"], link[rel="prefetch"]')
     .forEach((n) => n.remove())
+  // Only mail without colours of its own goes dark, so every colour left is a neutral one
+  if (look === 'dark') dropNeutralColors(doc)
 
   const remote = allowRemote ? ' https: http:' : ''
   const head = doc.head
