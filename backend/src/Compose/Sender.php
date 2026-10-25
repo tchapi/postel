@@ -15,6 +15,8 @@ use Symfony\Component\Mailer\Envelope;
 use Symfony\Component\Mailer\Transport\Smtp\EsmtpTransport;
 use Symfony\Component\Mailer\Transport\Smtp\Stream\SocketStream;
 
+use function in_array;
+
 /**
  * Submits through SMTP as the user (master user login, like IMAP), keeps a
  * copy in Sent, flags the original, drops the draft.
