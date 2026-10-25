@@ -216,7 +216,7 @@ docker run -d --name postel \
   -e SMTP_HOST=mail \
   -e LOGOUT_URL=https://auth.example.com/logout \
   -v postel-data:/app/var/data \
-  ghcr.io/tchapi/postel:1.0.0
+  ghcr.io/tchapi/postel:1.0.1
 ```
 
 A sample [`compose.yaml`](compose.yaml) is also included. It reads the variables from a `.env` file next to it.
@@ -236,7 +236,7 @@ For each release, an image is built for `amd64` and `arm64` and published in the
 Each release is tagged with its version, its minor version, its major version, and `latest`:
 
 ```
-docker pull ghcr.io/tchapi/postel:1.0.0
+docker pull ghcr.io/tchapi/postel:1.0.1
 docker pull ghcr.io/tchapi/postel:1.0
 docker pull ghcr.io/tchapi/postel:1
 ```
