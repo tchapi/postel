@@ -49,6 +49,7 @@ const en = {
   endOfList: (folder: string, n: string) => `End of ${folder} · ${n} messages`,
   releaseToRefresh: 'Release to refresh',
   pullToRefresh: 'Pull to refresh',
+  refreshing: 'Refreshing…',
   // actions
   open: 'Open',
   reply: 'Reply',
@@ -286,6 +287,7 @@ const fr: Strings = {
   endOfList: (folder, n) => `Fin de ${folder} · ${n} messages`,
   releaseToRefresh: 'Relâchez pour actualiser',
   pullToRefresh: 'Tirez pour actualiser',
+  refreshing: 'Actualisation…',
   open: 'Ouvrir',
   reply: 'Répondre',
   replyAll: 'Répondre à tous',

@@ -88,6 +88,8 @@ export type MessageListProps = {
 type ContextMenuState = { x: number; y: number; row: Row; uids: number[] } | null
 
 const PULL_TRIGGER = 64
+/** Height the indicator holds while the refresh runs. */
+const PULL_HOLD = 44
 
 export function MessageList(props: MessageListProps) {
   const {
@@ -133,6 +135,7 @@ export function MessageList(props: MessageListProps) {
   const rowHeight = ROW_HEIGHT[density]
   const [menu, setMenu] = useState<ContextMenuState>(null)
   const [pull, setPull] = useState(0)
+  const [pulling, setPulling] = useState(false)
   const [refreshing, setRefreshing] = useState(false)
   const pullStart = useRef<number | null>(null)
 
@@ -203,20 +206,23 @@ export function MessageList(props: MessageListProps) {
     setMenu({ x: e.clientX, y: e.clientY, row, uids })
   }
 
-  // Pull to refresh (touch only, list scrolled to top).
+  // Pull to refresh (touch only, list scrolled to top). iOS cancels the touch
+  // rather than ending it when it takes the gesture over, so both settle it.
   const onTouchStart = (e: TouchEvent) => {
     if (!isTouch || refreshing) return
-    pullStart.current =
-      (viewportRef.current?.scrollTop ?? 1) === 0 ? (e.touches[0]?.clientY ?? null) : null
+    const atTop = (viewportRef.current?.scrollTop ?? 1) <= 0
+    pullStart.current = atTop ? (e.touches[0]?.clientY ?? null) : null
+    setPulling(pullStart.current !== null)
   }
   const onTouchMove = (e: TouchEvent) => {
     if (pullStart.current === null) return
     const dy = (e.touches[0]?.clientY ?? 0) - pullStart.current
     setPull(dy > 0 ? Math.min(dy * 0.5, 96) : 0)
   }
-  const onTouchEnd = async () => {
-    const trigger = pull >= PULL_TRIGGER
+  const onTouchEnd = async (cancelled: boolean) => {
+    const trigger = !cancelled && pullStart.current !== null && pull >= PULL_TRIGGER
     pullStart.current = null
+    setPulling(false)
     setPull(0)
     if (!trigger) return
     setRefreshing(true)
@@ -226,6 +232,8 @@ export function MessageList(props: MessageListProps) {
       setRefreshing(false)
     }
   }
+  const pullOffset = refreshing ? PULL_HOLD : pull
+  const pullMotion = pulling ? 'none' : 'height 200ms ease, transform 200ms ease'
 
   const allSelected = rows.length > 0 && selected.size === rows.length
 
@@ -365,22 +373,38 @@ export function MessageList(props: MessageListProps) {
         {headerExtra && <Box className={classes.extra}>{headerExtra}</Box>}
       </div>
 
-      {(pull > 0 || refreshing) && (
+      {isTouch && (
         <Group
           role="status"
           justify="center"
           gap={8}
+          wrap="nowrap"
           className={classes.pull}
-          style={{ height: refreshing ? 44 : pull, marginTop: topInset }}
+          style={{ top: topInset, height: pullOffset, transition: pullMotion }}
         >
           {refreshing ? (
             <Loader size={14} color="gray" />
           ) : (
-            <RefreshCwIcon size={16} strokeWidth={2} />
+            pull > 0 && (
+              <RefreshCwIcon
+                size={16}
+                strokeWidth={2}
+                style={{
+                  opacity: Math.min(pull / PULL_TRIGGER, 1),
+                  transform: `rotate(${pull * 4}deg)`,
+                }}
+              />
+            )
           )}
-          <Text size="sm" c="dimmed">
-            {pull >= PULL_TRIGGER || refreshing ? t.releaseToRefresh : t.pullToRefresh}
-          </Text>
+          {(pull > 0 || refreshing) && (
+            <Text size="sm" c="dimmed">
+              {refreshing
+                ? t.refreshing
+                : pull >= PULL_TRIGGER
+                  ? t.releaseToRefresh
+                  : t.pullToRefresh}
+            </Text>
+          )}
         </Group>
       )}
 
@@ -391,7 +415,8 @@ export function MessageList(props: MessageListProps) {
         scrollbars="y"
         onTouchStart={onTouchStart}
         onTouchMove={onTouchMove}
-        onTouchEnd={() => void onTouchEnd()}
+        onTouchEnd={() => void onTouchEnd(false)}
+        onTouchCancel={() => void onTouchEnd(true)}
         classNames={{ viewport: classes.viewport }}
         styles={{ scrollbar: { marginTop: topInset } }}
         style={{ flex: 1, minHeight: 0, '--fade-end': `${topInset + 6}px` } as CSSProperties}
@@ -409,7 +434,14 @@ export function MessageList(props: MessageListProps) {
           onKeyDown: onListKeyDown,
         }}
       >
-        {body}
+        <div
+          style={{
+            transform: pullOffset ? `translateY(${pullOffset}px)` : undefined,
+            transition: pullMotion,
+          }}
+        >
+          {body}
+        </div>
       </ScrollArea>
 
       <Menu
