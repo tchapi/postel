@@ -17,6 +17,9 @@ use function count;
 use function in_array;
 use function sprintf;
 
+use const ENT_HTML5;
+use const ENT_QUOTES;
+
 final class MessageListService
 {
     public const int MAX_PER_PAGE = 100;
@@ -258,13 +261,25 @@ final class MessageListService
             folder: $folder,
             from: $headers->from(),
             subject: $headers->subject(),
-            snippet: trim(preg_replace('/\s+/', ' ', $item->string('PREVIEW') ?? '') ?? ''),
+            snippet: self::snippet($item->string('PREVIEW') ?? ''),
             date: $headers->date() ?? self::internalDate($item->string('INTERNALDATE')),
             seen: in_array('\seen', $flags, true),
             flagged: in_array('\flagged', $flags, true),
             hasAttachments: null !== $structure && [] !== BodyStructure::parse($structure)->attachments(),
             size: (int) ($item->string('RFC822.SIZE') ?? 0),
         );
+    }
+
+    /**
+     * The server preview of an HTML-only message keeps its entities, and
+     * newsletters pad it with invisible characters to hide the preheader.
+     */
+    public static function snippet(string $preview): string
+    {
+        $text = html_entity_decode($preview, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $text = preg_replace('/[\x{00AD}\x{034F}\x{180E}\x{200B}-\x{200F}\x{2060}-\x{2064}\x{FEFF}]/u', '', $text) ?? $text;
+
+        return trim(preg_replace('/[\s\x{00A0}\x{2000}-\x{200A}\x{202F}\x{3000}]+/u', ' ', $text) ?? $text);
     }
 
     public static function internalDate(?string $value): ?DateTimeImmutable
