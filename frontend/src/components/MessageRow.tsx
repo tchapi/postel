@@ -1,7 +1,7 @@
 import {
   memo,
+  useEffect,
   useRef,
-  useState,
   type CSSProperties,
   type MouseEvent,
   type PointerEvent,
@@ -16,6 +16,11 @@ import classes from './MessageRow.module.css'
 // Slot per row: the row inset 2px top and bottom, then 12px (comfortable, three lines) or 10px (compact, two) around the text.
 export const ROW_HEIGHT: Record<Density, number> = { comfortable: 88, compact: 64 }
 const SWIPE_THRESHOLD = 96
+const SWIPE_EASE = 'transform 280ms cubic-bezier(0.22, 1, 0.36, 1)'
+/** How long the row takes to slide out before its action runs. */
+const SWIPE_OUT_MS = 200
+
+type SwipeDrag = { id: number; x: number; y: number; locked: boolean | null; dx: number }
 
 export type MessageRowProps = {
   row: Row
@@ -54,45 +59,95 @@ function MessageRowImpl({
   onSwipe,
 }: MessageRowProps) {
   const { t, locale } = useI18n()
-  const [dx, setDx] = useState(0)
-  const start = useRef<{ x: number; y: number; locked: boolean | null } | null>(null)
+  const wrapRef = useRef<HTMLDivElement>(null)
+  const rowRef = useRef<HTMLDivElement>(null)
+  const drag = useRef<SwipeDrag | null>(null)
+  const frame = useRef(0)
+  const outTimer = useRef(0)
+  useEffect(
+    () => () => {
+      cancelAnimationFrame(frame.current)
+      clearTimeout(outTimer.current)
+    },
+    [],
+  )
+
+  // The drag writes to the DOM once per frame, without re-rendering the row.
+  // The action behind fades in with the distance, so a slight wobble shows no colour.
+  const paint = (dx: number, animate: boolean) => {
+    const wrap = wrapRef.current
+    const el = rowRef.current
+    if (!wrap || !el) return
+    el.style.transition = animate ? SWIPE_EASE : 'none'
+    el.style.transform = dx ? `translate3d(${dx}px, 0, 0)` : ''
+    wrap.dataset.swipe = dx > 0 ? 'archive' : dx < 0 ? 'delete' : ''
+    wrap.toggleAttribute('data-armed', Math.abs(dx) >= SWIPE_THRESHOLD)
+    wrap.style.setProperty('--swipe-reveal', String(Math.min(Math.abs(dx) / 40, 1)))
+  }
 
   const onPointerDown = (e: PointerEvent) => {
-    if (!swipeEnabled || e.pointerType === 'mouse') return
-    start.current = { x: e.clientX, y: e.clientY, locked: null }
+    if (!swipeEnabled || e.pointerType === 'mouse' || drag.current) return
+    clearTimeout(outTimer.current)
+    drag.current = { id: e.pointerId, x: e.clientX, y: e.clientY, locked: null, dx: 0 }
   }
   const onPointerMove = (e: PointerEvent) => {
-    const s = start.current
-    if (!s) return
-    const mx = e.clientX - s.x
-    const my = e.clientY - s.y
-    if (s.locked === null && Math.hypot(mx, my) > 8) s.locked = Math.abs(mx) > Math.abs(my)
-    if (s.locked) setDx(mx)
+    const d = drag.current
+    if (!d || d.id !== e.pointerId) return
+    const mx = e.clientX - d.x
+    const my = e.clientY - d.y
+    if (d.locked === null && Math.hypot(mx, my) > 8) {
+      d.locked = Math.abs(mx) > Math.abs(my)
+      // Keep the moves coming even if the finger drifts off the row
+      if (d.locked) e.currentTarget.setPointerCapture(e.pointerId)
+    }
+    if (!d.locked) return
+    d.dx = mx
+    if (!frame.current)
+      frame.current = requestAnimationFrame(() => {
+        frame.current = 0
+        if (drag.current) paint(drag.current.dx, false)
+      })
   }
-  const onPointerEnd = () => {
-    const s = start.current
-    start.current = null
-    if (s?.locked && Math.abs(dx) >= SWIPE_THRESHOLD) onSwipe(row, dx > 0 ? 'archive' : 'delete')
-    setDx(0)
+  const onPointerEnd = (e: PointerEvent) => {
+    const d = drag.current
+    if (!d || d.id !== e.pointerId) return
+    drag.current = null
+    cancelAnimationFrame(frame.current)
+    frame.current = 0
+    if (!d.locked) return
+    const width = wrapRef.current?.offsetWidth ?? 0
+    if (e.type === 'pointerup' && Math.abs(d.dx) >= SWIPE_THRESHOLD && width) {
+      // Slide out, then act: the row leaves the list as it lands
+      const action = d.dx > 0 ? 'archive' : 'delete'
+      paint(Math.sign(d.dx) * width, true)
+      outTimer.current = window.setTimeout(() => {
+        onSwipe(row, action)
+        // Back in place, should the row stay (e.g. the action failed)
+        outTimer.current = window.setTimeout(() => paint(0, true), 600)
+      }, SWIPE_OUT_MS)
+    } else {
+      paint(0, true)
+    }
   }
 
   const sender = displayName(row.from)
 
   return (
-    <div className={classes.swipeWrap} style={style} data-density={density}>
-      {dx > 0 && (
-        <div className={`${classes.swipeAction} ${classes.swipeArchive}`} aria-hidden>
-          <ArchiveIcon size={20} strokeWidth={1.75} />
-          {t.archive}
-        </div>
-      )}
-      {dx < 0 && (
-        <div className={`${classes.swipeAction} ${classes.swipeDelete}`} aria-hidden>
-          {t.delete}
-          <Trash2Icon size={20} strokeWidth={1.75} />
-        </div>
+    <div ref={wrapRef} className={classes.swipeWrap} style={style} data-density={density}>
+      {swipeEnabled && (
+        <>
+          <div className={`${classes.swipeAction} ${classes.swipeArchive}`} aria-hidden>
+            <ArchiveIcon size={20} strokeWidth={1.75} />
+            {t.archive}
+          </div>
+          <div className={`${classes.swipeAction} ${classes.swipeDelete}`} aria-hidden>
+            {t.delete}
+            <Trash2Icon size={20} strokeWidth={1.75} />
+          </div>
+        </>
       )}
       <div
+        ref={rowRef}
         id={domId}
         role="option"
         aria-selected={selected}
@@ -102,7 +157,6 @@ function MessageRowImpl({
         data-selected={selected || undefined}
         data-unread={!row.seen || undefined}
         data-selection-mode={selectionMode || undefined}
-        style={dx ? { transform: `translateX(${dx}px)` } : undefined}
         onClick={(e) => {
           if (e.shiftKey || e.metaKey || e.ctrlKey) onToggleSelect(row.uid, e.shiftKey)
           else onActivate(row.uid)

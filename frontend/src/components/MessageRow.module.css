@@ -12,6 +12,22 @@
   padding-inline: 22px;
   font-size: var(--mantine-font-size-sm);
   font-weight: 600;
+  /* Revealed with the swipe distance, only on the side the row is moving away from */
+  opacity: 0;
+
+  & svg {
+    transition: transform 160ms ease;
+  }
+}
+
+.swipeWrap[data-swipe='archive'] .swipeArchive,
+.swipeWrap[data-swipe='delete'] .swipeDelete {
+  opacity: var(--swipe-reveal, 0);
+}
+
+/* Past the threshold: letting go will act */
+.swipeWrap[data-armed] .swipeAction svg {
+  transform: scale(1.2);
 }
 
 .swipeArchive {
@@ -43,7 +59,6 @@
   touch-action: pan-y;
   /* A click opens the message; a drag would only select bits of rows */
   user-select: none;
-  transition: transform 160ms ease;
 
   [data-density='compact'] & {
     padding-block: 9px 10px;
@@ -184,6 +199,6 @@
 
 @media (prefers-reduced-motion: reduce) {
   .row {
-    transition: none;
+    transition: none !important;
   }
 }
