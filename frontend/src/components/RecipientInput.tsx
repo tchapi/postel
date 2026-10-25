@@ -89,6 +89,8 @@ export function RecipientInput({
       >
         <Combobox.DropdownTarget>
           <PillsInput
+            // The wrapper hands its id to the field: set here, so the label targets it
+            id={id}
             variant="unstyled"
             style={{ flex: 1 }}
             onClick={() => combobox.openDropdown()}
@@ -108,7 +110,6 @@ export function RecipientInput({
               ))}
               <Combobox.EventsTarget>
                 <PillsInput.Field
-                  id={id}
                   // Mantine's FocusTrap focuses [data-autofocus] when the drawer opens.
                   data-autofocus={autoFocus || undefined}
                   value={search}
