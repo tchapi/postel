@@ -79,7 +79,7 @@ final class SeedMailboxCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $io = new SymfonyStyle($input, $output);
-        $login = (string) $input->getOption('login');
+        $login = $input->getOption('login');
         $count = (int) $input->getOption('count');
         if ('' === $login) {
             $io->error('--login cannot be empty');
@@ -144,7 +144,7 @@ final class SeedMailboxCommand extends Command
                 'id' => $id,
                 'subject' => (string) $email->getSubject(),
                 'date' => $date,
-                'references' => (string) ($email->getHeaders()->get('References')?->getBodyAsString() ?? ''),
+                'references' => $email->getHeaders()->get('References')?->getBodyAsString() ?? '',
             ];
 
             if (mt_rand(1, 100) <= 70) {

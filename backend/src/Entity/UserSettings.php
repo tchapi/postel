@@ -61,11 +61,6 @@ class UserSettings
         $this->updatedAt = new DateTimeImmutable();
     }
 
-    public function getUsername(): string
-    {
-        return $this->username;
-    }
-
     public function getFromName(): ?string
     {
         return $this->fromName;

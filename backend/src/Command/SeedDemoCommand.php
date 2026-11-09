@@ -62,7 +62,7 @@ final class SeedDemoCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $io = new SymfonyStyle($input, $output);
-        $login = (string) $input->getOption('login');
+        $login = $input->getOption('login');
         $username = explode('@', $login)[0];
         if ('' === $username || !str_contains($login, '@')) {
             $io->error('The login is an email address, like camille@example.test');
@@ -201,7 +201,7 @@ final class SeedDemoCommand extends Command
         $to = is_array($message['to'] ?? null) ? $message['to'] : ['me'];
         $email = (new Email())
             ->from($address((string) $message['from']))
-            ->to(...array_map(static fn ($k) => $address((string) $k), $to))
+            ->to(...array_map(static fn (mixed $k): Address => $address((string) $k), $to))
             ->subject((string) $message['subject'])
             ->date(new DateTimeImmutable((string) $message['when']));
         $email->getHeaders()->addIdHeader('Message-ID', $messageId);
@@ -210,9 +210,10 @@ final class SeedDemoCommand extends Command
             $email->getHeaders()->addIdHeader('References', $references);
         }
 
-        if (is_string($message['html'] ?? null)) {
-            $email->html($message['html']);
-            $email->text(trim(html_entity_decode(strip_tags(str_replace(['</p>', '</h1>', '</h2>'], "\n\n", $message['html'])))));
+        $html = $message['html'] ?? null;
+        if (is_string($html)) {
+            $email->html($html);
+            $email->text(trim(html_entity_decode(strip_tags(str_replace(['</p>', '</h1>', '</h2>'], "\n\n", $html)))));
         } else {
             $email->text((string) ($message['text'] ?? ''));
         }
@@ -238,7 +239,7 @@ final class SeedDemoCommand extends Command
     private static function references(string $key, array $parents, array $messageIds): array
     {
         $chain = [];
-        while (isset($parents[$key]) && isset($messageIds[$parents[$key]]) && count($chain) < 20) {
+        for ($depth = 0; $depth < 20 && isset($parents[$key], $messageIds[$parents[$key]]); ++$depth) {
             $key = $parents[$key];
             array_unshift($chain, $messageIds[$key]);
         }
@@ -325,7 +326,7 @@ final class SeedDemoCommand extends Command
     {
         $start = new DateTimeImmutable((string) $invite['start']);
         $end = $start->modify(sprintf('+%d minutes', (int) ($invite['minutes'] ?? 60)));
-        $format = static fn (DateTimeImmutable $d) => $d->setTimezone(new DateTimeZone('UTC'))->format('Ymd\THis\Z');
+        $format = static fn (DateTimeImmutable $d): string => $d->setTimezone(new DateTimeZone('UTC'))->format('Ymd\THis\Z');
 
         $ics = implode("\r\n", [
             'BEGIN:VCALENDAR',

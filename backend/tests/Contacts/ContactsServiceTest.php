@@ -71,6 +71,7 @@ final class ContactsServiceTest extends KernelTestCase
 
         $service->refresh($this->user);
 
+        /** @psalm-suppress TypeDoesNotContainType the fake client fills $this->requests during refresh() */
         self::assertSame(['PROPFIND '.self::HOME], $this->requests, 'the home is remembered, the cards are not fetched');
     }
 
@@ -130,7 +131,7 @@ final class ContactsServiceTest extends KernelTestCase
     private function service(?DavisConfig $config = null): ContactsService
     {
         $config ??= new DavisConfig(self::URL, 'app_test', 'secret');
-        $http = new MockHttpClient(function (string $method, string $url, array $options): MockResponse {
+        $http = new MockHttpClient(function (string $method, string $url): MockResponse {
             $path = (string) parse_url($url, PHP_URL_PATH);
             $this->requests[] = $method.' '.$path;
             if (207 !== $this->status) {

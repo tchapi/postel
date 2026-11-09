@@ -8,6 +8,7 @@
     findUnusedPsalmSuppress="true"
     findUnusedCode="true"
     ensureOverrideAttribute="false"
+    strictBinaryOperands="false"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xmlns="https://getpsalm.org/schema/config"
     xsi:schemaLocation="https://getpsalm.org/schema/config vendor/vimeo/psalm/config.xsd"
@@ -28,4 +29,39 @@
         <pluginClass class="Weirdan\DoctrinePsalmPlugin\Plugin" />
         <pluginClass class="Psalm\PhpUnitPlugin\Plugin" />
     </plugins>
+
+    <issueHandlers>
+        <!-- Public readonly value objects: the serializer and the callers read them reflectively -->
+        <PossiblyUnusedProperty>
+            <errorLevel type="suppress">
+                <directory name="src/Imap/Dto" />
+                <file name="src/Compose/Upload.php" />
+                <file name="src/Imap/Protocol/ImapResponse.php" />
+                <file name="src/Imap/Exception/ImapCommandFailed.php" />
+            </errorLevel>
+        </PossiblyUnusedProperty>
+
+        <!-- Doctrine reads mapped fields and may extend entities for proxies -->
+        <UnusedProperty>
+            <errorLevel type="suppress">
+                <directory name="src/Entity" />
+            </errorLevel>
+        </UnusedProperty>
+        <ClassMustBeFinal>
+            <errorLevel type="suppress">
+                <directory name="src/Entity" />
+                <file name="src/Kernel.php" />
+            </errorLevel>
+        </ClassMustBeFinal>
+
+        <!-- "glob() ?: []" style fallbacks are deliberate -->
+        <RiskyTruthyFalsyComparison errorLevel="suppress" />
+
+        <!-- tearDown() runs even when setUp() skipped before assigning the client -->
+        <RedundantPropertyInitializationCheck>
+            <errorLevel type="suppress">
+                <directory name="tests/Integration" />
+            </errorLevel>
+        </RedundantPropertyInitializationCheck>
+    </issueHandlers>
 </psalm>

@@ -77,16 +77,6 @@ final class ContactRepository extends ServiceEntityRepository
             ->execute();
     }
 
-    public function deleteOwner(string $owner): void
-    {
-        $this->createQueryBuilder('c')
-            ->delete()
-            ->where('c.owner = :owner')
-            ->setParameter('owner', $owner)
-            ->getQuery()
-            ->execute();
-    }
-
     private static function escape(string $text): string
     {
         return str_replace(['!', '%', '_'], ['!!', '!%', '!_'], $text);

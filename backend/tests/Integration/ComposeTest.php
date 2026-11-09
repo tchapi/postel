@@ -64,6 +64,7 @@ final class ComposeTest extends WebTestCase
         $original = json_decode((string) $this->client->getResponse()->getContent(), true, flags: JSON_THROW_ON_ERROR);
 
         $file = tempnam(sys_get_temp_dir(), 'up');
+        self::assertNotFalse($file);
         file_put_contents($file, 'attached bytes');
         $this->client->request('POST', '/api/uploads', server: $this->server(), files: ['file' => new UploadedFile($file, 'notes.txt', 'text/plain', null, true)]);
         self::assertResponseStatusCodeSame(201);
@@ -84,7 +85,7 @@ final class ComposeTest extends WebTestCase
         $message = json_decode((string) $this->client->getResponse()->getContent(), true, flags: JSON_THROW_ON_ERROR);
         self::assertSame('Alice', $message['from']['name']);
         self::assertStringContainsString('<b>there</b>', $message['html']);
-        self::assertSame(['notes.txt'], array_map(static fn ($a) => $a['name'], $message['attachments']));
+        self::assertSame(['notes.txt'], array_map(static fn (array $a): mixed => $a['name'], $message['attachments']));
         self::assertNotEmpty($this->search('INBOX', 'UID '.$uid.' HEADER In-Reply-To ""'), 'no In-Reply-To header');
 
         // A copy in Sent, the original flagged as answered

@@ -37,7 +37,7 @@ final class BodyStructure
                 $children[] = self::part(array_values($tokens[$i]), '' === $section ? $index : $section.'.'.$index);
                 ++$i;
             }
-            $subtype = is_string($tokens[$i] ?? null) ? $tokens[$i] : 'mixed';
+            $subtype = self::string($tokens, $i) ?? 'mixed';
             $parameters = self::pairs($tokens[$i + 1] ?? null);
             [$disposition, $dispositionParameters] = self::disposition($tokens[$i + 2] ?? null);
 
@@ -53,11 +53,12 @@ final class BodyStructure
         }
 
         // single part: type subtype (params) id description encoding size [lines | (envelope body lines)] md5 (disposition) (language) (location)
-        $type = is_string($tokens[0] ?? null) ? $tokens[0] : 'application';
-        $subtype = is_string($tokens[1] ?? null) ? $tokens[1] : 'octet-stream';
+        $type = self::string($tokens, 0) ?? 'application';
+        $subtype = self::string($tokens, 1) ?? 'octet-stream';
         $parameters = self::pairs($tokens[2] ?? null);
-        $contentId = is_string($tokens[3] ?? null) ? $tokens[3] : null;
-        $encoding = is_string($tokens[5] ?? null) ? strtolower($tokens[5]) : null;
+        $contentId = self::string($tokens, 3);
+        $encoding = self::string($tokens, 5);
+        $encoding = null === $encoding ? null : strtolower($encoding);
         $size = (int) ($tokens[6] ?? 0);
 
         // Extension data starts after the body-type-specific fields.
@@ -79,6 +80,16 @@ final class BodyStructure
             disposition: $disposition,
             dispositionParameters: $dispositionParameters,
         );
+    }
+
+    /**
+     * @param array<int, mixed> $tokens
+     */
+    private static function string(array $tokens, int $index): ?string
+    {
+        $value = $tokens[$index] ?? null;
+
+        return is_string($value) ? $value : null;
     }
 
     /**

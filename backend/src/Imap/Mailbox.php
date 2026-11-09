@@ -92,7 +92,8 @@ final class Mailbox
     {
         $folders = [];
         foreach ($this->command('LIST', '"" "*"')->tokenized('LIST') as $row) {
-            $flags = is_array($row[2] ?? null) ? array_values(array_filter($row[2], 'is_string')) : [];
+            $attributes = $row[2] ?? null;
+            $flags = is_array($attributes) ? array_values(array_filter($attributes, 'is_string')) : [];
             $name = $row[4] ?? null;
             if (is_string($name)) {
                 $folders[$name] = $flags;

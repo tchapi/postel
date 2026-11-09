@@ -25,6 +25,7 @@ jobs:
       - run: composer lint
       - run: php bin/console cache:warmup
       - run: composer stan
+      - run: composer psalm
       - run: composer test
 
   frontend:

@@ -45,7 +45,7 @@ final class HtmlRendererTest extends KernelTestCase
 
     public function testInlineImagesPointToTheirPart(): void
     {
-        $resolver = static fn (string $cid) => 'pixel@shop.example' === $cid ? '/api/folders/INBOX/messages/7/parts/2' : null;
+        $resolver = static fn (string $cid): ?string => 'pixel@shop.example' === $cid ? '/api/folders/INBOX/messages/7/parts/2' : null;
         ['html' => $html, 'hasRemoteImages' => $remote] = $this->renderer->render('<img src="cid:pixel@shop.example"><img src="cid:unknown">', $resolver, false);
 
         self::assertFalse($remote);

@@ -61,7 +61,7 @@ final class MessagesTest extends WebTestCase
         self::assertSame(1, $page['page']);
         self::assertCount(20, $page['items']);
         self::assertGreaterThan(20, $page['total']);
-        $dates = array_map(static fn (array $row) => $row['date'], $page['items']);
+        $dates = array_map(static fn (array $row): mixed => $row['date'], $page['items']);
         $sorted = $dates;
         rsort($sorted);
         self::assertSame($sorted, $dates);
@@ -74,7 +74,7 @@ final class MessagesTest extends WebTestCase
 
         $message = $this->get(sprintf('/api/folders/INBOX/messages/%d', $uid));
         self::assertSame('Erin', $message['from']['name']);
-        self::assertSame(['report.pdf', 'numbers.csv'], array_map(static fn ($a) => $a['name'], $message['attachments']));
+        self::assertSame(['report.pdf', 'numbers.csv'], array_map(static fn (array $a): mixed => $a['name'], $message['attachments']));
         self::assertStringContainsString('/parts/1.2.2', (string) $message['html']);
         self::assertFalse($message['hasRemoteImages']);
 

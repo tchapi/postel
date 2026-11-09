@@ -94,12 +94,14 @@ final class FolderService
             $parent = null;
             $delimiter = '';
             foreach ($mailbox->command('LIST', '"" "*"')->tokenized('LIST') as $row) {
-                $flags = is_array($row[2] ?? null) ? array_values(array_filter($row[2], 'is_string')) : [];
+                $attributes = $row[2] ?? null;
+                $flags = is_array($attributes) ? array_values(array_filter($attributes, 'is_string')) : [];
                 $path = $row[4] ?? null;
                 if (!is_string($path) || !in_array(FolderRole::detect($path, $flags), [FolderRole::Sent, FolderRole::Trash, FolderRole::Drafts, FolderRole::Junk], true)) {
                     continue;
                 }
-                $delimiter = is_string($row[3] ?? null) ? $row[3] : '';
+                $separator = $row[3] ?? null;
+                $delimiter = is_string($separator) ? $separator : '';
                 $position = '' === $delimiter ? false : strrpos($path, $delimiter);
                 $parent = false === $position ? null : substr($path, 0, $position);
                 break;

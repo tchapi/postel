@@ -103,7 +103,9 @@ final class MessageActionService
         $uids = [];
         foreach (explode(',', $set) as $piece) {
             if (str_contains($piece, ':')) {
-                [$from, $to] = array_map('intval', explode(':', $piece, 2));
+                $bounds = array_map('intval', explode(':', $piece, 2));
+                $from = $bounds[0];
+                $to = $bounds[1] ?? $from;
                 $uids = [...$uids, ...range(min($from, $to), max($from, $to))];
             } else {
                 $uids[] = (int) $piece;

@@ -28,13 +28,26 @@ final readonly class ImapResponse
         $rows = [];
         foreach ($this->untagged as $line) {
             $tokens = Tokenizer::parse($line);
-            // "* 12 FETCH (...)" or "* SORT 1 2 3"
-            $name = is_numeric($tokens[1] ?? null) ? ($tokens[2] ?? null) : ($tokens[1] ?? null);
-            if (is_string($name) && strtoupper($name) === $kind) {
+            if (self::kind($tokens) === $kind) {
                 $rows[] = $tokens;
             }
         }
 
         return $rows;
+    }
+
+    /**
+     * "* 12 FETCH (...)" or "* SORT 1 2 3": the response name, uppercased.
+     *
+     * @param list<mixed> $tokens
+     */
+    private static function kind(array $tokens): ?string
+    {
+        $name = $tokens[1] ?? null;
+        if (is_numeric($name)) {
+            $name = $tokens[2] ?? null;
+        }
+
+        return is_string($name) ? strtoupper($name) : null;
     }
 }

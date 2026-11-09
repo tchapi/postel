@@ -115,7 +115,7 @@ final class MessageService
             }
 
             $decoded = match ($part->encoding) {
-                'base64' => (string) base64_decode($content, false),
+                'base64' => base64_decode($content, false),
                 'quoted-printable' => quoted_printable_decode($content),
                 default => $content,
             };

@@ -23,6 +23,6 @@ $schema->dropSchema($metadata);
 $schema->createSchema($metadata);
 $kernel->shutdown();
 
-if ($_SERVER['APP_DEBUG']) {
+if ($_SERVER['APP_DEBUG'] ?? false) {
     umask(0000);
 }

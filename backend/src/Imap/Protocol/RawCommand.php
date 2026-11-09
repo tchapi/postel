@@ -39,8 +39,9 @@ final class RawCommand
             $line = $this->readLine($stream);
 
             if (str_starts_with($line, $tag.' ')) {
-                [, $status, $text] = explode(' ', $line.' ', 3);
-                $text = trim($text);
+                $parts = explode(' ', $line.' ', 3);
+                $status = $parts[1] ?? '';
+                $text = trim($parts[2] ?? '');
                 if ('OK' !== $status) {
                     throw new ImapCommandFailed($command, $status, $text);
                 }
