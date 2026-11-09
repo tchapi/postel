@@ -252,7 +252,8 @@ final class SeedDemoCommand extends Command
 
         return match ($extension) {
             'pdf' => new DataPart(self::pdf(pathinfo($name, PATHINFO_FILENAME)), $name, 'application/pdf'),
-            'jpg', 'png' => new DataPart(self::image($name, $extension), $name, 'jpg' === $extension ? 'image/jpeg' : 'image/png'),
+            'jpg' => new DataPart(self::image($name, 'jpg'), $name, 'image/jpeg'),
+            'png' => new DataPart(self::image($name, 'png'), $name, 'image/png'),
             default => new DataPart('', $name, 'application/octet-stream'),
         };
     }

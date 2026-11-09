@@ -62,6 +62,15 @@ final class HtmlRendererTest extends KernelTestCase
         self::assertStringNotContainsString('url(', $html);
     }
 
+    public function testInlineStyleValuesAreEncodedOnce(): void
+    {
+        ['html' => $html] = $this->renderer->render('<p style=\'font-family: "Arial", sans-serif; width: calc(100% + 2px)\'>x</p>', static fn () => null, false);
+
+        self::assertStringContainsString('font-family: &#34;Arial&#34;, sans-serif', $html);
+        self::assertStringContainsString('calc(100% &#43; 2px)', $html);
+        self::assertStringNotContainsString('&amp;#', $html);
+    }
+
     public function testOutlookMarkupIsReducedToContent(): void
     {
         $raw = (string) file_get_contents(__DIR__.'/../Fixtures/mail/outlook-html.eml');

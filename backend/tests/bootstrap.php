@@ -13,9 +13,9 @@ $kernel = new App\Kernel('test', true);
 $kernel->boot();
 $entityManager = $kernel->getContainer()->get('doctrine.orm.entity_manager');
 // var/ is not versioned, so a fresh checkout has no folder for the SQLite file yet
-$path = $entityManager->getConnection()->getParams()['path'] ?? null;
-if (is_string($path) && !is_dir(dirname($path))) {
-    mkdir(dirname($path), 0777, true);
+$url = str_replace('%kernel.project_dir%', dirname(__DIR__), $_SERVER['DATABASE_URL'] ?? '');
+if (str_starts_with($url, 'sqlite:///') && !is_dir($dir = dirname(substr($url, strlen('sqlite:///'))))) {
+    mkdir($dir, 0777, true);
 }
 $schema = new Doctrine\ORM\Tools\SchemaTool($entityManager);
 $metadata = $entityManager->getMetadataFactory()->getAllMetadata();

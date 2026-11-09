@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Mail;
 
 use Symfony\Component\HtmlSanitizer\HtmlSanitizerConfig;
-use Symfony\Component\HtmlSanitizer\TextSanitizer\StringSanitizer;
 use Symfony\Component\HtmlSanitizer\Visitor\AttributeSanitizer\AttributeSanitizerInterface;
 
 /**
@@ -36,7 +35,8 @@ final class StyleAttributeSanitizer implements AttributeSanitizerInterface
             if (preg_match('/url\s*\(|expression\s*\(|@import|behavior\s*:|-moz-binding|javascript:|position\s*:\s*(fixed|sticky)/', $lower)) {
                 continue;
             }
-            $declarations[] = StringSanitizer::encodeHtmlEntities($declaration);
+            // The sanitizer encodes attribute values when it renders the node
+            $declarations[] = $declaration;
         }
 
         return [] === $declarations ? null : implode('; ', $declarations);

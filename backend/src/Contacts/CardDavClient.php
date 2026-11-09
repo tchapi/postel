@@ -103,7 +103,14 @@ final class CardDavClient
         }
 
         $document = new DOMDocument();
-        if (!$document->loadXML($xml, LIBXML_NONET)) {
+        $previous = libxml_use_internal_errors(true);
+        try {
+            $loaded = '' !== $xml && $document->loadXML($xml, LIBXML_NONET);
+        } finally {
+            libxml_clear_errors();
+            libxml_use_internal_errors($previous);
+        }
+        if (!$loaded) {
             throw new DavisUnavailable(sprintf('%s %s: not XML', $method, $url));
         }
         $xpath = new DOMXPath($document);

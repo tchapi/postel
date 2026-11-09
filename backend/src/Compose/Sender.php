@@ -12,8 +12,9 @@ use App\Imap\Mailbox;
 use App\Imap\MessageActionService;
 use App\Security\RemoteUser;
 use Symfony\Component\Mailer\Envelope;
-use Symfony\Component\Mailer\Transport\Smtp\EsmtpTransport;
-use Symfony\Component\Mailer\Transport\Smtp\Stream\SocketStream;
+use Symfony\Component\Mailer\Transport\Dsn;
+use Symfony\Component\Mailer\Transport\Smtp\EsmtpTransportFactory;
+use Symfony\Component\Mailer\Transport\TransportInterface;
 
 use function in_array;
 
@@ -64,22 +65,24 @@ final class Sender
         }
     }
 
-    private function transport(RemoteUser $user): EsmtpTransport
+    private function transport(RemoteUser $user): TransportInterface
     {
         $implicitTls = in_array($this->smtp->encryption, ['ssl', 'tls'], true);
-        $transport = new EsmtpTransport($this->smtp->host, $this->smtp->port, $implicitTls);
-        $transport
-            ->setUsername($user->email.'*'.$this->clients->masterUser())
-            ->setPassword($this->clients->masterPassword())
-        ;
-        $stream = $transport->getStream();
-        if (!$this->smtp->validateCert && $stream instanceof SocketStream) {
-            $stream->setStreamOptions(['ssl' => ['verify_peer' => false, 'verify_peer_name' => false]]);
+        $options = [];
+        if (!$this->smtp->validateCert) {
+            $options['verify_peer'] = '0';
         }
         if ('false' === $this->smtp->encryption) {
-            $transport->setAutoTls(false);
+            $options['auto_tls'] = '0';
         }
 
-        return $transport;
+        return (new EsmtpTransportFactory())->create(new Dsn(
+            $implicitTls ? 'smtps' : 'smtp',
+            $this->smtp->host,
+            $user->email.'*'.$this->clients->masterUser(),
+            $this->clients->masterPassword(),
+            $this->smtp->port,
+            $options,
+        ));
     }
 }

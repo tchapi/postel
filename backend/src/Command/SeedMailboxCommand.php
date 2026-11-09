@@ -114,6 +114,7 @@ final class SeedMailboxCommand extends Command
         $progress->start();
         $now = new DateTimeImmutable();
         // Earlier messages, so that some of the next ones can answer them
+        /** @var list<array{id: string, subject: string, date: DateTimeImmutable, references: string}> $sent */
         $sent = [];
 
         for ($i = 0; $i < $count; ++$i) {
