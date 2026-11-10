@@ -61,7 +61,7 @@ export type ReaderProps = {
   isMobile: boolean
   selfEmail: string
   moveTargets: MoveTarget[]
-  urlFor: (a: Attachment, disposition: 'inline' | 'download') => string
+  urlFor: (a: Attachment, disposition: 'inline' | 'download' | 'thumb') => string
   onAction: (action: RowAction) => void
   onBack?: () => void
   onAlwaysShowImages: (senderEmail: string) => void

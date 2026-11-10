@@ -57,7 +57,11 @@ createRoot(document.getElementById('root')!).render(
           <ModalsProvider>
             <Notifications position="bottom-center" limit={3} />
             <MailApp
-              attachmentUrl={(ref, a, disposition) => partUrl(ref, a.id, disposition === 'inline')}
+              attachmentUrl={(ref, a, disposition) =>
+                disposition === 'thumb'
+                  ? `${partUrl(ref, a.id, true)}&thumb=1`
+                  : partUrl(ref, a.id, disposition === 'inline')
+              }
             />
           </ModalsProvider>
         </ThemedRoot>
