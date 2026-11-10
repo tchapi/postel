@@ -69,7 +69,11 @@ const escapeHtml = (s: string) =>
 
 export type MailAppProps = {
   /** Where attachments are served from. Defaults to the proxy's REST shape. */
-  attachmentUrl?: (ref: MessageRef, a: Attachment, disposition: 'inline' | 'download') => string
+  attachmentUrl?: (
+    ref: MessageRef,
+    a: Attachment,
+    disposition: 'inline' | 'download' | 'thumb',
+  ) => string
 }
 
 export function MailApp({

@@ -93,7 +93,9 @@ final class BodyStructure
     }
 
     /**
-     * ("name" "value" "name" "value") to an associative array.
+     * ("name" "value" "name" "value") to an associative array. RFC 2231
+     * parameters ("filename*", or "filename*0*" "filename*1*" when the server
+     * did not join the pieces) end up under their plain name.
      *
      * @return array<string, string>
      */
@@ -103,10 +105,38 @@ final class BodyStructure
             return [];
         }
         $pairs = [];
+        $extended = [];
         for ($i = 0; $i + 1 < count($list); $i += 2) {
-            if (is_string($list[$i]) && is_string($list[$i + 1])) {
-                $pairs[strtolower($list[$i])] = self::decodeParameter($list[$i + 1]);
+            if (!is_string($list[$i]) || !is_string($list[$i + 1])) {
+                continue;
             }
+            $name = strtolower($list[$i]);
+            if (1 === preg_match('/^([^*]+)\*(\d+)?(\*)?$/', $name, $m)) {
+                $extended[$m[1]][(int) ($m[2] ?? 0)] = ['value' => $list[$i + 1], 'encoded' => '*' === substr($name, -1)];
+            } else {
+                $pairs[$name] = self::decodeParameter($list[$i + 1]);
+            }
+        }
+
+        // the extended form wins over the plain one, which is only there for old clients
+        foreach ($extended as $name => $pieces) {
+            ksort($pieces);
+            $charset = 'UTF-8';
+            $value = '';
+            foreach ($pieces as $index => $piece) {
+                $text = $piece['value'];
+                if ($piece['encoded']) {
+                    // only the first piece carries charset'language'
+                    if (0 === $index && 1 === preg_match("/^([^']*)'[^']*'(.*)$/s", $text, $m)) {
+                        $charset = '' === $m[1] ? $charset : $m[1];
+                        $text = $m[2];
+                    }
+                    $text = rawurldecode($text);
+                }
+                $value .= $text;
+            }
+            $converted = 'UTF-8' === strtoupper($charset) ? $value : @iconv($charset, 'UTF-8//IGNORE', $value);
+            $pairs[$name] = is_string($converted) && mb_check_encoding($converted, 'UTF-8') ? $converted : mb_scrub($value, 'UTF-8');
         }
 
         return $pairs;

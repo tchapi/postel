@@ -16,15 +16,20 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\CurrentUser;
 use Symfony\Component\Serializer\SerializerInterface;
 
+use function function_exists;
 use function sprintf;
 
 #[Route('/api/folders/{folder}/messages', requirements: ['folder' => '[^/]+'])]
 final class MessagesController
 {
+    /** Longest side in pixels: the chip shows 28px, this leaves room for 3x screens. */
+    private const int THUMBNAIL_SIZE = 96;
+
     public function __construct(
         private readonly MessageListService $list,
         private readonly MessageService $messages,
@@ -96,20 +101,30 @@ final class MessagesController
     }
 
     /**
-     * Served as a download, never rendered in place: a part is untrusted bytes.
+     * Served as a download unless ?inline=1 asks for an image or a PDF, the
+     * two kinds a browser can show without running anything from the part.
      */
     #[Route('/{uid}/parts/{section}', methods: ['GET'], requirements: ['uid' => '\d+', 'section' => '\d+(\.\d+)*'])]
     public function part(#[CurrentUser] RemoteUser $user, string $folder, int $uid, string $section, Request $request): Response
     {
         $part = $this->messages->part($user, $folder, $uid, $section);
-        $inline = $request->query->getBoolean('inline') && str_starts_with($part->mime, 'image/');
+        if ($request->query->getBoolean('thumb')) {
+            return $this->thumbnail($part->content);
+        }
+
+        // plenty of clients attach PDFs as application/octet-stream
+        $pdf = str_starts_with($part->content, '%PDF-');
+        $inline = $request->query->getBoolean('inline') && ($pdf || str_starts_with($part->mime, 'image/'));
 
         $response = new Response($part->content, Response::HTTP_OK, [
-            'Content-Type' => $inline ? $part->mime : 'application/octet-stream',
+            'Content-Type' => $inline ? ($pdf ? 'application/pdf' : $part->mime) : 'application/octet-stream',
             'X-Content-Type-Options' => 'nosniff',
-            'Content-Security-Policy' => "default-src 'none'; sandbox",
             'Cache-Control' => 'private, max-age=3600',
         ]);
+        if (!$inline || !$pdf) {
+            // NOTE: browsers refuse to start their PDF viewer in a sandboxed document
+            $response->headers->set('Content-Security-Policy', "default-src 'none'; sandbox");
+        }
         $response->headers->set('Content-Disposition', HeaderUtils::makeDisposition(
             $inline ? HeaderUtils::DISPOSITION_INLINE : HeaderUtils::DISPOSITION_ATTACHMENT,
             $part->filename ?? 'part-'.$section,
@@ -117,6 +132,43 @@ final class MessagesController
         ));
 
         return $response;
+    }
+
+    /**
+     * A small JPEG of an image part, 404 for anything GD cannot or should not open.
+     */
+    private function thumbnail(string $bytes): Response
+    {
+        $size = function_exists('imagecreatefromstring') ? @getimagesizefromstring($bytes) : false;
+        // decoding takes ~5 bytes per pixel, so no more than 24 MP under our 256M memory_limit
+        if (false === $size || $size[0] * $size[1] > 24_000_000) {
+            throw new NotFoundHttpException('No thumbnail');
+        }
+        $image = @imagecreatefromstring($bytes);
+        if (false === $image) {
+            throw new NotFoundHttpException('No thumbnail');
+        }
+
+        $scale = min(1, self::THUMBNAIL_SIZE / max($size[0], $size[1]));
+        $width = max(1, (int) round($size[0] * $scale));
+        $height = max(1, (int) round($size[1] * $scale));
+        $thumb = imagecreatetruecolor($width, $height);
+        if (false === $thumb) {
+            throw new NotFoundHttpException('No thumbnail');
+        }
+        // transparent PNGs would come out black otherwise
+        imagefill($thumb, 0, 0, (int) imagecolorallocate($thumb, 255, 255, 255));
+        imagecopyresampled($thumb, $image, 0, 0, 0, 0, $width, $height, $size[0], $size[1]);
+
+        ob_start();
+        imagejpeg($thumb, null, 80);
+
+        return new Response((string) ob_get_clean(), Response::HTTP_OK, [
+            'Content-Type' => 'image/jpeg',
+            'X-Content-Type-Options' => 'nosniff',
+            'Content-Security-Policy' => "default-src 'none'; sandbox",
+            'Cache-Control' => 'private, max-age=86400, immutable',
+        ]);
     }
 
     /**

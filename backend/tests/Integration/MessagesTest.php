@@ -85,6 +85,12 @@ final class MessagesTest extends WebTestCase
         self::assertResponseHeaderSame('Content-Type', 'application/octet-stream');
         self::assertStringStartsWith('%PDF', (string) $this->client->getResponse()->getContent());
         self::assertStringContainsString('report.pdf', (string) $this->client->getResponse()->headers->get('Content-Disposition'));
+
+        $this->client->request('GET', sprintf('/api/folders/INBOX/messages/%d/parts/2?inline=1', $uid), server: [
+            'REMOTE_ADDR' => '127.0.0.1', 'HTTP_REMOTE_USER' => 'alice', 'HTTP_REMOTE_EMAIL' => 'alice@example.test',
+        ]);
+        self::assertResponseHeaderSame('Content-Type', 'application/pdf');
+        self::assertStringStartsWith('inline', (string) $this->client->getResponse()->headers->get('Content-Disposition'));
     }
 
     public function testListRowOfTheFixture(): void

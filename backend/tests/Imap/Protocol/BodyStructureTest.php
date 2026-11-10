@@ -81,4 +81,18 @@ final class BodyStructureTest extends TestCase
 
         self::assertSame('résumé.bin', $part->filename());
     }
+
+    public function testRfc2231FilenameIsDecoded(): void
+    {
+        $part = self::parse('("application" "pdf" NIL NIL NIL "base64" 10 NIL ("attachment" ("filename*" "utf-8\'\'Compte-rendu%20de%20la%20r%C3%A9union.pdf")) NIL NIL)');
+
+        self::assertSame('Compte-rendu de la réunion.pdf', $part->filename());
+    }
+
+    public function testRfc2231ContinuationsAreJoined(): void
+    {
+        $part = self::parse('("application" "pdf" NIL NIL NIL "base64" 10 NIL ("attachment" ("filename*1*" "%E9union" "filename*0*" "iso-8859-1\'fr\'Compte-rendu%20r" "filename*2" ".pdf" "filename" "fallback.pdf")) NIL NIL)');
+
+        self::assertSame('Compte-rendu réunion.pdf', $part->filename());
+    }
 }

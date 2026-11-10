@@ -43,6 +43,10 @@ final class HtmlRenderer
             $html = preg_replace($remote, '', $html) ?? $html;
         }
 
+        // The body is already UTF-8 at this point, but the sanitizer's parser trusts a
+        // <meta charset> (Outlook loves iso-8859-1) and would decode it a second time.
+        $html = preg_replace('/<meta\b[^>]*>/i', '', $html) ?? $html;
+
         return [
             'html' => $this->mail->sanitizeFor('body', $html),
             'hasRemoteImages' => $hasRemoteImages,
