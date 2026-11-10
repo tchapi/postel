@@ -36,6 +36,14 @@ final class HtmlRendererTest extends KernelTestCase
         self::assertStringContainsString('Overlay', $html);
     }
 
+    public function testMetaCharsetDoesNotReDecodeTheBody(): void
+    {
+        $source = '<html><head><meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1"></head><body><p>Envoyé à J’ai</p></body></html>';
+        ['html' => $html] = $this->renderer->render($source, static fn () => null, false);
+
+        self::assertStringContainsString('Envoyé à J’ai', $html);
+    }
+
     public function testRemoteImagesStayWhenAsked(): void
     {
         ['html' => $html] = $this->renderer->render('<p><img src="https://img.example/a.png" alt="a"></p>', static fn () => null, true);
