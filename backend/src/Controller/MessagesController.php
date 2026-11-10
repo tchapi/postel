@@ -153,6 +153,9 @@ final class MessagesController
         $width = max(1, (int) round($size[0] * $scale));
         $height = max(1, (int) round($size[1] * $scale));
         $thumb = imagecreatetruecolor($width, $height);
+        if (false === $thumb) {
+            throw new NotFoundHttpException('No thumbnail');
+        }
         // transparent PNGs would come out black otherwise
         imagefill($thumb, 0, 0, (int) imagecolorallocate($thumb, 255, 255, 255));
         imagecopyresampled($thumb, $image, 0, 0, 0, 0, $width, $height, $size[0], $size[1]);
