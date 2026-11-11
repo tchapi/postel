@@ -18,7 +18,24 @@ describe('htmlHasOwnColors', () => {
     ['<p style="color: #888">light grey</p>', true],
     ['<p style="color: navy">named colour</p>', true],
     ['<div style="background: #fff url(x.png)">picture</div>', true],
+    ['<a href="https://x" style="color:rgb(17,85,204)">Gmail link</a>', false],
+    ['<a href="https://x" style="color:#0563C1">Outlook link</a>', false],
+    ['<a href="https://x" style="color:#e4572e">branded link</a>', true],
+    ['<span style="color:rgb(17,85,204)">blue text</span>', true],
   ])('%s', (html, expected) => {
     expect(htmlHasOwnColors(html)).toBe(expected)
+  })
+
+  const forward =
+    '<div style="color: rgb(0, 0, 0)">Si tu veux</div>' +
+    '<blockquote type="cite"><table bgcolor="#1f497d"><tr><td>school news</td></tr></table></blockquote>'
+
+  it('ignores the quote while it is collapsed', () => {
+    expect(htmlHasOwnColors(forward, { withQuote: false })).toBe(false)
+  })
+
+  it('counts the quote once it is shown', () => {
+    expect(htmlHasOwnColors(forward, { withQuote: true })).toBe(true)
+    expect(htmlHasOwnColors(forward)).toBe(true)
   })
 })

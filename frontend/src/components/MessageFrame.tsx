@@ -76,17 +76,35 @@ function isNeutral(property: string, value: string): boolean {
  * white page, so in dark mode it keeps one. Plain mail follows the theme instead,
  * and so does mail whose only colours are the neutral defaults its client wrote.
  */
-export function htmlHasOwnColors(html: string): boolean {
+export function htmlHasOwnColors(html: string, { withQuote = true } = {}): boolean {
   const doc = new DOMParser().parseFromString(html, 'text/html')
+  // A collapsed quote is not on screen, so its colours do not count
+  if (!withQuote) doc.querySelectorAll(QUOTE_SELECTOR).forEach((n) => n.remove())
   if (doc.querySelector('[background]')) return true
   for (const el of doc.querySelectorAll('[bgcolor]'))
     if (!isNeutral('background-color', el.getAttribute('bgcolor')!)) return true
   for (const el of doc.querySelectorAll('font[color], [color]'))
     if (!isNeutral('color', el.getAttribute('color')!)) return true
   return [...doc.querySelectorAll('[style]')].some((el) =>
-    [...(el.getAttribute('style') ?? '').matchAll(COLOR_DECL)].some(
-      (m) => !isNeutral(m[2]!.toLowerCase(), m[3]!),
-    ),
+    [...(el.getAttribute('style') ?? '').matchAll(COLOR_DECL)].some((m) => {
+      const prop = m[2]!.toLowerCase()
+      if (prop === 'color' && el.tagName === 'A' && isClientLinkBlue(m[3]!)) return false
+      return !isNeutral(prop, m[3]!)
+    }),
+  )
+}
+
+/** The blue Gmail, Outlook and Word write on every link: the client's colour, not the sender's. */
+function isClientLinkBlue(value: string): boolean {
+  const c = parseColor(value)
+  return (
+    c !== null &&
+    [
+      [17, 85, 204], // Gmail #1155cc
+      [5, 99, 193], // Outlook #0563c1
+      [0, 0, 255], // Word, old Outlook
+      [0, 0, 238], // browser default
+    ].some(([r, g, b]) => c[0] === r && c[1] === g && c[2] === b)
   )
 }
 
@@ -125,7 +143,7 @@ function buildSrcDoc(
   const head = doc.head
   const csp = doc.createElement('meta')
   csp.httpEquiv = 'Content-Security-Policy'
-  csp.content = `default-src 'none'; img-src 'self' data: cid:${remote}; style-src 'unsafe-inline'${remote}; font-src data:${remote}`
+  csp.content = `default-src 'none'; img-src 'self' data: cid:${remote}; style-src 'unsafe-inline'${remote}; font-src data:${remote}; form-action 'none'`
   const base = doc.createElement('base')
   base.target = '_blank'
   const style = doc.createElement('style')
@@ -149,9 +167,33 @@ function buildSrcDoc(
   return `<!doctype html>${doc.documentElement.outerHTML}`
 }
 
+const EXTERNAL = /^(https?|mailto|tel|sms):/i
+
+/**
+ * Opens the link the user clicked in the frame from the parent window, so the frame itself
+ * never navigates: a page that refuses to be framed would otherwise leave it blank.
+ * <base target="_blank"> stays as a fallback for browsers that deliver no click here.
+ */
+function openLink(event: MouseEvent, doc: Document) {
+  const target = event.target as Element | null
+  const anchor = target?.closest?.('a[href]') as HTMLAnchorElement | null
+  if (!anchor || event.button !== 0) return
+  event.preventDefault()
+  const raw = anchor.getAttribute('href')?.trim() ?? ''
+  if (raw.startsWith('#')) {
+    doc.getElementById(decodeURIComponent(raw.slice(1)))?.scrollIntoView()
+    return
+  }
+  const href = anchor.href
+  if (!EXTERNAL.test(href)) return
+  if (/^https?:/i.test(href)) window.open(href, '_blank', 'noopener,noreferrer')
+  // mailto: and the like hand over to the system; the page stays
+  else window.location.href = href
+}
+
 /**
  * Sandboxed message HTML. No `allow-scripts`, so `allow-same-origin` only lets us
- * measure the document height. Links open in a new tab via <base target>.
+ * measure the document height and catch link clicks. Links open outside the frame.
  */
 export function MessageFrame({
   html,
@@ -168,7 +210,10 @@ export function MessageFrame({
   const [height, setHeight] = useState(120)
   // Dark mode shows mail on a white sheet; light mode lets it sit flush with the headers.
   const scheme = useComputedColorScheme('light')
-  const ownColors = useMemo(() => htmlHasOwnColors(html), [html])
+  const ownColors = useMemo(
+    () => htmlHasOwnColors(html, { withQuote: showQuoted }),
+    [html, showQuoted],
+  )
   const look: FrameLook = scheme === 'light' ? 'flush' : ownColors ? 'sheet' : 'dark'
   const srcDoc = useMemo(
     () => buildSrcDoc(html, allowRemote, showQuoted, look),
@@ -184,13 +229,18 @@ export function MessageFrame({
       const body = frame.contentDocument?.body
       if (body) setHeight(Math.ceil(body.getBoundingClientRect().height))
     }
+    let listening: Document | null = null
+    const onClick = (e: MouseEvent) => listening && openLink(e, listening)
     const onLoad = () => {
       observer?.disconnect()
+      listening?.removeEventListener('click', onClick)
       measure()
-      const body = frame.contentDocument?.body
-      if (body) {
+      const doc = frame.contentDocument
+      if (doc?.body) {
         observer = new ResizeObserver(measure)
-        observer.observe(body)
+        observer.observe(doc.body)
+        listening = doc
+        doc.addEventListener('click', onClick)
       }
     }
     frame.addEventListener('load', onLoad)
@@ -203,6 +253,7 @@ export function MessageFrame({
     }
     return () => {
       frame.removeEventListener('load', onLoad)
+      listening?.removeEventListener('click', onClick)
       observer?.disconnect()
     }
   }, [srcDoc])
