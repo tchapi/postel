@@ -5,6 +5,7 @@ import {
   CheckIcon,
   ColorSwatch,
   FileButton,
+  Anchor,
   Group,
   Kbd,
   Radio,
@@ -22,7 +23,7 @@ import { useDebouncedCallback } from '@mantine/hooks'
 import { Link, RichTextEditor } from '@mantine/tiptap'
 import { useEditor } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
-import { ArrowLeftIcon } from 'lucide-react'
+import { ArrowLeftIcon, ExternalLinkIcon } from 'lucide-react'
 import type { Settings as SettingsData } from '../types'
 import { useI18n } from '../lib/i18n'
 import { buildSettingsFile, parseSettingsFile, SETTINGS_FILE_NAME } from '../lib/settingsFile'
@@ -348,6 +349,29 @@ export function Settings({
                   {t.backupHint}
                 </Text>
               </Stack>
+            </Row>
+          </section>
+
+          <section aria-labelledby="s-about" className={classes.section}>
+            <Text id="s-about" className={classes.heading}>
+              {t.about}
+            </Text>
+            <Row label={t.appName} id="l-version">
+              <Group gap={12}>
+                <Text size="sm">{t.version(__APP_VERSION__)}</Text>
+                <Anchor
+                  size="sm"
+                  c="dimmed"
+                  href={`https://github.com/tchapi/postel/releases/tag/v${__APP_VERSION__}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <Group gap={4} wrap="nowrap" component="span">
+                    {t.releaseNotes}
+                    <ExternalLinkIcon size={13} strokeWidth={2} />
+                  </Group>
+                </Anchor>
+              </Group>
             </Row>
           </section>
 

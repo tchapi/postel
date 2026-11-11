@@ -3,6 +3,7 @@ import {
   useEffect,
   useRef,
   type CSSProperties,
+  type DragEvent,
   type MouseEvent,
   type PointerEvent,
 } from 'react'
@@ -11,6 +12,7 @@ import { ArchiveIcon, PaperclipIcon, StarIcon, Trash2Icon } from 'lucide-react'
 import type { Density, MessageRow as Row } from '../types'
 import { absoluteDate, displayName, relativeDate } from '../lib/format'
 import { useI18n } from '../lib/i18n'
+import { KnownContactIcon, useKnownAddr } from '../lib/contacts'
 import classes from './MessageRow.module.css'
 
 // Slot per row: the row inset 2px top and bottom, then 12px (comfortable, three lines) or 10px (compact, two) around the text.
@@ -33,12 +35,18 @@ export type MessageRowProps = {
   folderLabel?: string
   highlight?: string
   swipeEnabled: boolean
+  /** Desktop: rows can be dragged onto a folder. */
+  dragEnabled: boolean
+  /** Part of the drag in progress: shown faded. */
+  dragging: boolean
   style?: CSSProperties
   onActivate: (uid: number) => void
   onToggleSelect: (uid: number, range: boolean) => void
   onToggleStar: (row: Row) => void
   onContextMenu: (row: Row, event: MouseEvent) => void
   onSwipe: (row: Row, action: 'archive' | 'delete') => void
+  onDragStart: (row: Row, event: DragEvent) => void
+  onDragEnd: () => void
 }
 
 function MessageRowImpl({
@@ -51,12 +59,16 @@ function MessageRowImpl({
   folderLabel,
   highlight,
   swipeEnabled,
+  dragEnabled,
+  dragging,
   style,
   onActivate,
   onToggleSelect,
   onToggleStar,
   onContextMenu,
   onSwipe,
+  onDragStart,
+  onDragEnd,
 }: MessageRowProps) {
   const { t, locale } = useI18n()
   const wrapRef = useRef<HTMLDivElement>(null)
@@ -130,7 +142,8 @@ function MessageRowImpl({
     }
   }
 
-  const sender = displayName(row.from)
+  const from = useKnownAddr(row.from)
+  const sender = displayName(from.addr)
 
   return (
     <div ref={wrapRef} className={classes.swipeWrap} style={style} data-density={density}>
@@ -157,6 +170,10 @@ function MessageRowImpl({
         data-selected={selected || undefined}
         data-unread={!row.seen || undefined}
         data-selection-mode={selectionMode || undefined}
+        data-dragging={dragging || undefined}
+        draggable={dragEnabled}
+        onDragStart={(e) => onDragStart(row, e)}
+        onDragEnd={onDragEnd}
         onClick={(e) => {
           if (e.shiftKey || e.metaKey || e.ctrlKey) onToggleSelect(row.uid, e.shiftKey)
           else onActivate(row.uid)
@@ -189,6 +206,7 @@ function MessageRowImpl({
             <Text span className={classes.sender} truncate>
               {sender}
             </Text>
+            {from.known && <KnownContactIcon />}
             {(row.threadSize ?? 1) > 1 && (
               <Text span size="xs" c="dimmed" fw={500} style={{ flex: 'none' }}>
                 {row.threadSize}

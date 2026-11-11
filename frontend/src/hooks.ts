@@ -12,6 +12,7 @@ import type {
   Settings,
   Undo,
 } from './types'
+import type { KnownContact } from './lib/contacts'
 
 /**
  * Data contract between the components and the API, implemented with TanStack Query in
@@ -49,6 +50,8 @@ export interface MailHooks {
   /** The conversation of a message, oldest first; idle when `ref` is null. */
   useThread(ref: MessageRef | null): UseQueryResult<MessageRow[]>
   useContacts(q: string): UseQueryResult<Contact[]>
+  /** Which of these addresses have a contact card, and the name on it. Grows as addresses come by. */
+  useContactNames(emails: string[]): ReadonlyMap<string, KnownContact>
   useSettings(): { settings: Settings; update: (patch: Partial<Settings>) => void }
   useRecentSearches(): { recent: string[]; push: (q: string) => void }
   useSession(): { name: string; email: string; signOut: () => void }

@@ -39,8 +39,8 @@ export function ShortcutsTable() {
             <Table.Tbody>
               {ORDER.filter((id) => SHORTCUTS[id].group === g).map((id) => (
                 <Table.Tr key={id}>
-                  <Table.Td w={112}>
-                    <KeyCombo id={id} size="sm" />
+                  <Table.Td w={132}>
+                    <KeyCombo id={id} size="sm" withAlt />
                   </Table.Td>
                   <Table.Td>{t.shortcutLabels[id]}</Table.Td>
                 </Table.Tr>

@@ -30,6 +30,7 @@ import type {
 import { I18nContext, STRINGS } from './lib/i18n'
 import { absoluteDate, displayName } from './lib/format'
 import { useMailShortcuts } from './lib/shortcuts'
+import { KnownContactsProvider } from './lib/contacts'
 import { parseLocation, toUrl } from './lib/url'
 import { DEFAULT_NAV, MailAppShell, type Layout } from './components/AppShell'
 import { TopBar } from './components/TopBar'
@@ -164,6 +165,17 @@ export function MailApp({
   )
   const earlierRows = (threadQuery.data ?? []).filter((row) => row.uid !== readerRow?.uid)
   const message = messageQuery.data
+
+  // Everyone on screen, looked up in the address book: senders in the list, the open message's people
+  const addressesOnScreen = useMemo(
+    () => [
+      ...rows.map((r) => r.from.email),
+      ...earlierRows.map((r) => r.from.email),
+      ...(message ? [message.from, ...message.to, ...message.cc].map((a) => a.email) : []),
+    ],
+    [rows, earlierRows, message],
+  )
+  const knownContacts = hooks.useContactNames(addressesOnScreen)
 
   // Opening marks as read (silently, no toast).
   useEffect(() => {
@@ -692,146 +704,153 @@ export function MailApp({
 
   return (
     <I18nContext value={i18n}>
-      <MailAppShell
-        layout={layout}
-        showHeader={layout !== 'mobile' || (!mobileReader && view === 'mail')}
-        header={
-          <TopBar
-            layout={layout}
-            unreadCount={inboxUnread}
-            title={search ? t.resultsFor(search.query) : folderTitle}
-            navOpened={layout === 'desktop' ? !navCollapsed : drawerOpened}
-            onNavToggle={() =>
-              layout === 'desktop' ? setNavCollapsed((v) => !v) : setDrawerOpened((v) => !v)
-            }
-            onSearch={() => spotlight.open()}
-            onCompose={() => openCompose('new')}
-            composeDisabled={!reachable}
-            session={session}
-            isDark={computed === 'dark'}
-            onToggleTheme={toggleTheme}
-            onSettings={() => setView('settings')}
-            onShortcuts={() => setHelpOpen(true)}
-            onSignOut={session.signOut}
-          />
-        }
-        navCollapsed={navCollapsed}
-        drawerOpened={drawerOpened}
-        onDrawerClose={() => setDrawerOpened(false)}
-        renderNav={(collapsed) => (
-          <FolderNav
-            folders={foldersQuery.data}
-            status={foldersQuery.status}
-            onRetry={() => void foldersQuery.refetch()}
-            activeId={search ? null : folderId}
-            collapsed={collapsed}
-            onSelect={goFolder}
-            onToggleCollapsed={layout === 'desktop' ? () => setNavCollapsed((v) => !v) : undefined}
-            onCompose={layout === 'desktop' ? () => openCompose('new') : undefined}
-            composeDisabled={!reachable}
-          />
+      <KnownContactsProvider value={knownContacts}>
+        <MailAppShell
+          layout={layout}
+          showHeader={layout !== 'mobile' || (!mobileReader && view === 'mail')}
+          header={
+            <TopBar
+              layout={layout}
+              unreadCount={inboxUnread}
+              title={search ? t.resultsFor(search.query) : folderTitle}
+              navOpened={layout === 'desktop' ? !navCollapsed : drawerOpened}
+              onNavToggle={() =>
+                layout === 'desktop' ? setNavCollapsed((v) => !v) : setDrawerOpened((v) => !v)
+              }
+              onSearch={() => spotlight.open()}
+              onCompose={() => openCompose('new')}
+              composeDisabled={!reachable}
+              session={session}
+              isDark={computed === 'dark'}
+              onToggleTheme={toggleTheme}
+              onSettings={() => setView('settings')}
+              onShortcuts={() => setHelpOpen(true)}
+              onSignOut={session.signOut}
+            />
+          }
+          navCollapsed={navCollapsed}
+          drawerOpened={drawerOpened}
+          onDrawerClose={() => setDrawerOpened(false)}
+          renderNav={(collapsed) => (
+            <FolderNav
+              folders={foldersQuery.data}
+              status={foldersQuery.status}
+              onRetry={() => void foldersQuery.refetch()}
+              activeId={search ? null : folderId}
+              collapsed={collapsed}
+              onSelect={goFolder}
+              onToggleCollapsed={
+                layout === 'desktop' ? () => setNavCollapsed((v) => !v) : undefined
+              }
+              onCompose={layout === 'desktop' ? () => openCompose('new') : undefined}
+              composeDisabled={!reachable}
+              onDropMessages={
+                layout === 'mobile' ? undefined : (id, uids) => void runAction({ moveTo: id }, uids)
+              }
+            />
+          )}
+          list={list}
+          reader={reader}
+          page={page}
+          mobilePane={mobileReader ? 'reader' : 'list'}
+          listWidth={listWidth}
+          onListWidthChange={setListWidth}
+          navWidth={navWidth}
+          onNavWidthChange={setNavWidth}
+        />
+
+        {layout === 'mobile' && view === 'mail' && !mobileReader && (
+          <Button
+            aria-label={t.compose}
+            pos="fixed"
+            right={16}
+            bottom={24}
+            w={56}
+            h={56}
+            p={0}
+            radius="xl"
+            style={{ zIndex: 150 }}
+            disabled={!reachable}
+            onClick={() => openCompose('new')}
+          >
+            <SquarePenIcon size={24} strokeWidth={1.75} />
+          </Button>
         )}
-        list={list}
-        reader={reader}
-        page={page}
-        mobilePane={mobileReader ? 'reader' : 'list'}
-        listWidth={listWidth}
-        onListWidthChange={setListWidth}
-        navWidth={navWidth}
-        onNavWidthChange={setNavWidth}
-      />
 
-      {layout === 'mobile' && view === 'mail' && !mobileReader && (
-        <Button
-          aria-label={t.compose}
-          pos="fixed"
-          right={16}
-          bottom={24}
-          w={56}
-          h={56}
-          p={0}
-          radius="xl"
-          style={{ zIndex: 150 }}
-          disabled={!reachable}
-          onClick={() => openCompose('new')}
-        >
-          <SquarePenIcon size={24} strokeWidth={1.75} />
-        </Button>
-      )}
+        {compose && (
+          <Suspense fallback={null}>
+            <Composer
+              key={compose.key}
+              mode={compose.mode}
+              initial={compose.initial}
+              quotedLabel={compose.quotedLabel}
+              signatureHtml={compose.mode === 'draft' ? '' : settings.signatureHtml}
+              isMobile={layout === 'mobile'}
+              useContacts={hooks.useContacts}
+              onUpload={actions.upload}
+              onSaveDraft={actions.saveDraft}
+              onSend={sendWithUndo}
+              onDiscard={(uid) => {
+                setCompose(null)
+                if (uid) void actions.discardDraft(uid)
+                notifications.show({ message: t.draftDiscarded, color: 'gray', autoClose: 3000 })
+              }}
+              onClose={() => setCompose(null)}
+            />
+          </Suspense>
+        )}
 
-      {compose && (
-        <Suspense fallback={null}>
-          <Composer
-            key={compose.key}
-            mode={compose.mode}
-            initial={compose.initial}
-            quotedLabel={compose.quotedLabel}
-            signatureHtml={compose.mode === 'draft' ? '' : settings.signatureHtml}
-            isMobile={layout === 'mobile'}
-            useContacts={hooks.useContacts}
-            onUpload={actions.upload}
-            onSaveDraft={actions.saveDraft}
-            onSend={sendWithUndo}
-            onDiscard={(uid) => {
-              setCompose(null)
-              if (uid) void actions.discardDraft(uid)
-              notifications.show({ message: t.draftDiscarded, color: 'gray', autoClose: 3000 })
-            }}
-            onClose={() => setCompose(null)}
-          />
-        </Suspense>
-      )}
+        <SearchSpotlight
+          recent={recent}
+          folders={allFolders.map((f) => ({ id: f.id, label: labelOf(f), unread: f.unread }))}
+          commands={[
+            ...(reachable
+              ? [
+                  {
+                    id: 'compose',
+                    label: t.compose,
+                    icon: <SquarePenIcon size={16} strokeWidth={1.75} />,
+                    shortcut: 'compose' as const,
+                  },
+                ]
+              : []),
+            {
+              id: 'theme',
+              label: computed === 'dark' ? t.lightTheme : t.darkTheme,
+              icon: <MoonIcon size={16} strokeWidth={1.75} />,
+            },
+            {
+              id: 'settings',
+              label: t.settings,
+              icon: <SlidersHorizontalIcon size={16} strokeWidth={1.75} />,
+            },
+            {
+              id: 'shortcuts',
+              label: t.shortcuts,
+              icon: <KeyboardIcon size={16} strokeWidth={1.75} />,
+              shortcut: 'help',
+            },
+          ]}
+          onSearch={runSearch}
+          onGoToFolder={goFolder}
+          onCommand={(id) => {
+            if (id === 'compose') openCompose('new')
+            if (id === 'theme') toggleTheme()
+            if (id === 'settings') setView('settings')
+            if (id === 'shortcuts') setHelpOpen(true)
+          }}
+        />
 
-      <SearchSpotlight
-        recent={recent}
-        folders={allFolders.map((f) => ({ id: f.id, label: labelOf(f), unread: f.unread }))}
-        commands={[
-          ...(reachable
-            ? [
-                {
-                  id: 'compose',
-                  label: t.compose,
-                  icon: <SquarePenIcon size={16} strokeWidth={1.75} />,
-                  shortcut: 'compose' as const,
-                },
-              ]
-            : []),
-          {
-            id: 'theme',
-            label: computed === 'dark' ? t.lightTheme : t.darkTheme,
-            icon: <MoonIcon size={16} strokeWidth={1.75} />,
-          },
-          {
-            id: 'settings',
-            label: t.settings,
-            icon: <SlidersHorizontalIcon size={16} strokeWidth={1.75} />,
-          },
-          {
-            id: 'shortcuts',
-            label: t.shortcuts,
-            icon: <KeyboardIcon size={16} strokeWidth={1.75} />,
-            shortcut: 'help',
-          },
-        ]}
-        onSearch={runSearch}
-        onGoToFolder={goFolder}
-        onCommand={(id) => {
-          if (id === 'compose') openCompose('new')
-          if (id === 'theme') toggleTheme()
-          if (id === 'settings') setView('settings')
-          if (id === 'shortcuts') setHelpOpen(true)
-        }}
-      />
+        <ShortcutsHelp opened={helpOpen} onClose={() => setHelpOpen(false)} />
 
-      <ShortcutsHelp opened={helpOpen} onClose={() => setHelpOpen(false)} />
-
-      <RawMessageModal
-        opened={sourceRef !== null}
-        onClose={() => setSourceRef(null)}
-        status={sourceRef === null ? 'idle' : sourceQuery.status}
-        source={sourceQuery.data}
-        downloadUrl={sourceRef ? rawUrl(sourceRef, true) : '#'}
-      />
+        <RawMessageModal
+          opened={sourceRef !== null}
+          onClose={() => setSourceRef(null)}
+          status={sourceRef === null ? 'idle' : sourceQuery.status}
+          source={sourceQuery.data}
+          downloadUrl={sourceRef ? rawUrl(sourceRef, true) : '#'}
+        />
+      </KnownContactsProvider>
     </I18nContext>
   )
 }

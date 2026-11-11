@@ -16,6 +16,7 @@ import {
 } from 'lucide-react'
 import type { Folder, FolderRole } from '../types'
 import { useI18n } from '../lib/i18n'
+import { hasMessageDrag, readMessageDrag } from '../lib/dnd'
 import { ErrorState, FolderNavSkeleton } from './States'
 import { SHORTCUTS, keyLabel } from '../lib/shortcuts'
 import classes from './FolderNav.module.css'
@@ -108,6 +109,8 @@ export type FolderNavProps = {
   onCompose?: () => void
   /** The backend is away: Compose shows, greyed out. */
   composeDisabled?: boolean
+  /** Messages dropped on a folder, dragged from the list. Omit where there is nothing to drag. */
+  onDropMessages?: (folderId: string, uids: number[]) => void
 }
 
 export function FolderNav({
@@ -120,6 +123,7 @@ export function FolderNav({
   onToggleCollapsed,
   onCompose,
   composeDisabled,
+  onDropMessages,
 }: FolderNavProps) {
   const { t } = useI18n()
   const label = useFolderLabel()
@@ -130,6 +134,49 @@ export function FolderNav({
   })
   const toggleOpen = (id: string) =>
     setClosed((ids) => (ids.includes(id) ? ids.filter((i) => i !== id) : [...ids, id]))
+
+  // Drag and drop from the list: the folder under the pointer lights up, and a closed
+  // parent opens after a moment so its subfolders can be reached.
+  const [dropId, setDropId] = useState<string | null>(null)
+  const openTimer = useRef(0)
+  useEffect(() => () => clearTimeout(openTimer.current), [])
+  const canDrop = (f: Folder) =>
+    !!onDropMessages && f.role !== 'drafts' && f.role !== 'sent' && f.id !== activeId
+  const dragProps = (f: Folder, open: boolean) =>
+    onDropMessages
+      ? {
+          onDragEnter: (e: React.DragEvent) => {
+            if (!hasMessageDrag(e.dataTransfer) || !canDrop(f)) return
+            e.preventDefault()
+            setDropId(f.id)
+            clearTimeout(openTimer.current)
+            if (!open)
+              openTimer.current = window.setTimeout(
+                () => setClosed((ids) => ids.filter((i) => i !== f.id)),
+                700,
+              )
+          },
+          onDragOver: (e: React.DragEvent) => {
+            if (!hasMessageDrag(e.dataTransfer) || !canDrop(f)) return
+            e.preventDefault()
+            e.dataTransfer.dropEffect = 'move'
+          },
+          onDragLeave: (e: React.DragEvent) => {
+            // Moving onto a child element of the same row fires leave too
+            if (e.currentTarget.contains(e.relatedTarget as Node | null)) return
+            clearTimeout(openTimer.current)
+            setDropId((id) => (id === f.id ? null : id))
+          },
+          onDrop: (e: React.DragEvent) => {
+            clearTimeout(openTimer.current)
+            setDropId(null)
+            if (!hasMessageDrag(e.dataTransfer) || !canDrop(f)) return
+            e.preventDefault()
+            const uids = readMessageDrag(e.dataTransfer)
+            if (uids.length) onDropMessages(f.id, uids)
+          },
+        }
+      : {}
 
   // A small shadow over the footer while more folders hide below it
   const viewport = useRef<HTMLDivElement>(null)
@@ -206,9 +253,11 @@ export function FolderNav({
             data-active={active || undefined}
             data-strong={strong || undefined}
             data-parent={hasChildren || undefined}
+            data-drop={dropId === f.id || undefined}
             aria-current={active ? 'page' : undefined}
             style={{ '--depth': depth } as React.CSSProperties}
             onClick={() => onSelect(f.id)}
+            {...dragProps(f, open)}
           >
             <span className={classes.iconWrap}>
               {f.role ? (

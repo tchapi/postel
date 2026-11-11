@@ -19,7 +19,13 @@ export type ShortcutId =
   | 'send'
   | 'help'
 
-type ShortcutDef = { keys: string[]; group: 'move' | 'act' | 'app'; sequence?: boolean }
+/** `alt`: other single keys that fire the same action, shown after the main one in the cheat sheet. */
+type ShortcutDef = {
+  keys: string[]
+  group: 'move' | 'act' | 'app'
+  sequence?: boolean
+  alt?: string[]
+}
 
 /** Single source for the global handler, tooltips, ShortcutsHelp and the cheat sheet. */
 export const SHORTCUTS: Record<ShortcutId, ShortcutDef> = {
@@ -34,7 +40,7 @@ export const SHORTCUTS: Record<ShortcutId, ShortcutDef> = {
   replyAll: { keys: ['a'], group: 'act' },
   forward: { keys: ['f'], group: 'act' },
   archive: { keys: ['e'], group: 'act' },
-  delete: { keys: ['#'], group: 'act' },
+  delete: { keys: ['Backspace'], alt: ['Delete'], group: 'act' },
   star: { keys: ['s'], group: 'act' },
   unread: { keys: ['u'], group: 'act' },
   compose: { keys: ['c'], group: 'app' },
@@ -52,6 +58,10 @@ export function keyLabel(key: string): string {
       return '↵'
     case 'Escape':
       return 'Esc'
+    case 'Backspace':
+      return '⌫'
+    case 'Delete':
+      return '⌦'
     default:
       return key
   }
@@ -102,7 +112,10 @@ export function useMailShortcuts(handlers: Handlers, enabled: boolean) {
 
     const match = (Object.keys(SHORTCUTS) as ShortcutId[]).find((id) => {
       const def = SHORTCUTS[id]
-      return !def.sequence && def.keys.length === 1 && def.keys[0] === key
+      return (
+        (!def.sequence && def.keys.length === 1 && def.keys[0] === key) ||
+        (def.alt?.includes(key) ?? false)
+      )
     })
     const handler = match ? handlers[match] : undefined
     if (handler) {

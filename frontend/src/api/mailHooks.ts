@@ -5,9 +5,10 @@ import {
   useInfiniteQuery,
   useQuery,
 } from '@tanstack/react-query'
-import { useSyncExternalStore } from 'react'
+import { useEffect, useMemo, useState, useSyncExternalStore } from 'react'
 
 import type { MailActions, MailHooks } from '../hooks'
+import type { KnownContact } from '../lib/contacts'
 import { ACCENTS, DEFAULT_ACCENT, type AccentName } from '../theme'
 import type {
   DateRange,
@@ -529,6 +530,57 @@ export function createMailHooks(qc: QueryClient): MailHooks {
         staleTime: 60_000,
         placeholderData: keepPreviousData,
       }),
+
+    useContactNames: (emails) => {
+      // Looked up once per address, then kept for the session
+      const [known, setKnown] = useState<Map<string, KnownContact | null>>(() => new Map())
+      const missing = useMemo(() => {
+        const set = new Set<string>()
+        for (const e of emails) {
+          const email = e.trim().toLowerCase()
+          if (email && !known.has(email)) set.add(email)
+        }
+        return [...set].sort()
+      }, [emails, known])
+      const { data } = useQuery({
+        queryKey: ['contact-names', missing],
+        queryFn: async () => {
+          const query = missing.map((e) => `emails[]=${encodeURIComponent(e)}`).join('&')
+          return api<Record<string, { name: string | null; photo: boolean }>>(
+            `/contacts/lookup?${query}`,
+          )
+        },
+        enabled: missing.length > 0,
+        staleTime: Infinity,
+      })
+      useEffect(() => {
+        if (!data) return
+        setKnown((prev) => {
+          const next = new Map(prev)
+          for (const email of missing) {
+            const card = data[email]
+            next.set(
+              email,
+              card
+                ? {
+                    email,
+                    name: card.name ?? undefined,
+                    photo: card.photo
+                      ? `/api/contacts/photo?email=${encodeURIComponent(email)}`
+                      : undefined,
+                  }
+                : null,
+            )
+          }
+          return next
+        })
+      }, [data, missing])
+      return useMemo(() => {
+        const out = new Map<string, KnownContact>()
+        for (const [email, contact] of known) if (contact) out.set(email, contact)
+        return out
+      }, [known])
+    },
 
     useSettings: () => {
       const { data } = useQuery({

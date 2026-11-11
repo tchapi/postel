@@ -60,6 +60,11 @@
   /* A click opens the message; a drag would only select bits of rows */
   user-select: none;
 
+  /* On its way to a folder */
+  &[data-dragging] {
+    opacity: 0.45;
+  }
+
   [data-density='compact'] & {
     padding-block: 9px 10px;
   }

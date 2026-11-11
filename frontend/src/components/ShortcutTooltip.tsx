@@ -3,7 +3,16 @@ import { Group, Kbd, Text, Tooltip, type KbdProps, type TooltipProps } from '@ma
 import { SHORTCUTS, keyLabel, type ShortcutId } from '../lib/shortcuts'
 import { useI18n } from '../lib/i18n'
 
-export function KeyCombo({ id, size = 'xs' }: { id: ShortcutId; size?: KbdProps['size'] }) {
+export function KeyCombo({
+  id,
+  size = 'xs',
+  withAlt = false,
+}: {
+  id: ShortcutId
+  size?: KbdProps['size']
+  /** Also list the alternate keys, e.g. "# or ⌫ ⌦" */
+  withAlt?: boolean
+}) {
   const { t } = useI18n()
   const def = SHORTCUTS[id]
   return (
@@ -18,6 +27,17 @@ export function KeyCombo({ id, size = 'xs' }: { id: ShortcutId; size?: KbdProps[
           <Kbd size={size}>{keyLabel(k)}</Kbd>
         </Group>
       ))}
+      {withAlt && def.alt?.length && (
+        <Text span size="xs" c="dimmed">
+          {t.or}
+        </Text>
+      )}
+      {withAlt &&
+        def.alt?.map((k) => (
+          <Kbd key={k} size={size}>
+            {keyLabel(k)}
+          </Kbd>
+        ))}
     </Group>
   )
 }

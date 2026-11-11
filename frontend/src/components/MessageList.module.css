@@ -114,3 +114,21 @@
     outline: none;
   }
 }
+
+/* The drag image: rendered off screen, the browser snapshots it when a drag starts */
+.dragGhost {
+  position: fixed;
+  top: -200px;
+  left: -200px;
+  max-width: 280px;
+  padding: 8px 14px;
+  border-radius: var(--mantine-radius-md);
+  background: var(--mantine-primary-color-filled);
+  color: var(--mantine-color-white);
+  font-size: var(--mantine-font-size-sm);
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: none;
+}

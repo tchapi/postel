@@ -3,7 +3,8 @@ import { type ReactNode, useState } from 'react'
 
 import { displayName, initials, relativeDate } from '../lib/format'
 import { useI18n } from '../lib/i18n'
-import type { Message, MessageRow } from '../types'
+import { KnownAvatar, useKnownAddr } from '../lib/contacts'
+import type { Addr, Message, MessageRow } from '../types'
 import { MessageFrame, splitTextQuote } from './MessageFrame'
 import classes from './Conversation.module.css'
 
@@ -45,18 +46,7 @@ export function EarlierMessages({ rows, renderMessage }: EarlierProps) {
             aria-expanded={false}
           >
             <Group gap={12} wrap="nowrap">
-              <Avatar
-                radius="xl"
-                size={28}
-                color="initials"
-                name={displayName(row.from)}
-                aria-hidden
-              >
-                {initials(row.from)}
-              </Avatar>
-              <Text size="sm" fw={row.seen ? 500 : 700} className={classes.sender}>
-                {displayName(row.from)}
-              </Text>
+              <Sender addr={row.from} fw={row.seen ? 500 : 700} />
               <Text size="sm" c="dimmed" truncate style={{ flex: 1 }}>
                 {row.snippet}
               </Text>
@@ -68,6 +58,30 @@ export function EarlierMessages({ rows, renderMessage }: EarlierProps) {
         ),
       )}
     </Stack>
+  )
+}
+
+/** Avatar and name, as the address book knows them */
+function Sender({ addr, fw }: { addr: Addr; fw: number }) {
+  const from = useKnownAddr(addr)
+  return (
+    <>
+      <KnownAvatar known={from.known} size={28}>
+        <Avatar
+          radius="xl"
+          size={28}
+          color="initials"
+          name={displayName(from.addr)}
+          src={from.photo}
+          aria-hidden
+        >
+          {initials(from.addr)}
+        </Avatar>
+      </KnownAvatar>
+      <Text size="sm" fw={fw} className={classes.sender}>
+        {displayName(from.addr)}
+      </Text>
+    </>
   )
 }
 
@@ -84,18 +98,7 @@ export function EarlierMessage({ message, allowRemote, onFold }: OpenedProps) {
     <Stack gap={12}>
       <UnstyledButton onClick={onFold} aria-expanded>
         <Group gap={12} wrap="nowrap">
-          <Avatar
-            radius="xl"
-            size={28}
-            color="initials"
-            name={displayName(message.from)}
-            aria-hidden
-          >
-            {initials(message.from)}
-          </Avatar>
-          <Text size="sm" fw={600} className={classes.sender}>
-            {displayName(message.from)}
-          </Text>
+          <Sender addr={message.from} fw={600} />
           <Box style={{ flex: 1 }} />
           <Text size="xs" c="dimmed" className={classes.date}>
             {relativeDate(message.date, locale)}

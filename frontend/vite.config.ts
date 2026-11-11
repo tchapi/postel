@@ -1,5 +1,12 @@
+import { readFileSync } from 'node:fs'
 import react from '@vitejs/plugin-react'
 import { defineConfig, loadEnv } from 'vite'
+
+const { version } = JSON.parse(
+  readFileSync(new URL('./package.json', import.meta.url), 'utf8'),
+) as {
+  version: string
+}
 
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => {
@@ -7,6 +14,8 @@ export default defineConfig(({ mode }) => {
 
   return {
     plugins: [react()],
+    // The release number, from package.json, shown in Settings
+    define: { __APP_VERSION__: JSON.stringify(version) },
     server: {
       // mail.localtest.me resolves to 127.0.0.1, for a nicer address in screenshots
       allowedHosts: ['.localtest.me'],

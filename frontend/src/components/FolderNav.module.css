@@ -69,6 +69,14 @@
     color: var(--mantine-primary-color-light-color);
   }
 
+  /* Messages dragged over it: letting go files them here */
+  &[data-drop] {
+    background: var(--mantine-primary-color-light);
+    color: var(--mantine-primary-color-light-color);
+    outline: 2px solid var(--mantine-primary-color-filled);
+    outline-offset: -2px;
+  }
+
   &:focus-visible {
     outline: 2px solid var(--mantine-primary-color-filled);
     outline-offset: -2px;

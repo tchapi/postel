@@ -3,6 +3,7 @@ import {
   useRef,
   useState,
   type KeyboardEvent,
+  type DragEvent,
   type MouseEvent,
   type ReactNode,
   type CSSProperties,
@@ -37,6 +38,7 @@ import {
   XIcon,
 } from 'lucide-react'
 import type { BulkAction, Density, MessageRow as Row, RowAction } from '../types'
+import { setMessageDrag } from '../lib/dnd'
 import { useElementSize } from '@mantine/hooks'
 import { useI18n } from '../lib/i18n'
 import { KeyCombo } from './ShortcutTooltip'
@@ -139,6 +141,9 @@ export function MessageList(props: MessageListProps) {
   const { ref: areaRef, height: areaHeight } = useElementSize()
   const rowHeight = ROW_HEIGHT[density]
   const [menu, setMenu] = useState<ContextMenuState>(null)
+  // Rows being dragged to a folder: all the selected ones when the drag starts on one of them
+  const [dragging, setDragging] = useState<ReadonlySet<number>>(new Set())
+  const ghostRef = useRef<HTMLDivElement>(null)
   const [pullPhase, setPullPhase] = useState<PullPhase>('idle')
   const pullContentRef = useRef<HTMLDivElement>(null)
   const pullIndicatorRef = useRef<HTMLDivElement>(null)
@@ -209,6 +214,18 @@ export function MessageList(props: MessageListProps) {
         return
     }
   }
+
+  const onRowDragStart = (row: Row, e: DragEvent) => {
+    const uids = selected.has(row.uid) ? [...selected] : [row.uid]
+    setMessageDrag(e.dataTransfer, uids)
+    const ghost = ghostRef.current
+    if (ghost) {
+      ghost.textContent = uids.length > 1 ? t.dragCount(uids.length) : row.subject || t.noSubject
+      e.dataTransfer.setDragImage(ghost, 16, 18)
+    }
+    setDragging(new Set(uids))
+  }
+  const onRowDragEnd = () => setDragging(new Set())
 
   const openContextMenu = (row: Row, e: MouseEvent) => {
     const uids = selected.has(row.uid) ? [...selected] : [row.uid]
@@ -453,11 +470,15 @@ export function MessageList(props: MessageListProps) {
               folderLabel={folderLabelFor?.(row)}
               highlight={highlight}
               swipeEnabled={isTouch}
+              dragEnabled={!isTouch}
+              dragging={dragging.has(row.uid)}
               onActivate={onOpen}
               onToggleSelect={onToggleSelect}
               onToggleStar={onToggleStar}
               onContextMenu={openContextMenu}
               onSwipe={onSwipe}
+              onDragStart={onRowDragStart}
+              onDragEnd={onRowDragEnd}
             />
           )
         })}
@@ -472,6 +493,8 @@ export function MessageList(props: MessageListProps) {
 
   return (
     <Stack gap={0} h="100%" className={classes.root}>
+      {/* What the pointer carries during a drag: a label, not the whole row */}
+      {!isTouch && <div ref={ghostRef} className={classes.dragGhost} aria-hidden />}
       <div ref={overlayRef} className={classes.overlay} style={{ top: topOffset }}>
         {/* On phones the top bar already names the folder. */}
         {(!isTouch || selected.size > 0 || onCloseSearch) && (

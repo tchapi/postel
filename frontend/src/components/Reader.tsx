@@ -42,6 +42,7 @@ import {
   relativeDate,
 } from '../lib/format'
 import { useI18n } from '../lib/i18n'
+import { KnownAvatar, useKnownAddr, useKnownAddrs } from '../lib/contacts'
 import { AttachmentList } from './AttachmentList'
 import { MessageFrame, htmlHasQuote, splitTextQuote } from './MessageFrame'
 import { MoveMenuItems, type MoveTarget } from './MoveMenu'
@@ -303,9 +304,12 @@ function ReaderBody({
     [message.html, message.text],
   )
 
+  const from = useKnownAddr(message.from)
+  const to = useKnownAddrs(message.to)
+  const cc = useKnownAddrs(message.cc)
   const self = (a: { email: string }) => a.email.toLowerCase() === selfEmail.toLowerCase()
-  const toLine = message.to.map((a) => (self(a) ? t.me : displayName(a))).join(', ')
-  const ccLine = message.cc.length ? formatAddrList(message.cc) : ''
+  const toLine = to.map((a) => (self(a) ? t.me : displayName(a))).join(', ')
+  const ccLine = cc.length ? formatAddrList(cc) : ''
 
   return (
     <Stack
@@ -320,22 +324,25 @@ function ReaderBody({
       {/* Sender first, the date across from it, subject and recipients below, an inset rule to close the block */}
       <header className={classes.header}>
         <Group gap={12} align="flex-start" wrap="nowrap">
-          <Avatar
-            radius="xl"
-            size={40}
-            color="initials"
-            name={displayName(message.from)}
-            aria-hidden
-          >
-            {initials(message.from)}
-          </Avatar>
+          <KnownAvatar known={from.known} size={40}>
+            <Avatar
+              radius="xl"
+              size={40}
+              color="initials"
+              name={displayName(from.addr)}
+              src={from.photo}
+              aria-hidden
+            >
+              {initials(from.addr)}
+            </Avatar>
+          </KnownAvatar>
           <Stack gap={3} style={{ flex: 1, minWidth: 0 }}>
             <Group gap={16} justify="space-between" align="baseline" wrap="nowrap">
               <Group gap={6} align="baseline" wrap="nowrap" style={{ minWidth: 0 }}>
                 <Text fw={700} truncate style={{ flex: 'none', maxWidth: '60%' }}>
-                  {displayName(message.from)}
+                  {displayName(from.addr)}
                 </Text>
-                {message.from.name && (
+                {from.addr.name && (
                   <Text size="sm" c="dimmed" truncate>
                     {message.from.email}
                   </Text>
