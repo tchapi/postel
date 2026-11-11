@@ -100,6 +100,30 @@ final class ContactsServiceTest extends KernelTestCase
         self::assertSame(['bob@example.test', 'emile@example.test'], $this->cached());
     }
 
+    public function testTheLookupNamesTheAddressesOnFile(): void
+    {
+        $this->cards[self::HOME.'contacts/'][] = self::card('', 'nameless@example.test');
+
+        $names = $this->service()->lookup($this->user, ['Bob@Example.test', 'nameless@example.test', 'stranger@example.test']);
+        ksort($names);
+
+        self::assertSame([
+            'bob@example.test' => ['name' => 'Bob Martin', 'photo' => false],
+            'nameless@example.test' => ['name' => null, 'photo' => false],
+        ], $names);
+    }
+
+    public function testThePictureOnACardIsKeptAndServed(): void
+    {
+        $png = "\x89PNG\r\n\x1a\n";
+        $this->cards[self::HOME.'contacts/'][] = "BEGIN:VCARD\r\nVERSION:3.0\r\nFN:Pic\r\nPHOTO;ENCODING=b;TYPE=PNG:".base64_encode($png)."\r\nEMAIL:pic@example.test\r\nEND:VCARD\r\n";
+        $service = $this->service();
+
+        self::assertSame(['pic@example.test' => ['name' => 'Pic', 'photo' => true]], $service->lookup($this->user, ['pic@example.test']));
+        self::assertSame(['mime' => 'image/png', 'data' => $png], $service->photo($this->user, 'PIC@example.test'));
+        self::assertNull($service->photo($this->user, 'bob@example.test'));
+    }
+
     public function testNothingIsAskedWhenDavisIsNotConfigured(): void
     {
         $service = $this->service(new DavisConfig('', '', ''));

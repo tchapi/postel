@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Entity;
 
 use App\Repository\ContactRepository;
+use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Normalizer;
 
@@ -35,6 +36,11 @@ class Contact
         private ?string $name,
         #[ORM\Column(length: 320)]
         private string $email,
+        /** The card's picture, base64 so it travels through any database as text */
+        #[ORM\Column(type: Types::TEXT, nullable: true)]
+        private ?string $photo = null,
+        #[ORM\Column(length: 64, nullable: true)]
+        private ?string $photoMime = null,
     ) {
         $this->search = self::fold(($name ?? '').' '.$email);
     }
@@ -54,5 +60,21 @@ class Contact
     public function getEmail(): string
     {
         return $this->email;
+    }
+
+    public function getPhotoMime(): ?string
+    {
+        return $this->photoMime;
+    }
+
+    /** The picture's bytes, or null without one */
+    public function getPhoto(): ?string
+    {
+        if (null === $this->photo) {
+            return null;
+        }
+        $data = base64_decode($this->photo, true);
+
+        return false === $data ? null : $data;
     }
 }

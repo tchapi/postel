@@ -64,6 +64,69 @@ final class ContactRepository extends ServiceEntityRepository
     }
 
     /**
+     * For each of these addresses that is in a book: the name on file (null for a
+     * card without one) and whether the card has a picture.
+     *
+     * @param list<string> $emails
+     *
+     * @return array<string, array{name: ?string, photo: bool}>
+     */
+    public function namesByEmail(string $owner, array $emails): array
+    {
+        if ([] === $emails) {
+            return [];
+        }
+
+        /** @var list<array{email: string, name: ?string, photoMime: ?string}> $rows */
+        $rows = $this->createQueryBuilder('c')
+            ->select('c.email', 'c.name', 'c.photoMime')
+            ->andWhere('c.owner = :owner')
+            ->andWhere('c.email IN (:emails)')
+            ->setParameter('owner', $owner)
+            ->setParameter('emails', array_map(strtolower(...), $emails))
+            ->addOrderBy('c.name')
+            ->getQuery()
+            ->getArrayResult();
+
+        $found = [];
+        foreach ($rows as $row) {
+            // The same address in two books: the first name wins, a picture from any book counts
+            $entry = $found[$row['email']] ?? ['name' => null, 'photo' => false];
+            $entry['name'] ??= $row['name'];
+            $entry['photo'] = $entry['photo'] || null !== $row['photoMime'];
+            $found[$row['email']] = $entry;
+        }
+
+        return $found;
+    }
+
+    /**
+     * The picture on this address's card, from whichever book has one.
+     *
+     * @return ?array{mime: string, data: string}
+     */
+    public function findPhoto(string $owner, string $email): ?array
+    {
+        $contacts = $this->createQueryBuilder('c')
+            ->andWhere('c.owner = :owner')
+            ->andWhere('c.email = :email')
+            ->andWhere('c.photoMime IS NOT NULL')
+            ->setParameter('owner', $owner)
+            ->setParameter('email', strtolower($email))
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getResult();
+        $contact = $contacts[0] ?? null;
+        if (!$contact instanceof Contact) {
+            return null;
+        }
+        $data = $contact->getPhoto();
+        $mime = $contact->getPhotoMime();
+
+        return null === $data || null === $mime ? null : ['mime' => $mime, 'data' => $data];
+    }
+
+    /**
      * Drops what a book had before it is filled again.
      */
     public function deleteBook(string $owner, string $book): void
