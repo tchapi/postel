@@ -338,11 +338,13 @@ export function createMailHooks(qc: QueryClient): MailHooks {
     },
 
     async move(refs, toFolder) {
+      // Expanded before the rows leave the cache: a conversation row stands for all its messages
+      const byFolder = expand(refs)
       const keys = new Set(refs.map(keyOf))
       patchLists(qc, (row) => (keys.has(keyOf(row)) ? null : row))
       const moved: { from: string; uids: number[] }[] = []
       try {
-        for (const [folder, uids] of expand(refs)) {
+        for (const [folder, uids] of byFolder) {
           const result = await api<{ uids: number[] }>(
             '/messages/move',
             json('POST', { folder, uids, to: toFolder }),
@@ -376,10 +378,11 @@ export function createMailHooks(qc: QueryClient): MailHooks {
       let undo: Undo | undefined
       if (others.length && trash) undo = await actions.move(others, trash)
       if (inTrash.length) {
+        const byFolder = expand(inTrash)
         const keys = new Set(inTrash.map(keyOf))
         patchLists(qc, (row) => (keys.has(keyOf(row)) ? null : row))
         try {
-          for (const [folder, uids] of expand(inTrash)) {
+          for (const [folder, uids] of byFolder) {
             await api('/messages/delete', json('POST', { folder, uids }))
           }
         } finally {
