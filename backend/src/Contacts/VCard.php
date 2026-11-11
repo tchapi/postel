@@ -88,6 +88,11 @@ final class VCard
                     $encoded = true;
                 } elseif ('TYPE' === $key || 'MEDIATYPE' === $key) {
                     $mime = self::PHOTO_TYPES[$val] ?? (str_starts_with(strtolower($val), 'image/') ? strtolower($val) : $mime);
+                } elseif ('' === $val && isset(self::PHOTO_TYPES[$key])) {
+                    // vCard 2.1 wrote the type bare: PHOTO;JPEG;ENCODING=BASE64:
+                    $mime = self::PHOTO_TYPES[$key];
+                } elseif ('' === $val && 'BASE64' === $key) {
+                    $encoded = true;
                 }
             }
             if ($encoded) {

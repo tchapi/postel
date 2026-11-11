@@ -41,8 +41,10 @@ final class VCardTest extends TestCase
         $v3 = "BEGIN:VCARD\r\nVERSION:3.0\r\nFN:Pic\r\nPHOTO;ENCODING=b;TYPE=PNG:".substr(base64_encode($png), 0, 6)."\r\n ".substr(base64_encode($png), 6)."\r\nEMAIL:pic@example.test\r\nEND:VCARD\r\n";
         // 4.0 style, a data URL
         $v4 = "BEGIN:VCARD\r\nVERSION:4.0\r\nFN:Pic\r\nPHOTO:data:image/png;base64,".base64_encode($png)."\r\nEMAIL:pic@example.test\r\nEND:VCARD\r\n";
+        // 2.1 style, still written by some exporters: the type as a bare parameter
+        $v21 = "BEGIN:VCARD\r\nVERSION:2.1\r\nFN:Pic\r\nPHOTO;PNG;ENCODING=BASE64:".base64_encode($png)."\r\nEMAIL:pic@example.test\r\nEND:VCARD\r\n";
 
-        foreach ([$v3, $v4] as $card) {
+        foreach ([$v3, $v4, $v21] as $card) {
             self::assertSame([['name' => 'Pic', 'email' => 'pic@example.test', 'photo' => ['mime' => 'image/png', 'data' => $png]]], VCard::addresses($card));
         }
     }

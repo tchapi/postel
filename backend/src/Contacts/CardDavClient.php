@@ -65,7 +65,7 @@ final class CardDavClient
     {
         $body = '<?xml version="1.0" encoding="utf-8"?>'
             .'<card:addressbook-query xmlns:d="DAV:" xmlns:card="urn:ietf:params:xml:ns:carddav">'
-            .'<d:prop><card:address-data><card:prop name="FN"/><card:prop name="EMAIL"/></card:address-data></d:prop>'
+            .'<d:prop><card:address-data><card:prop name="FN"/><card:prop name="EMAIL"/><card:prop name="PHOTO"/></card:address-data></d:prop>'
             .'</card:addressbook-query>';
         $xpath = $this->request($user, 'REPORT', $book, 1, $body);
 
