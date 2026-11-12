@@ -4,36 +4,52 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Contacts\AddressBook;
 use App\Contacts\CardDocument;
 use App\Contacts\ContactsService;
 use App\Contacts\DavisConfig;
 use App\Contacts\InvalidCard;
+use App\Contacts\Picture;
+use App\Contacts\Request\CardInput;
+use App\Contacts\Request\Etag;
 use App\Entity\Card;
 use App\Repository\CardRepository;
 use App\Security\RemoteUser;
+use InvalidArgumentException;
 use Normalizer;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\HeaderUtils;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Attribute\MapQueryParameter;
+use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\CurrentUser;
 
 use function in_array;
 
 /**
- * The address book: its cards from the cache, read and downloaded. Every
- * card is looked up by id and owner, so another user's id is not found.
+ * The address book: its cards from the cache, read and downloaded, and
+ * changes, which AddressBook writes to the server first. Every card is
+ * looked up by id and owner, so another user's id is not found.
  */
 #[Route('/api/contacts')]
 final class ContactCardsController
 {
     private const string ID = '[a-f0-9]{32}';
 
+    /** Larger pictures are refused before they are decoded */
+    private const int PHOTO_MAX_BYTES = 20_000_000;
+
     public function __construct(
         private readonly DavisConfig $config,
         private readonly ContactsService $contacts,
         private readonly CardRepository $cards,
+        private readonly AddressBook $addressBook,
     ) {
     }
 
@@ -88,6 +104,73 @@ final class ContactCardsController
     public function show(#[CurrentUser] RemoteUser $user, string $id): JsonResponse
     {
         return new JsonResponse($this->model($this->card($user, $id)));
+    }
+
+    #[Route('/cards', methods: ['POST'])]
+    public function create(#[CurrentUser] RemoteUser $user, #[MapRequestPayload] CardInput $input): JsonResponse
+    {
+        $this->owner($user);
+        if (null === $input->book) {
+            throw new UnprocessableEntityHttpException('A new contact needs an address book');
+        }
+
+        return new JsonResponse($this->model($this->addressBook->create($user, $input->book, $input)), Response::HTTP_CREATED);
+    }
+
+    #[Route('/cards/{id}', methods: ['PUT'], requirements: ['id' => self::ID])]
+    public function update(#[CurrentUser] RemoteUser $user, string $id, #[MapRequestPayload] CardInput $input): JsonResponse
+    {
+        $this->owner($user);
+
+        return new JsonResponse($this->model($this->addressBook->update($user, $id, self::etag($input->etag), $input)));
+    }
+
+    /**
+     * Answers with the card as it was, which the client can import again to undo.
+     */
+    #[Route('/cards/{id}', methods: ['DELETE'], requirements: ['id' => self::ID])]
+    public function delete(#[CurrentUser] RemoteUser $user, string $id, #[MapQueryParameter] ?string $etag = null): JsonResponse
+    {
+        $this->owner($user);
+
+        return new JsonResponse(['vcard' => $this->addressBook->delete($user, $id, self::etag($etag))]);
+    }
+
+    /**
+     * A multipart form with the picture in "file" and the card's "etag".
+     */
+    #[Route('/cards/{id}/photo', methods: ['PUT'], requirements: ['id' => self::ID])]
+    public function setPhoto(#[CurrentUser] RemoteUser $user, string $id, Request $request): JsonResponse
+    {
+        $this->owner($user);
+        $etag = self::etag($request->request->getString('etag'));
+        $bytes = self::upload($request, self::PHOTO_MAX_BYTES);
+        try {
+            $jpeg = Picture::jpeg($bytes);
+        } catch (InvalidArgumentException $e) {
+            throw new UnprocessableEntityHttpException($e->getMessage(), $e);
+        }
+
+        return new JsonResponse($this->model($this->addressBook->setPhoto($user, $id, $etag, $jpeg)));
+    }
+
+    #[Route('/cards/{id}/photo', methods: ['DELETE'], requirements: ['id' => self::ID])]
+    public function removePhoto(#[CurrentUser] RemoteUser $user, string $id, #[MapQueryParameter] ?string $etag = null): JsonResponse
+    {
+        $this->owner($user);
+
+        return new JsonResponse($this->model($this->addressBook->removePhoto($user, $id, self::etag($etag))));
+    }
+
+    /**
+     * A .vcf file in "file", each of its cards added as a new one.
+     */
+    #[Route('/books/{id}/import', methods: ['POST'], requirements: ['id' => self::ID])]
+    public function import(#[CurrentUser] RemoteUser $user, string $id, Request $request): JsonResponse
+    {
+        $this->owner($user);
+
+        return new JsonResponse($this->addressBook->import($user, $id, self::upload($request, AddressBook::IMPORT_MAX_BYTES)));
     }
 
     /**
@@ -166,6 +249,28 @@ final class ContactCardsController
         }
 
         return ['id' => $card->getId(), 'book' => Card::idFor($card->getOwner(), $card->getBook()), 'etag' => $card->getEtag()] + $model;
+    }
+
+    private static function etag(?string $etag): string
+    {
+        if (!Etag::valid($etag)) {
+            throw new UnprocessableEntityHttpException('Expected the "etag" the card was read with');
+        }
+
+        return (string) $etag;
+    }
+
+    private static function upload(Request $request, int $maxBytes): string
+    {
+        $file = $request->files->get('file');
+        if (!$file instanceof UploadedFile || !$file->isValid()) {
+            throw new UnprocessableEntityHttpException('Expected a "file" field');
+        }
+        if ($file->getSize() > $maxBytes) {
+            throw new HttpException(Response::HTTP_REQUEST_ENTITY_TOO_LARGE, 'file_too_large');
+        }
+
+        return $file->getContent();
     }
 
     private function card(RemoteUser $user, string $id): Card

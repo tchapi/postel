@@ -12,7 +12,7 @@ final readonly class PhoneInput
         #[Assert\NotBlank]
         #[Assert\Length(max: 100)]
         public string $value,
-        #[Assert\Choice(['home', 'work', 'cell', 'other'])]
+        #[Assert\Choice(choices: ['home', 'work', 'cell', 'other'])]
         public string $type = 'other',
         #[Assert\PositiveOrZero]
         public ?int $key = null,

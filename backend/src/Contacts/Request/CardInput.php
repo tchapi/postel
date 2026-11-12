@@ -10,6 +10,8 @@ use Symfony\Component\Validator\Constraints as Assert;
  * A contact as the editor sends it. Rows of emails, phones, addresses and
  * links carry the `key` they were read with, so they are updated in place;
  * a row without one is new, and a key that is not sent back is removed.
+ *
+ * `book` is only read when creating, `etag` only when updating.
  */
 final readonly class CardInput
 {
@@ -45,6 +47,12 @@ final readonly class CardInput
         public ?string $birthday = null,
         #[Assert\Length(max: 10000)]
         public ?string $note = null,
+        /** The book a new card goes to */
+        #[Assert\Regex('/^[a-f0-9]{32}$/')]
+        public ?string $book = null,
+        /** The version of the card the edit was made on */
+        #[Assert\Regex(Etag::PATTERN)]
+        public ?string $etag = null,
     ) {
     }
 

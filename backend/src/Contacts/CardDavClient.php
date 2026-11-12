@@ -11,7 +11,9 @@ use DOMXPath;
 use RuntimeException;
 use Symfony\Contracts\HttpClient\Exception\ExceptionInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
+use Symfony\Contracts\HttpClient\ResponseInterface;
 
+use function in_array;
 use function sprintf;
 
 use const ENT_XML1;
@@ -102,6 +104,61 @@ final class CardDavClient
     }
 
     /**
+     * One card, whole.
+     *
+     * @return array{etag: string, vcard: string}
+     */
+    public function get(RemoteUser $user, string $href): array
+    {
+        $response = $this->send($user, 'GET', $href, ['headers' => ['Accept' => 'text/vcard']], [200]);
+        try {
+            $vcard = $response->getContent();
+            $etag = $response->getHeaders()['etag'][0] ?? '';
+        } catch (ExceptionInterface $e) {
+            throw new DavisUnavailable(sprintf('GET %s: %s', $href, $e->getMessage()), previous: $e);
+        }
+        if ('' === $etag || '' === trim($vcard)) {
+            throw new DavisUnavailable(sprintf('GET %s: no card or no ETag', $href));
+        }
+
+        return ['etag' => $etag, 'vcard' => $vcard];
+    }
+
+    /**
+     * Writes a card. With an ETag, only over that version of the card; without
+     * one, only if there is no card there yet.
+     *
+     * @return ?string the new ETag, or null when the server does not say (it
+     *                 may have changed the card, which must then be read again)
+     *
+     * @throws CardChanged when the card is not at that version any more
+     */
+    public function put(RemoteUser $user, string $href, string $vcard, ?string $ifMatch): ?string
+    {
+        $condition = null === $ifMatch ? ['If-None-Match' => '*'] : ['If-Match' => $ifMatch];
+        $response = $this->send($user, 'PUT', $href, [
+            'headers' => ['Content-Type' => 'text/vcard; charset=utf-8'] + $condition,
+            'body' => $vcard,
+        ], [200, 201, 204]);
+        try {
+            $etag = $response->getHeaders(false)['etag'][0] ?? null;
+        } catch (ExceptionInterface $e) {
+            throw new DavisUnavailable(sprintf('PUT %s: %s', $href, $e->getMessage()), previous: $e);
+        }
+
+        // A weak ETag says the server stored something else than what was sent
+        return null === $etag || str_starts_with($etag, 'W/') ? null : $etag;
+    }
+
+    /**
+     * @throws CardChanged when the card is not at that version any more
+     */
+    public function delete(RemoteUser $user, string $href, string $ifMatch): void
+    {
+        $this->send($user, 'DELETE', $href, ['headers' => ['If-Match' => $ifMatch]], [200, 204]);
+    }
+
+    /**
      * @return array<string, array{etag: string, vcard: ?string}> by card href, only what the server found
      */
     private function report(RemoteUser $user, string $book, string $report, string $content): array
@@ -153,16 +210,11 @@ final class CardDavClient
 
     private function request(RemoteUser $user, string $method, string $url, int $depth, string $body): DOMXPath
     {
+        $response = $this->send($user, $method, $url, [
+            'headers' => ['Depth' => (string) $depth, 'Content-Type' => 'application/xml; charset=utf-8'],
+            'body' => $body,
+        ], [207]);
         try {
-            $response = $this->http->request($method, $this->absolute($url), [
-                'auth_basic' => [$this->config->login($user), $this->config->secret],
-                'headers' => ['Depth' => (string) $depth, 'Content-Type' => 'application/xml; charset=utf-8'],
-                'body' => $body,
-                'timeout' => 10,
-            ]);
-            if (207 !== $response->getStatusCode()) {
-                throw new DavisUnavailable(sprintf('%s %s: HTTP %d', $method, $url, $response->getStatusCode()));
-            }
             $xml = $response->getContent();
         } catch (ExceptionInterface $e) {
             throw new DavisUnavailable(sprintf('%s %s: %s', $method, $url, $e->getMessage()), previous: $e);
@@ -185,6 +237,36 @@ final class CardDavClient
         }
 
         return $xpath;
+    }
+
+    /**
+     * @param array<string, mixed> $options
+     * @param list<int>            $accepted the statuses that mean it worked
+     */
+    private function send(RemoteUser $user, string $method, string $url, array $options, array $accepted): ResponseInterface
+    {
+        try {
+            $response = $this->http->request($method, $this->absolute($url), $options + [
+                'auth_basic' => [$this->config->login($user), $this->config->secret],
+                'timeout' => 10,
+            ]);
+            $status = $response->getStatusCode();
+        } catch (ExceptionInterface $e) {
+            throw new DavisUnavailable(sprintf('%s %s: %s', $method, $url, $e->getMessage()), previous: $e);
+        }
+
+        $message = sprintf('%s %s: HTTP %d', $method, $url, $status);
+        // Reading a book or the home that fails means the server is not answering as it should
+        $onCard = in_array($method, ['GET', 'PUT', 'DELETE'], true);
+
+        return match (true) {
+            in_array($status, $accepted, true) => $response,
+            $onCard && 412 === $status => throw new CardChanged($message),
+            $onCard && (404 === $status || 410 === $status) => throw new CardGone($message),
+            // Refused for what was sent, not because the server or the key is broken
+            in_array($status, [400, 403, 409, 413, 415, 422], true) && 'PUT' === $method => throw new CardRefused($message),
+            default => throw new DavisUnavailable($message),
+        };
     }
 
     private function href(DOMXPath $xpath, string $query): string

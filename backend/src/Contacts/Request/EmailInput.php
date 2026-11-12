@@ -13,7 +13,7 @@ final readonly class EmailInput
         #[Assert\Length(max: 320)]
         #[Assert\Email(mode: Assert\Email::VALIDATION_MODE_HTML5)]
         public string $value,
-        #[Assert\Choice(['home', 'work', 'other'])]
+        #[Assert\Choice(choices: ['home', 'work', 'other'])]
         public string $type = 'other',
         #[Assert\PositiveOrZero]
         public ?int $key = null,

@@ -6,6 +6,7 @@ namespace App\Tests\Contacts;
 
 use Symfony\Component\HttpClient\Response\MockResponse;
 
+use function in_array;
 use function is_array;
 use function is_string;
 use function sprintf;
@@ -29,6 +30,15 @@ final class FakeCardDav
     /** Anything else than 207 makes every request fail with it */
     public int $status = 207;
 
+    /** @var array<string, int> a status that requests of this method get instead */
+    public array $failing = [];
+
+    /** When true, PUT stores the card with a line of its own and answers without an ETag, as servers that change cards do */
+    public bool $rewrites = false;
+
+    /** @var array<string, string> the conditional headers of the last PUT or DELETE */
+    private array $conditions = [];
+
     /** @var list<string> */
     private array $requests = [];
 
@@ -43,6 +53,16 @@ final class FakeCardDav
         $this->requests = [];
 
         return $requests;
+    }
+
+    /**
+     * The If-Match or If-None-Match of the last PUT or DELETE.
+     *
+     * @return array<string, string>
+     */
+    public function conditions(): array
+    {
+        return $this->conditions;
     }
 
     public static function card(string $name, string $email): string
@@ -63,11 +83,67 @@ final class FakeCardDav
         $path = (string) parse_url($url, PHP_URL_PATH);
         $body = is_string($options['body'] ?? null) ? $options['body'] : '';
         $this->requests[] = $method.' '.$path.('REPORT' === $method ? ' '.$this->reportKind($body) : '');
-        if (207 !== $this->status) {
-            return new MockResponse('', ['http_code' => $this->status]);
+        if (207 !== $this->status || isset($this->failing[$method])) {
+            return new MockResponse('', ['http_code' => $this->failing[$method] ?? $this->status]);
+        }
+        if (in_array($method, ['GET', 'PUT', 'DELETE'], true)) {
+            return $this->resource($method, $path, $body, $options);
         }
 
         return new MockResponse($this->multistatus($method, $path, $body, self::login($options)), ['http_code' => 207]);
+    }
+
+    /**
+     * One card: read, written or deleted, with If-Match and If-None-Match as RFC 7232 says.
+     *
+     * @param array<string, mixed> $options
+     */
+    private function resource(string $method, string $href, string $body, array $options): MockResponse
+    {
+        $book = substr($href, 0, (int) strrpos($href, '/') + 1);
+        $current = $this->cards[$book][$href] ?? null;
+        $ifMatch = self::header($options, 'if-match');
+        $ifNoneMatch = self::header($options, 'if-none-match');
+        if ('GET' !== $method) {
+            $this->conditions = array_filter(['If-Match' => $ifMatch, 'If-None-Match' => $ifNoneMatch], static fn (?string $v) => null !== $v);
+        }
+        if (null !== $ifMatch && (null === $current || $ifMatch !== self::etag($current)) || '*' === $ifNoneMatch && null !== $current) {
+            return new MockResponse('', ['http_code' => 412]);
+        }
+        if ('GET' === $method || 'DELETE' === $method) {
+            if (null === $current || !isset($this->books[$book])) {
+                return new MockResponse('', ['http_code' => 404]);
+            }
+            if ('DELETE' === $method) {
+                unset($this->cards[$book][$href]);
+
+                return new MockResponse('', ['http_code' => 204]);
+            }
+
+            return new MockResponse($current, ['http_code' => 200, 'response_headers' => ['ETag' => self::etag($current)]]);
+        }
+
+        if (!isset($this->books[$book])) {
+            return new MockResponse('', ['http_code' => 404]);
+        }
+        if (!str_starts_with($body, 'BEGIN:VCARD') || str_contains($body, 'VERSION:2.1')) {
+            return new MockResponse('', ['http_code' => 415]);
+        }
+        $stored = $this->rewrites ? str_replace("END:VCARD\r\n", "X-SERVER:was here\r\nEND:VCARD\r\n", $body) : $body;
+        $this->cards[$book][$href] = $stored;
+
+        return new MockResponse('', ['http_code' => null === $current ? 201 : 204, 'response_headers' => $this->rewrites ? [] : ['ETag' => self::etag($stored)]]);
+    }
+
+    /**
+     * @param array<string, mixed> $options
+     */
+    private static function header(array $options, string $name): ?string
+    {
+        $headers = $options['normalized_headers'] ?? [];
+        $line = is_array($headers) && is_array($headers[$name] ?? null) ? ($headers[$name][0] ?? null) : null;
+
+        return is_string($line) ? substr($line, (int) strpos($line, ':') + 2) : null;
     }
 
     /**

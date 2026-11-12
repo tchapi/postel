@@ -9,7 +9,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 final readonly class AddressInput
 {
     public function __construct(
-        #[Assert\Choice(['home', 'work', 'other'])]
+        #[Assert\Choice(choices: ['home', 'work', 'other'])]
         public string $type = 'other',
         #[Assert\Length(max: 500)]
         public string $street = '',

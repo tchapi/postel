@@ -234,7 +234,7 @@ final class ContactsService implements EventSubscriberInterface
     /**
      * Puts a card in the cache as the server has it, or updates it.
      */
-    public function store(string $owner, string $book, string $href, string $etag, string $vcard): void
+    public function store(string $owner, string $book, string $href, string $etag, string $vcard): Card
     {
         $card = $this->cards->findOwned($owner, Card::idFor($owner, $href));
         if (null === $card) {
@@ -259,6 +259,8 @@ final class ContactsService implements EventSubscriberInterface
         foreach (VCard::addresses($vcard) as $address) {
             $this->entityManager->persist(new Contact($owner, $book, $address['name'], $address['email'], $card->getId(), $summary['hasPhoto']));
         }
+
+        return $card;
     }
 
     public function forget(Card $card): void
