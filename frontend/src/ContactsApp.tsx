@@ -6,12 +6,14 @@ import { CheckIcon, CircleAlertIcon, UploadIcon } from 'lucide-react'
 import { ContactError, useMailHooks, type ContactUrls } from './hooks'
 import type { Addr, ContactCard, ContactInput, ContactSummary, Density, Undo } from './types'
 import { matchesFilter } from './lib/addressBook'
+import { findDuplicates } from './lib/duplicates'
 import { useI18n } from './lib/i18n'
 import { useMailShortcuts } from './lib/shortcuts'
 import type { Layout } from './components/AppShell'
 import { SplitPanes } from './components/SplitPanes'
 import { ContactList } from './components/contacts/ContactList'
 import { ContactDetail } from './components/contacts/ContactDetail'
+import { MergeDialog } from './components/contacts/MergeDialog'
 import {
   ContactEditor,
   type ContactSave,
@@ -112,6 +114,17 @@ export function ContactsApp({
   }, [actions])
 
   const card = cardQuery.data
+
+  // The open card may be on file twice: the other cards that look like the same person
+  const [mergeWith, setMergeWith] = useState<string | null>(null)
+  const [mergeProblem, setMergeProblem] = useState<string | null>(null)
+  const otherQuery = hooks.useContactCard(mergeWith)
+  const duplicateIds = useMemo(() => findDuplicates(data?.cards ?? []), [data])
+  const duplicates = useMemo(() => {
+    const ids = card ? (duplicateIds.get(card.id) ?? []) : []
+    return (data?.cards ?? []).filter((c) => ids.includes(c.id))
+  }, [card, duplicateIds, data])
+
   const photoUrl = (c: Pick<ContactSummary, 'id' | 'etag' | 'photo'>) =>
     c.photo ? urls.photo(c) : undefined
 
@@ -246,6 +259,32 @@ export function ContactsApp({
     }
   }
 
+  const closeMerge = () => {
+    setMergeWith(null)
+    setMergeProblem(null)
+  }
+
+  const merge = async (keep: ContactCard, other: ContactCard) => {
+    setMergeProblem(null)
+    try {
+      const merged = await actions.merge(keep, other)
+      closeMerge()
+      onContactChange(merged.id)
+      notifyDone(t.contact.merged(merged.name))
+    } catch (error) {
+      const problem = problemOf(error)
+      // The dialog stays open on the cards as they are now
+      await Promise.all([cardQuery.refetch(), otherQuery.refetch()])
+      setMergeProblem(
+        problem === 'changed'
+          ? t.contact.mergeChanged
+          : problem === 'unavailable'
+            ? t.contact.unreachable
+            : t.contact.mergeFailed,
+      )
+    }
+  }
+
   const importInto = async (book: string, file: File) => {
     const id = notifications.show({
       loading: true,
@@ -254,7 +293,13 @@ export function ContactsApp({
       withCloseButton: false,
     })
     try {
-      const { imported, failed } = await actions.importFile(book, file)
+      const { imported, failed } = await actions.importFile(book, file, (done, total) =>
+        notifications.update({
+          id,
+          loading: true,
+          message: t.contact.importingProgress(done, total),
+        }),
+      )
       notifications.update({
         id,
         loading: false,
@@ -324,8 +369,8 @@ export function ContactsApp({
       goInbox: onGoInbox,
       help: onShowShortcuts,
     },
-    // The editor has its own keys
-    shortcutsEnabled && editing === null,
+    // The editor and the merge dialog have their own keys
+    shortcutsEnabled && editing === null && mergeWith === null,
   )
 
   const downloadUrl = bookId === 'all' ? urls.allVcf() : urls.bookVcf(bookId)
@@ -398,6 +443,8 @@ export function ContactsApp({
         onShowMessages={onShowMessages}
         onEdit={canWrite ? startEdit : undefined}
         onDelete={canWrite ? () => void remove() : undefined}
+        duplicates={duplicates}
+        onMerge={canWrite ? setMergeWith : undefined}
       />
     )
 
@@ -412,6 +459,18 @@ export function ContactsApp({
         mobilePane={showDetail ? 'reader' : 'list'}
         listWidth={listWidth}
         onListWidthChange={setListWidth}
+      />
+
+      <MergeDialog
+        // A new pair starts with the open card as the main one
+        key={mergeWith ?? 'none'}
+        opened={mergeWith !== null && card !== undefined}
+        first={card}
+        second={mergeWith === null ? undefined : otherQuery.data}
+        photoUrl={photoUrl}
+        onMerge={merge}
+        onCancel={closeMerge}
+        problem={mergeProblem}
       />
 
       <input

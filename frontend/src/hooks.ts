@@ -66,7 +66,17 @@ export interface ContactActions {
   remove(card: { id: string; book: string; etag: string }): Promise<Undo>
   setPhoto(id: string, etag: string, jpeg: Blob): Promise<ContactCard>
   removePhoto(id: string, etag: string): Promise<ContactCard>
-  importFile(book: string, file: File): Promise<{ imported: number; failed: number }>
+  /** Sent a few cards at a time; `onProgress` says how many of the file's cards are done. */
+  importFile(
+    book: string,
+    file: File,
+    onProgress?: (done: number, total: number) => void,
+  ): Promise<{ imported: number; failed: number }>
+  /** `keep` takes in what `other` has and `other` is deleted. No undo. */
+  merge(
+    keep: { id: string; etag: string },
+    other: { id: string; etag: string },
+  ): Promise<ContactCard>
   /** Asks the backend to sync with the address book now; the list follows if anything changed. */
   refresh(): Promise<{ available: boolean; changed: boolean }>
 }

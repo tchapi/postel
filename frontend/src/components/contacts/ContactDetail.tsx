@@ -4,6 +4,7 @@ import {
   Anchor,
   Avatar,
   Box,
+  Button,
   CopyButton,
   Group,
   Menu,
@@ -26,6 +27,7 @@ import {
   SquarePenIcon,
   Trash2Icon,
   UserPenIcon,
+  UsersIcon,
   UserXIcon,
 } from 'lucide-react'
 import type { ContactCard, ContactType } from '../../types'
@@ -54,6 +56,9 @@ export type ContactDetailProps = {
   /** Omit when the card cannot be changed. */
   onEdit?: () => void
   onDelete?: () => void
+  /** Cards that may be the same person. Shown with `onMerge` only. */
+  duplicates?: { id: string; name: string }[]
+  onMerge?: (id: string) => void
 }
 
 const isWebLink = (url: string) => /^https?:\/\//i.test(url.trim())
@@ -237,6 +242,8 @@ function Body({
   photoUrl,
   bookName,
   onWrite,
+  duplicates,
+  onMerge,
 }: ContactDetailProps & { card: ContactCard }) {
   const { t, locale } = useI18n()
   const typeLabel = (type: ContactType, label?: string) => label || t.contact.types[type]
@@ -346,6 +353,23 @@ function Body({
           )}
         </Stack>
       </header>
+      {onMerge &&
+        duplicates?.slice(0, 3).map((duplicate) => (
+          <div key={duplicate.id} className={classes.duplicate}>
+            <UsersIcon size={15} strokeWidth={1.75} />
+            <Text size="sm" truncate style={{ flex: 1, minWidth: 0 }}>
+              {t.contact.possibleDuplicate(duplicate.name)}
+            </Text>
+            <Button
+              variant="subtle"
+              color="gray"
+              size="compact-sm"
+              onClick={() => onMerge(duplicate.id)}
+            >
+              {t.contact.merge}
+            </Button>
+          </div>
+        ))}
       {groups.length > 0 && (
         <Stack gap={0} className={classes.groups}>
           {groups.map((group, i) => (

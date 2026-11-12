@@ -234,6 +234,18 @@ const en = {
     showMessages: 'Show messages',
     delete: 'Delete contact',
     deleted: (name: string) => `${name} deleted`,
+    possibleDuplicate: (name: string) => `Possible duplicate: ${name}`,
+    merge: 'Merge…',
+    mergeTitle: 'Merge two contacts',
+    mergeKeep: 'Which one is the main contact?',
+    mergeExplain:
+      'The emails, phones, addresses and links of both are kept. The name, the picture and the other details are the main contact’s, or the other one’s where the main contact has none.',
+    mergeNoUndo: 'The other contact is then deleted. This can’t be undone.',
+    mergeConfirm: 'Merge',
+    merged: (name: string) => `Merged into ${name}`,
+    mergeChanged:
+      'One of these contacts was changed somewhere else in the meantime. Look at them again, then merge.',
+    mergeFailed: 'Couldn’t merge. Nothing is lost: look at both contacts and try again.',
     copy: (what: string) => `Copy ${what}`,
     website: 'website',
     birthday: 'birthday',
@@ -296,10 +308,11 @@ const en = {
     importTitle: 'Import contacts',
     importInto: 'Into which address book?',
     importing: 'Importing…',
+    importingProgress: (done: number, total: number) => `Importing… ${done} of ${total}`,
     imported: (n: number) =>
       n === 0 ? 'No contact imported' : n === 1 ? '1 contact imported' : `${n} contacts imported`,
     importFailed: (n: number) =>
-      n === 1 ? '1 card couldn’t be read.' : `${n} cards couldn’t be read.`,
+      n === 1 ? '1 card couldn’t be imported.' : `${n} cards couldn’t be imported.`,
     // from mail
     addToContacts: 'Add to contacts',
     openContact: (name: string) => `Open the contact card of ${name}`,
@@ -572,6 +585,18 @@ const fr: Strings = {
     showMessages: 'Voir les messages',
     delete: 'Supprimer le contact',
     deleted: (name) => `${name} supprimé des contacts`,
+    possibleDuplicate: (name) => `Doublon possible : ${name}`,
+    merge: 'Fusionner…',
+    mergeTitle: 'Fusionner deux contacts',
+    mergeKeep: 'Quel est le contact principal ?',
+    mergeExplain:
+      'Les e-mails, téléphones, adresses et liens des deux sont conservés. Le nom, la photo et les autres informations sont ceux du contact principal, ou ceux de l’autre quand le principal n’en a pas.',
+    mergeNoUndo: 'L’autre contact est ensuite supprimé. Cette action est définitive.',
+    mergeConfirm: 'Fusionner',
+    merged: (name) => `Fusionné dans ${name}`,
+    mergeChanged:
+      'L’un de ces contacts a été modifié ailleurs entre-temps. Regardez-les de nouveau, puis fusionnez.',
+    mergeFailed: 'Échec de la fusion. Rien n’est perdu : regardez les deux contacts et réessayez.',
     copy: (what) => `Copier : ${what}`,
     website: 'site web',
     birthday: 'anniversaire',
@@ -633,10 +658,11 @@ const fr: Strings = {
     importTitle: 'Importer des contacts',
     importInto: 'Dans quel carnet d’adresses ?',
     importing: 'Importation…',
+    importingProgress: (done, total) => `Importation… ${done} sur ${total}`,
     imported: (n) =>
       n === 0 ? 'Aucun contact importé' : n === 1 ? '1 contact importé' : `${n} contacts importés`,
     importFailed: (n) =>
-      n === 1 ? '1 fiche n’a pas pu être lue.' : `${n} fiches n’ont pas pu être lues.`,
+      n === 1 ? '1 fiche n’a pas pu être importée.' : `${n} fiches n’ont pas pu être importées.`,
     addToContacts: 'Ajouter aux contacts',
     openContact: (name) => `Ouvrir la fiche de ${name}`,
   },

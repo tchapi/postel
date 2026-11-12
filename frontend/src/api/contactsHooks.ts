@@ -9,6 +9,7 @@ import {
   type MailHooks,
 } from '../hooks'
 import { sortCards } from '../lib/addressBook'
+import { batchCards, splitCards } from '../lib/vcf'
 import type { KnownContact } from '../lib/contacts'
 import type {
   AddressBookData,
@@ -298,6 +299,20 @@ export function createContactsHooks(
       qc.invalidateQueries({ queryKey: ['contact-card'] }),
     ])
 
+  /**
+   * A write refused because the card moved on, or is gone: the backend has read it
+   * again, so the list and the card are fetched again before the user is told.
+   */
+  const onCard = async <T>(write: () => Promise<T>): Promise<T> => {
+    try {
+      return await write()
+    } catch (error) {
+      const problem = error instanceof ContactError ? error.problem : null
+      if (problem === 'changed' || problem === 'notFound') await reloadBook()
+      throw error
+    }
+  }
+
   const actions: ContactActions = {
     async create(book, input) {
       return store(
@@ -306,48 +321,100 @@ export function createContactsHooks(
     },
 
     async update(id, etag, input) {
-      return store(await call<Dto.Card>(cardPath(id), json('PUT', { etag, ...fromInput(input) })))
+      return store(
+        await onCard(() =>
+          call<Dto.Card>(cardPath(id), json('PUT', { etag, ...fromInput(input) })),
+        ),
+      )
     },
 
     async remove({ id, book, etag }) {
-      const { vcard } = await call<Dto.DeletedCard>(
-        `${cardPath(id)}?etag=${encodeURIComponent(etag)}`,
-        { method: 'DELETE' },
+      const { vcard } = await onCard(() =>
+        call<Dto.DeletedCard>(`${cardPath(id)}?etag=${encodeURIComponent(etag)}`, {
+          method: 'DELETE',
+        }),
       )
       patchList((cards) => cards.filter((c) => c.id !== id))
       qc.removeQueries({ queryKey: cardKey(id) })
       afterWrite()
       const undo: Undo = async () => {
-        await actions.importFile(book, new File([vcard], 'contact.vcf', { type: 'text/vcard' }))
+        const file = new File([vcard], 'contact.vcf', { type: 'text/vcard' })
+        if ((await actions.importFile(book, file)).imported < 1) throw new ContactError('failed')
       }
       return undo
     },
 
     async setPhoto(id, etag, jpeg) {
       return store(
-        await call<Dto.Card>(
-          `${cardPath(id)}/photo`,
-          multipart('PUT', { etag, file: jpeg }, 'photo.jpg'),
+        await onCard(() =>
+          call<Dto.Card>(
+            `${cardPath(id)}/photo`,
+            multipart('PUT', { etag, file: jpeg }, 'photo.jpg'),
+          ),
         ),
       )
     },
 
     async removePhoto(id, etag) {
       return store(
-        await call<Dto.Card>(`${cardPath(id)}/photo?etag=${encodeURIComponent(etag)}`, {
-          method: 'DELETE',
-        }),
+        await onCard(() =>
+          call<Dto.Card>(`${cardPath(id)}/photo?etag=${encodeURIComponent(etag)}`, {
+            method: 'DELETE',
+          }),
+        ),
       )
     },
 
-    async importFile(book, file) {
-      const result = await call<Dto.ImportResult>(
-        `${bookPath(book)}/import`,
-        multipart('POST', { file }, file.name),
-      )
-      await reloadBook()
-      afterWrite()
-      return result
+    async importFile(book, file, onProgress) {
+      const cards = splitCards(await file.text())
+      let imported = 0
+      let failed = 0
+      let done = 0
+      try {
+        // A few cards at a time: no request runs long, and the user sees how far it is
+        for (const batch of batchCards(cards)) {
+          const result = await call<Dto.ImportResult>(
+            `${bookPath(book)}/import`,
+            multipart(
+              'POST',
+              { file: new Blob([batch.join('')], { type: 'text/vcard' }) },
+              'cards.vcf',
+            ),
+          )
+          imported += result.imported
+          failed += result.failed
+          done += batch.length
+          onProgress?.(done, cards.length)
+        }
+      } catch (error) {
+        // Stopped half way: say what went in, the rest did not
+        if (imported === 0) throw error
+        failed += cards.length - done
+      } finally {
+        if (done > 0) {
+          await reloadBook()
+          afterWrite()
+        }
+      }
+      return { imported, failed }
+    },
+
+    async merge(keep, other) {
+      let dto: Dto.Card
+      try {
+        dto = await call<Dto.Card>(
+          `${cardPath(keep.id)}/merge`,
+          json('POST', { etag: keep.etag, other: other.id, otherEtag: other.etag }),
+        )
+      } catch (error) {
+        // Half of it may have gone through: show the cards as they are now
+        await reloadBook()
+        afterWrite()
+        throw error
+      }
+      patchList((cards) => cards.filter((c) => c.id !== other.id))
+      qc.removeQueries({ queryKey: cardKey(other.id) })
+      return store(dto)
     },
 
     async refresh() {

@@ -184,3 +184,16 @@
     transition: none;
   }
 }
+
+/* A quiet line: this person may be on file twice */
+.duplicate {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 6px 6px 6px 12px;
+  border: 1px solid var(--mantine-color-default-border);
+  border-radius: var(--mantine-radius-md);
+  color: var(--mantine-color-dimmed);
+  user-select: none;
+}
