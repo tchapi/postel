@@ -25,3 +25,8 @@ services:
     # please note that last definitions always *replace* previous ones
 
     ZBateson\MailMimeParser\MailMimeParser: ~
+
+when@test:
+    services:
+        App\Tests\Contacts\FakeCardDav:
+            public: true

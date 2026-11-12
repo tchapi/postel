@@ -41,7 +41,7 @@ final class ContactsServiceTest extends KernelTestCase
         $this->entityManager->createQuery('DELETE FROM App\Entity\Card')->execute();
         $this->entityManager->createQuery('DELETE FROM App\Entity\ContactSync')->execute();
 
-        $this->dav = new FakeCardDav(self::HOME);
+        $this->dav = new FakeCardDav();
         $this->dav->books[self::BOOK] = ['token' => 'token-1', 'name' => 'Contacts'];
         $this->dav->cards[self::BOOK] = [
             self::BOOK.'emile.vcf' => FakeCardDav::card('Émile Durand', 'emile@example.test'),
@@ -167,8 +167,8 @@ final class ContactsServiceTest extends KernelTestCase
         ksort($names);
 
         self::assertSame([
-            'bob@example.test' => ['name' => 'Bob Martin', 'photo' => false],
-            'nameless@example.test' => ['name' => null, 'photo' => false],
+            'bob@example.test' => ['name' => 'Bob Martin', 'photo' => false, 'id' => Card::idFor('alice', self::BOOK.'bob.vcf')],
+            'nameless@example.test' => ['name' => null, 'photo' => false, 'id' => Card::idFor('alice', self::BOOK.'nameless.vcf')],
         ], $names);
     }
 
@@ -178,7 +178,7 @@ final class ContactsServiceTest extends KernelTestCase
         $this->dav->cards[self::BOOK][self::BOOK.'pic.vcf'] = "BEGIN:VCARD\r\nVERSION:3.0\r\nFN:Pic\r\nPHOTO;ENCODING=b;TYPE=PNG:".base64_encode($png)."\r\nEMAIL:pic@example.test\r\nEND:VCARD\r\n";
         $service = $this->service();
 
-        self::assertSame(['pic@example.test' => ['name' => 'Pic', 'photo' => true]], $service->lookup($this->user, ['pic@example.test']));
+        self::assertSame(['pic@example.test' => ['name' => 'Pic', 'photo' => true, 'id' => Card::idFor('alice', self::BOOK.'pic.vcf')]], $service->lookup($this->user, ['pic@example.test']));
         self::assertSame(['mime' => 'image/png', 'data' => $png], $service->photo($this->user, 'PIC@example.test'));
         self::assertSame([false, false, true], array_map(static fn (Card $c) => $c->hasPhoto(), $this->cards()));
         self::assertNull($service->photo($this->user, 'bob@example.test'));

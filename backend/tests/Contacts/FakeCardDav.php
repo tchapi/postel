@@ -6,9 +6,12 @@ namespace App\Tests\Contacts;
 
 use Symfony\Component\HttpClient\Response\MockResponse;
 
+use function is_array;
 use function is_string;
 use function sprintf;
+use function strlen;
 
+use const ARRAY_FILTER_USE_KEY;
 use const PHP_URL_PATH;
 
 /**
@@ -28,10 +31,6 @@ final class FakeCardDav
 
     /** @var list<string> */
     private array $requests = [];
-
-    public function __construct(private readonly string $home)
-    {
-    }
 
     /**
      * The requests received since the last call.
@@ -68,7 +67,21 @@ final class FakeCardDav
             return new MockResponse('', ['http_code' => $this->status]);
         }
 
-        return new MockResponse($this->multistatus($method, $path, $body), ['http_code' => 207]);
+        return new MockResponse($this->multistatus($method, $path, $body, self::login($options)), ['http_code' => 207]);
+    }
+
+    /**
+     * Who is asking: "alice" for "alice*app_test", as Davis reads an app key login.
+     *
+     * @param array<string, mixed> $options
+     */
+    private static function login(array $options): string
+    {
+        $headers = $options['normalized_headers'] ?? [];
+        $header = is_array($headers) && is_array($headers['authorization'] ?? null) ? (string) ($headers['authorization'][0] ?? '') : '';
+        $decoded = (string) base64_decode(substr($header, strlen('Authorization: Basic ')), true);
+
+        return explode('*', explode(':', $decoded)[0])[0];
     }
 
     private function reportKind(string $body): string
@@ -82,13 +95,15 @@ final class FakeCardDav
         return str_contains($body, 'address-data') ? 'query with cards' : 'query with ETags';
     }
 
-    private function multistatus(string $method, string $path, string $body): string
+    private function multistatus(string $method, string $path, string $body, string $login): string
     {
+        $home = '/dav/addressbooks/'.$login.'/';
+        $books = array_filter($this->books, static fn (string $href) => str_starts_with($href, $home), ARRAY_FILTER_USE_KEY);
         $responses = match (true) {
-            'REPORT' === $method => $this->report($path, $body),
-            '/dav/' === $path => '<d:response><d:href>/dav/</d:href><d:propstat><d:prop><d:current-user-principal><d:href>/dav/principals/alice/</d:href></d:current-user-principal></d:prop><d:status>HTTP/1.1 200 OK</d:status></d:propstat></d:response>',
-            '/dav/principals/alice/' === $path => '<d:response><d:href>'.$path.'</d:href><d:propstat><d:prop><card:addressbook-home-set><d:href>'.$this->home.'</d:href></card:addressbook-home-set></d:prop><d:status>HTTP/1.1 200 OK</d:status></d:propstat></d:response>',
-            default => '<d:response><d:href>'.$this->home.'</d:href><d:propstat><d:prop><d:resourcetype><d:collection/></d:resourcetype></d:prop><d:status>HTTP/1.1 200 OK</d:status></d:propstat></d:response>'
+            'REPORT' === $method => str_starts_with($path, $home) ? $this->report($path, $body) : '',
+            '/dav/' === $path => '<d:response><d:href>/dav/</d:href><d:propstat><d:prop><d:current-user-principal><d:href>/dav/principals/'.$login.'/</d:href></d:current-user-principal></d:prop><d:status>HTTP/1.1 200 OK</d:status></d:propstat></d:response>',
+            '/dav/principals/'.$login.'/' === $path => '<d:response><d:href>'.$path.'</d:href><d:propstat><d:prop><card:addressbook-home-set><d:href>'.$home.'</d:href></card:addressbook-home-set></d:prop><d:status>HTTP/1.1 200 OK</d:status></d:propstat></d:response>',
+            default => '<d:response><d:href>'.$home.'</d:href><d:propstat><d:prop><d:resourcetype><d:collection/></d:resourcetype></d:prop><d:status>HTTP/1.1 200 OK</d:status></d:propstat></d:response>'
                 .implode('', array_map(
                     static fn (string $href, array $book) => sprintf(
                         '<d:response><d:href>%s</d:href><d:propstat><d:prop><d:resourcetype><d:collection/><card:addressbook/></d:resourcetype>%s<d:displayname>%s</d:displayname></d:prop><d:status>HTTP/1.1 200 OK</d:status></d:propstat></d:response>',
@@ -96,8 +111,8 @@ final class FakeCardDav
                         '' === $book['token'] ? '' : '<d:sync-token>'.$book['token'].'</d:sync-token>',
                         htmlspecialchars($book['name']),
                     ),
-                    array_keys($this->books),
-                    $this->books,
+                    array_keys($books),
+                    $books,
                 )),
         };
 
@@ -119,7 +134,8 @@ final class FakeCardDav
                 '<d:response><d:href>%s</d:href><d:propstat><d:prop><d:getetag>%s</d:getetag>%s</d:prop><d:status>HTTP/1.1 200 OK</d:status></d:propstat></d:response>',
                 htmlspecialchars($href),
                 htmlspecialchars(self::etag($vcard)),
-                $withData ? '<card:address-data>'.htmlspecialchars($vcard).'</card:address-data>' : '',
+                // Like Davis, carriage returns are sent as &#13; so XML does not turn them into plain line feeds
+                $withData ? '<card:address-data>'.str_replace("\r", '&#13;', htmlspecialchars($vcard)).'</card:address-data>' : '',
             );
         }
 

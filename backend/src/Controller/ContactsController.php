@@ -34,8 +34,8 @@ final class ContactsController
     }
 
     /**
-     * Which of these addresses are in the user's address books, under what name, and with a picture or not:
-     * `{"bob@example.test": {"name": "Bob Martin", "photo": true}, "anon@example.test": {"name": null, "photo": false}}`.
+     * Which of these addresses are in the user's address books, under what name, with a picture or not, and on which card:
+     * `{"bob@example.test": {"name": "Bob Martin", "photo": true, "id": "…"}, "anon@example.test": {"name": null, "photo": false, "id": "…"}}`.
      *
      * @param array<mixed> $emails `?emails[]=a@x&emails[]=b@y`
      */

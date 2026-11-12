@@ -71,7 +71,7 @@ final class ContactsService implements EventSubscriberInterface
      *
      * @param list<string> $emails
      *
-     * @return array<string, array{name: ?string, photo: bool}>
+     * @return array<string, array{name: ?string, photo: bool, id: string}>
      */
     public function lookup(RemoteUser $user, array $emails): array
     {
@@ -80,6 +80,46 @@ final class ContactsService implements EventSubscriberInterface
         }
 
         return $this->contacts->namesByEmail($this->warm($user), $emails);
+    }
+
+    /**
+     * The user's address books, by name.
+     *
+     * @return list<array{id: string, href: string, name: string}>
+     */
+    public function books(string $owner): array
+    {
+        $books = [];
+        foreach ($this->syncs->find($owner)?->getBooks() ?? [] as $href => $book) {
+            // A book without a display name goes by the last part of its address
+            $name = '' !== $book['name'] ? $book['name'] : rawurldecode(basename(rtrim($href, '/')));
+            $books[] = ['id' => Card::idFor($owner, $href), 'href' => $href, 'name' => $name];
+        }
+        usort($books, static fn (array $a, array $b) => strnatcasecmp($a['name'], $b['name']));
+
+        return $books;
+    }
+
+    /**
+     * @return ?array{id: string, href: string, name: string}
+     */
+    public function book(string $owner, string $id): ?array
+    {
+        foreach ($this->books($owner) as $book) {
+            if ($book['id'] === $id) {
+                return $book;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * False when the last refresh could not reach the server.
+     */
+    public function available(string $owner): bool
+    {
+        return $this->syncs->find($owner)?->isAvailable() ?? false;
     }
 
     /**

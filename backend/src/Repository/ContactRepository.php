@@ -65,11 +65,11 @@ final class ContactRepository extends ServiceEntityRepository
 
     /**
      * For each of these addresses that is in a book: the name on file (null for a
-     * card without one) and whether the card has a picture.
+     * card without one), whether the card has a picture, and the card's id.
      *
      * @param list<string> $emails
      *
-     * @return array<string, array{name: ?string, photo: bool}>
+     * @return array<string, array{name: ?string, photo: bool, id: string}>
      */
     public function namesByEmail(string $owner, array $emails): array
     {
@@ -77,22 +77,26 @@ final class ContactRepository extends ServiceEntityRepository
             return [];
         }
 
-        /** @var list<array{email: string, name: ?string, hasPhoto: bool}> $rows */
+        /** @var list<array{email: string, name: ?string, hasPhoto: bool, cardId: string}> $rows */
         $rows = $this->createQueryBuilder('c')
-            ->select('c.email', 'c.name', 'c.hasPhoto')
+            ->select('c.email', 'c.name', 'c.hasPhoto', 'c.cardId')
             ->andWhere('c.owner = :owner')
             ->andWhere('c.email IN (:emails)')
             ->setParameter('owner', $owner)
             ->setParameter('emails', array_map(strtolower(...), $emails))
             ->addOrderBy('c.name')
+            ->addOrderBy('c.cardId')
             ->getQuery()
             ->getArrayResult();
 
         $found = [];
         foreach ($rows as $row) {
-            // The same address in two books: the first name wins, a picture from any book counts
-            $entry = $found[$row['email']] ?? ['name' => null, 'photo' => false];
-            $entry['name'] ??= $row['name'];
+            // The same address in two books: the first card with a name wins, a picture from any book counts
+            $entry = $found[$row['email']] ?? ['name' => null, 'photo' => false, 'id' => $row['cardId']];
+            if (null === $entry['name'] && null !== $row['name']) {
+                $entry['name'] = $row['name'];
+                $entry['id'] = $row['cardId'];
+            }
             $entry['photo'] = $entry['photo'] || $row['hasPhoto'];
             $found[$row['email']] = $entry;
         }
