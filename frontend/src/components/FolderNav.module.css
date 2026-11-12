@@ -309,7 +309,14 @@
   }
 }
 
-.footer .link {
+.footer {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* The toggle is chrome, not a place: quieter than the rows above it */
+.toggle {
   color: var(--mantine-color-dimmed);
 }
 

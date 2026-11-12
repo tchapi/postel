@@ -1,0 +1,186 @@
+.root {
+  position: relative;
+  min-width: 0;
+}
+
+/* The toolbar floats over the card as it does over a message */
+.viewport,
+.scrollbar {
+  --bar-space: 50px;
+
+  @media (max-width: $mantine-breakpoint-sm) {
+    --bar-space: 62px;
+  }
+}
+
+.viewport {
+  padding-top: var(--bar-space);
+  mask-image: linear-gradient(to bottom, transparent 4px, #000 calc(var(--bar-space) + 6px));
+}
+
+.scrollbar {
+  margin-top: var(--bar-space);
+}
+
+.bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 2;
+  margin: 6px 6px 0;
+  border-radius: var(--mantine-radius-md);
+  backdrop-filter: blur(14px) saturate(140%);
+  transition: box-shadow 150ms ease;
+
+  @mixin light {
+    background: color-mix(
+      in srgb,
+      color-mix(in srgb, var(--mantine-color-gray-1) 55%, var(--mantine-color-body)) 78%,
+      transparent
+    );
+    box-shadow:
+      0 1px 2px rgb(31 29 26 / 6%),
+      0 2px 8px -2px rgb(31 29 26 / 10%);
+  }
+
+  @mixin dark {
+    background: color-mix(
+      in srgb,
+      color-mix(in srgb, var(--mantine-color-dark-8) 55%, var(--mantine-color-body)) 78%,
+      transparent
+    );
+    box-shadow:
+      0 1px 2px rgb(0 0 0 / 30%),
+      0 2px 8px -2px rgb(0 0 0 / 40%);
+  }
+
+  &[data-scrolled] {
+    @mixin light {
+      box-shadow:
+        0 1px 2px rgb(31 29 26 / 8%),
+        0 6px 14px -6px rgb(31 29 26 / 22%);
+    }
+
+    @mixin dark {
+      box-shadow:
+        0 1px 2px rgb(0 0 0 / 35%),
+        0 6px 16px -6px rgb(0 0 0 / 60%);
+    }
+  }
+}
+
+.toolbar {
+  height: 44px;
+
+  @media (max-width: $mantine-breakpoint-sm) {
+    height: 56px;
+  }
+}
+
+/* Everything on a card can be selected and copied. A card is short: one column, rules included */
+.body {
+  max-width: 760px;
+  user-select: text;
+  cursor: auto;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--mantine-color-default-border);
+}
+
+.name {
+  font-size: 1.375rem;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+/* Emails, phones, addresses…: one group each, a thin rule between groups */
+.group {
+  padding-block: 8px;
+
+  & + & {
+    border-top: 1px solid var(--mantine-color-default-border);
+  }
+}
+
+.field {
+  display: grid;
+  grid-template-columns: 112px minmax(0, 1fr) 28px;
+  column-gap: 16px;
+  align-items: start;
+  padding-block: 6px;
+
+  @media (max-width: $mantine-breakpoint-sm) {
+    grid-template-columns: 84px minmax(0, 1fr) 28px;
+    column-gap: 12px;
+  }
+}
+
+.fieldLabel {
+  line-height: 22px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: right;
+}
+
+.fieldValue {
+  min-width: 0;
+  line-height: 22px;
+  overflow-wrap: anywhere;
+
+  & > * {
+    line-height: 22px;
+  }
+}
+
+.link {
+  font-size: var(--mantine-font-size-sm);
+  color: var(--mantine-primary-color-light-color);
+  text-align: left;
+  overflow-wrap: anywhere;
+
+  @mixin hover {
+    text-decoration: underline;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--mantine-primary-color-filled);
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+}
+
+.multiline {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* The copy button only shows on the line under the pointer or the keyboard */
+.copy {
+  margin-top: 1px;
+  color: var(--mantine-color-dimmed);
+  opacity: 0;
+  transition: opacity 120ms ease;
+
+  .field:hover &,
+  .field:focus-within &,
+  &[data-copied] {
+    opacity: 1;
+  }
+
+  @media (hover: none) {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .copy {
+    transition: none;
+  }
+}

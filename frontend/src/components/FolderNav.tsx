@@ -5,6 +5,7 @@ import { useLocalStorage } from '@mantine/hooks'
 import {
   ArchiveIcon,
   BanIcon,
+  BookUserIcon,
   ChevronRightIcon,
   FileTextIcon,
   FolderIcon,
@@ -111,6 +112,10 @@ export type FolderNavProps = {
   composeDisabled?: boolean
   /** Messages dropped on a folder, dragged from the list. Omit where there is nothing to drag. */
   onDropMessages?: (folderId: string, uids: number[]) => void
+  /** Opens the address book. Omit when none is configured. */
+  onContacts?: () => void
+  /** The address book is open: its row is the current one, no folder is. */
+  contactsActive?: boolean
 }
 
 export function FolderNav({
@@ -124,6 +129,8 @@ export function FolderNav({
   onCompose,
   composeDisabled,
   onDropMessages,
+  onContacts,
+  contactsActive,
 }: FolderNavProps) {
   const { t } = useI18n()
   const label = useFolderLabel()
@@ -215,10 +222,50 @@ export function FolderNav({
     </div>
   ) : null
 
+  // Contacts and the collapse toggle stay at the bottom, whatever the folders are doing
+  const footer =
+    onContacts || onToggleCollapsed ? (
+      <div className={classes.footer} data-more-above={moreBelow || undefined}>
+        {onContacts && (
+          <Tooltip label={t.contact.title} position="right" disabled={!collapsed}>
+            <UnstyledButton
+              className={classes.link}
+              data-active={contactsActive || undefined}
+              aria-current={contactsActive ? 'page' : undefined}
+              onClick={onContacts}
+            >
+              <BookUserIcon size={18} strokeWidth={1.75} className={classes.icon} />
+              <span className={`${classes.label} ${classes.fade}`}>{t.contact.title}</span>
+            </UnstyledButton>
+          </Tooltip>
+        )}
+        {onToggleCollapsed && (
+          <Tooltip label={t.expandFolders} position="right" disabled={!collapsed}>
+            <UnstyledButton
+              className={`${classes.link} ${classes.toggle}`}
+              onClick={onToggleCollapsed}
+              aria-label={collapsed ? t.expandFolders : t.collapseFolders}
+              aria-expanded={!collapsed}
+            >
+              <PanelLeftCloseIcon
+                size={18}
+                strokeWidth={1.75}
+                className={`${classes.icon} ${classes.turn}`}
+              />
+              <span className={`${classes.label} ${classes.fade}`}>{t.collapse}</span>
+            </UnstyledButton>
+          </Tooltip>
+        )}
+      </div>
+    ) : null
+
   const shell = (children: React.ReactNode) => (
     <Stack gap={0} h="100%" className={classes.root} data-collapsed={collapsed || undefined}>
       {compose}
-      {children}
+      <Stack gap={0} style={{ flex: 1, minHeight: 0 }}>
+        {children}
+      </Stack>
+      {footer}
     </Stack>
   )
 
@@ -322,25 +369,6 @@ export function FolderNav({
           {custom.map((f) => renderLink(f))}
         </Stack>
       </ScrollArea>
-      {onToggleCollapsed && (
-        <div className={classes.footer} data-more-above={moreBelow || undefined}>
-          <Tooltip label={t.expandFolders} position="right" disabled={!collapsed}>
-            <UnstyledButton
-              className={classes.link}
-              onClick={onToggleCollapsed}
-              aria-label={collapsed ? t.expandFolders : t.collapseFolders}
-              aria-expanded={!collapsed}
-            >
-              <PanelLeftCloseIcon
-                size={18}
-                strokeWidth={1.75}
-                className={`${classes.icon} ${classes.turn}`}
-              />
-              <span className={`${classes.label} ${classes.fade}`}>{t.collapse}</span>
-            </UnstyledButton>
-          </Tooltip>
-        </div>
-      )}
     </>,
   )
 }

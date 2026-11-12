@@ -1,0 +1,111 @@
+.root {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-width: 0;
+}
+
+/* The header floats over the list, as in the message list; rows show faintly through it */
+.overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 2;
+  pointer-events: none;
+
+  & > * {
+    pointer-events: auto;
+  }
+}
+
+.header {
+  position: relative;
+  margin: 6px 6px 0;
+  border-radius: var(--mantine-radius-md);
+  backdrop-filter: blur(14px) saturate(140%);
+  transition: box-shadow 150ms ease;
+
+  @mixin light {
+    background: color-mix(
+      in srgb,
+      color-mix(in srgb, var(--mantine-color-gray-1) 55%, var(--mantine-color-body)) 78%,
+      transparent
+    );
+    box-shadow:
+      0 1px 2px rgb(31 29 26 / 6%),
+      0 2px 8px -2px rgb(31 29 26 / 10%);
+  }
+
+  @mixin dark {
+    background: color-mix(
+      in srgb,
+      color-mix(in srgb, var(--mantine-color-dark-8) 55%, var(--mantine-color-body)) 78%,
+      transparent
+    );
+    box-shadow:
+      0 1px 2px rgb(0 0 0 / 30%),
+      0 2px 8px -2px rgb(0 0 0 / 40%);
+  }
+
+  &[data-scrolled] {
+    @mixin light {
+      box-shadow:
+        0 1px 2px rgb(31 29 26 / 8%),
+        0 6px 14px -6px rgb(31 29 26 / 22%);
+    }
+
+    @mixin dark {
+      box-shadow:
+        0 1px 2px rgb(0 0 0 / 35%),
+        0 6px 16px -6px rgb(0 0 0 / 60%);
+    }
+  }
+}
+
+/* The filter sits on the translucent bar: a solid field so the text stays crisp */
+.filter {
+  background: var(--mantine-color-body);
+}
+
+.picker {
+  flex: none;
+  max-width: 45%;
+  font-weight: 500;
+}
+
+.pickerLabel {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.stale {
+  margin-top: -2px;
+}
+
+.viewport {
+  padding-inline-end: 8px;
+  mask-image: linear-gradient(to bottom, transparent 4px, #000 var(--fade-end));
+
+  &:focus-visible {
+    outline: none;
+  }
+}
+
+/* A letter heading: lined up with the names, on the page colour so rows pass under it when pinned */
+.letter {
+  left: 0;
+  right: 0;
+  z-index: 1;
+  display: flex;
+  align-items: flex-end;
+  padding: 0 0 6px 16px;
+  font-size: var(--mantine-font-size-xs);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--mantine-color-dimmed);
+  background: var(--mantine-color-body);
+  pointer-events: none;
+}

@@ -4,6 +4,7 @@ import { useLocalStorage, useMediaQuery, useNetwork } from '@mantine/hooks'
 import { notifications } from '@mantine/notifications'
 import { spotlight } from '@mantine/spotlight'
 import {
+  BookUserIcon,
   CheckIcon,
   CircleAlertIcon,
   KeyboardIcon,
@@ -14,8 +15,10 @@ import {
   WifiOffIcon,
 } from 'lucide-react'
 import { rawUrl, realUid } from './api/mailHooks'
-import { useMailHooks } from './hooks'
+import { contactUrls as apiContactUrls } from './api/contactsHooks'
+import { useMailHooks, type ContactUrls } from './hooks'
 import type {
+  Addr,
   Attachment,
   ComposeMode,
   DraftInput,
@@ -31,7 +34,7 @@ import { I18nContext, STRINGS } from './lib/i18n'
 import { absoluteDate, displayName } from './lib/format'
 import { useMailShortcuts } from './lib/shortcuts'
 import { KnownContactsProvider } from './lib/contacts'
-import { parseLocation, toUrl } from './lib/url'
+import { parseLocation, placeOf, toUrl, type AppLocation } from './lib/url'
 import { DEFAULT_NAV, MailAppShell, type Layout } from './components/AppShell'
 import { TopBar } from './components/TopBar'
 import { FolderNav, sortFolders } from './components/FolderNav'
@@ -48,6 +51,8 @@ import { toMoveTargets } from './components/MoveMenu'
 // Tiptap only loads when someone writes or opens settings.
 const Composer = lazy(() => import('./components/Composer').then((m) => ({ default: m.Composer })))
 const Settings = lazy(() => import('./components/Settings').then((m) => ({ default: m.Settings })))
+// The address book is its own screen, loaded the first time it opens
+const ContactsApp = lazy(() => import('./ContactsApp').then((m) => ({ default: m.ContactsApp })))
 
 const SEND_DELAY_S = 5
 
@@ -75,11 +80,14 @@ export type MailAppProps = {
     a: Attachment,
     disposition: 'inline' | 'download' | 'thumb',
   ) => string
+  /** Where contact pictures and .vcf downloads are served from. */
+  contactUrls?: ContactUrls
 }
 
 export function MailApp({
   attachmentUrl = (ref, a, d) =>
     `/api/folders/${encodeURIComponent(ref.folder)}/messages/${ref.uid}/attachments/${encodeURIComponent(a.id)}?disposition=${d}`,
+  contactUrls = apiContactUrls,
 }: MailAppProps) {
   const hooks = useMailHooks()
   const { settings, update: updateSettings } = hooks.useSettings()
@@ -125,7 +133,12 @@ export function MailApp({
   const [mobileReader, setMobileReader] = useState(initial.uid !== null)
   const [selected, setSelected] = useState<Set<number>>(() => new Set())
   const anchor = useRef<number | null>(null)
-  const [view, setView] = useState<'mail' | 'settings'>(initial.view)
+  const [requestedView, setView] = useState<AppLocation['view']>(initial.view)
+  const [contactId, setContactId] = useState<string | null>(initial.contactId)
+  // Undefined until the session is known: the contacts view waits rather than flashing the inbox
+  const contactsEnabled = session.contacts
+  // No address book: /contacts is the inbox
+  const view = requestedView === 'contacts' && contactsEnabled === false ? 'mail' : requestedView
   const [helpOpen, setHelpOpen] = useState(false)
   const [sourceRef, setSourceRef] = useState<MessageRef | null>(null)
   const sourceQuery = hooks.useRawMessage(sourceRef)
@@ -206,15 +219,16 @@ export function MailApp({
   // The address bar follows the app: a new place is a new history entry, opening a message replaces it.
   const lastUrl = useRef(toUrl(initial))
   useEffect(() => {
-    const url = toUrl({ view, folderId, uid: search ? null : activeUid, search })
+    const url = toUrl({ view, folderId, uid: search ? null : activeUid, search, contactId })
     if (url === lastUrl.current) return
-    const samePlace =
-      url.split('?')[0]!.split('/').slice(0, 3).join('/') ===
-      lastUrl.current.split('?')[0]!.split('/').slice(0, 3).join('/')
-    if (samePlace && !url.startsWith('/search')) window.history.replaceState(null, '', url)
+    const samePlace = placeOf(url) === placeOf(lastUrl.current)
+    // A /contacts that became the inbox takes the place of the address that asked for it
+    const redirected = view !== requestedView
+    if ((samePlace && !url.startsWith('/search')) || redirected)
+      window.history.replaceState(null, '', url)
     else window.history.pushState(null, '', url)
     lastUrl.current = url
-  }, [view, folderId, activeUid, search])
+  }, [view, requestedView, folderId, activeUid, search, contactId])
 
   // Back and forward: the app follows the address bar.
   const place = useRef({ folderId, search })
@@ -234,6 +248,7 @@ export function MailApp({
       setFolderId(location.folderId)
       setSearch(location.search)
       setActiveUid(location.uid)
+      setContactId(location.contactId)
       setSelected(new Set())
     }
     window.addEventListener('popstate', onPop)
@@ -560,6 +575,21 @@ export function MailApp({
 
   const toggleTheme = () => setColorScheme(computed === 'dark' ? 'light' : 'dark')
 
+  const goContacts = () => {
+    setView('contacts')
+    setDrawerOpened(false)
+  }
+
+  const composeTo = (to?: Addr) =>
+    openCompose('new', undefined, {
+      to: to ? [to] : [],
+      cc: [],
+      bcc: [],
+      subject: '',
+      html: '',
+      attachmentIds: [],
+    })
+
   /* ---------- keyboard ---------- */
   useMailShortcuts(
     {
@@ -586,9 +616,11 @@ export function MailApp({
       compose: () => openCompose('new'),
       search: () => spotlight.open(),
       goInbox: () => goFolder(roleId('inbox') ?? 'INBOX'),
+      goContacts: contactsEnabled ? goContacts : undefined,
       help: () => setHelpOpen(true),
     },
-    compose === null && !helpOpen,
+    // The address book has its own keys
+    compose === null && !helpOpen && view !== 'contacts',
   )
 
   /* ---------- derived props ---------- */
@@ -688,7 +720,29 @@ export function MailApp({
   )
 
   const page =
-    view === 'settings' ? (
+    view === 'contacts' ? (
+      contactsEnabled ? (
+        <Suspense fallback={null}>
+          <ContactsApp
+            layout={layout}
+            density={settings.density}
+            urls={contactUrls}
+            contactId={contactId}
+            onContactChange={setContactId}
+            onClose={() => setView('mail')}
+            onCompose={reachable ? composeTo : undefined}
+            onShowMessages={runSearch}
+            onGoInbox={() => goFolder(roleId('inbox') ?? 'INBOX')}
+            onShowShortcuts={() => setHelpOpen(true)}
+            shortcutsEnabled={compose === null && !helpOpen}
+            reachable={reachable}
+          />
+        </Suspense>
+      ) : (
+        // Waiting to know whether there is an address book at all
+        <div />
+      )
+    ) : view === 'settings' ? (
       <Suspense fallback={null}>
         <Settings
           settings={settings}
@@ -736,7 +790,7 @@ export function MailApp({
               folders={foldersQuery.data}
               status={foldersQuery.status}
               onRetry={() => void foldersQuery.refetch()}
-              activeId={search ? null : folderId}
+              activeId={search || view === 'contacts' ? null : folderId}
               collapsed={collapsed}
               onSelect={goFolder}
               onToggleCollapsed={
@@ -747,6 +801,8 @@ export function MailApp({
               onDropMessages={
                 layout === 'mobile' ? undefined : (id, uids) => void runAction({ moveTo: id }, uids)
               }
+              onContacts={contactsEnabled ? goContacts : undefined}
+              contactsActive={view === 'contacts'}
             />
           )}
           list={list}
@@ -819,6 +875,16 @@ export function MailApp({
               label: computed === 'dark' ? t.lightTheme : t.darkTheme,
               icon: <MoonIcon size={16} strokeWidth={1.75} />,
             },
+            ...(contactsEnabled
+              ? [
+                  {
+                    id: 'contacts',
+                    label: t.contact.title,
+                    icon: <BookUserIcon size={16} strokeWidth={1.75} />,
+                    shortcut: 'goContacts' as const,
+                  },
+                ]
+              : []),
             {
               id: 'settings',
               label: t.settings,
@@ -837,11 +903,16 @@ export function MailApp({
             if (id === 'compose') openCompose('new')
             if (id === 'theme') toggleTheme()
             if (id === 'settings') setView('settings')
+            if (id === 'contacts') goContacts()
             if (id === 'shortcuts') setHelpOpen(true)
           }}
         />
 
-        <ShortcutsHelp opened={helpOpen} onClose={() => setHelpOpen(false)} />
+        <ShortcutsHelp
+          opened={helpOpen}
+          onClose={() => setHelpOpen(false)}
+          contacts={contactsEnabled}
+        />
 
         <RawMessageModal
           opened={sourceRef !== null}
