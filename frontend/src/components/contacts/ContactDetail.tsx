@@ -23,9 +23,9 @@ import {
   EllipsisIcon,
   EllipsisVerticalIcon,
   InboxIcon,
-  PencilIcon,
   SquarePenIcon,
   Trash2Icon,
+  UserPenIcon,
   UserXIcon,
 } from 'lucide-react'
 import type { ContactCard, ContactType } from '../../types'
@@ -188,7 +188,7 @@ function Toolbar({
       {onEdit && (
         <ShortcutTooltip label={t.contact.edit} shortcut="editContact">
           <ActionIcon size={size} aria-label={t.contact.edit} disabled={!card} onClick={onEdit}>
-            <PencilIcon size={iconSize} strokeWidth={stroke} />
+            <UserPenIcon size={iconSize} strokeWidth={stroke} />
           </ActionIcon>
         </ShortcutTooltip>
       )}

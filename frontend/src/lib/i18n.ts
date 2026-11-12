@@ -277,6 +277,7 @@ const en = {
       'This contact was changed somewhere else in the meantime. Your edits are still here: save again to replace that version.',
     unreachable: 'Can’t reach the address book. Your edits are still here: try again in a moment.',
     saveFailed: 'Couldn’t save. Your edits are still here.',
+    unreachableNothing: 'Can’t reach the address book. Nothing was changed.',
     created: (name: string) => `${name} added to your contacts`,
     saved: 'Contact saved',
     // picture
@@ -614,6 +615,7 @@ const fr: Strings = {
     unreachable:
       'Carnet d’adresses injoignable. Vos modifications sont conservées : réessayez dans un instant.',
     saveFailed: 'Échec de l’enregistrement. Vos modifications sont conservées.',
+    unreachableNothing: 'Carnet d’adresses injoignable. Rien n’a été modifié.',
     created: (name) => `${name} ajouté aux contacts`,
     saved: 'Contact enregistré',
     picture: 'Photo',
