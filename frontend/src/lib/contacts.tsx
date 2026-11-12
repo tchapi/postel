@@ -4,26 +4,42 @@ import { BookUserIcon } from 'lucide-react'
 import type { Addr } from '../types'
 import { useI18n } from './i18n'
 
-/** An address found in the user's address books, with the name on its card and its picture's URL. */
-export type KnownContact = { email: string; name?: string; photo?: string }
+/**
+ * An address found in the user's address books, with the name on its card and its picture's URL.
+ * `id` is the card's, to open it; older backends do not send it.
+ */
+export type KnownContact = { email: string; id?: string; name?: string; photo?: string }
 
 const KnownContactsContext = createContext<ReadonlyMap<string, KnownContact>>(new Map())
 export const KnownContactsProvider = KnownContactsContext.Provider
+
+/** Opens a card in the address book; absent when there is none to open. */
+const OpenContactContext = createContext<((id: string) => void) | undefined>(undefined)
+export const OpenContactProvider = OpenContactContext.Provider
 
 /**
  * The address as the user knows it: the name on the contact card replaces the one
  * the mail carried, and `known` says there is a card at all.
  */
-export function useKnownAddr(addr: Addr): { addr: Addr; known: boolean; photo?: string } {
+export function useKnownAddr(addr: Addr): {
+  addr: Addr
+  known: boolean
+  photo?: string
+  /** Opens the person's card, when there is one and an address book to open it in. */
+  open?: () => void
+} {
   const contacts = use(KnownContactsContext)
+  const openContact = use(OpenContactContext)
   const contact = contacts.get(addr.email.toLowerCase())
+  const id = contact?.id
   return useMemo(
     () => ({
       addr: contact?.name ? { ...addr, name: contact.name } : addr,
       known: contact !== undefined,
       photo: contact?.photo,
+      open: id && openContact ? () => openContact(id) : undefined,
     }),
-    [addr, contact],
+    [addr, contact, id, openContact],
   )
 }
 

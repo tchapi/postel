@@ -36,6 +36,9 @@ export type ContactsAppProps = {
   shortcutsEnabled: boolean
   /** The backend answers */
   reachable: boolean
+  /** Someone from mail to add: the editor opens with their name and address. */
+  newContact?: Addr | null
+  onNewContactTaken?: () => void
 }
 
 type Editing =
@@ -60,6 +63,8 @@ export function ContactsApp({
   onShowShortcuts,
   shortcutsEnabled,
   reachable,
+  newContact,
+  onNewContactTaken,
 }: ContactsAppProps) {
   const { t } = useI18n()
   const hooks = useMailHooks()
@@ -283,6 +288,24 @@ export function ContactsApp({
       fileRef.current?.click()
     }
   }
+
+  // A sender from mail: a new card with what the message said about them
+  useEffect(() => {
+    if (!newContact) return
+    const [first = '', ...rest] = (newContact.name ?? '').trim().split(/\s+/)
+    newKey.current += 1
+    setEditing({
+      kind: 'new',
+      key: newKey.current,
+      prefill: {
+        firstName: first,
+        lastName: rest.join(' '),
+        emails: [{ value: newContact.email, type: 'home' }],
+      },
+    })
+    if (isMobile) setMobileDetail(true)
+    onNewContactTaken?.()
+  }, [newContact, onNewContactTaken, isMobile])
 
   useMailShortcuts(
     {

@@ -35,3 +35,12 @@ button.item:hover {
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
+
+/* Beside a sender that opens their card: the rest of the line still folds the message */
+.fold {
+  flex: 1;
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}

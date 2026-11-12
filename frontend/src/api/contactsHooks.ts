@@ -217,6 +217,7 @@ const nameStore = {
         contact: card
           ? {
               email,
+              id: card.id,
               name: card.name ?? undefined,
               // The generation in the URL fetches a picture again after a change
               photo: card.photo

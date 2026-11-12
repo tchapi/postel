@@ -134,7 +134,9 @@ export function ContactEditor({
   const { t, locale } = useI18n()
   const [start] = useState<ContactInput>(() => (card ? fromCard(card) : { ...blank(), ...prefill }))
   const [draft, setDraft] = useState<ContactInput>(() => withEmptyLines(start))
-  const [book, setBook] = useState(card?.book ?? defaultBook)
+  // Empty until the user picks one: the default may arrive after the editor opens
+  const [pickedBook, setBook] = useState(card?.book ?? '')
+  const book = pickedBook || defaultBook
   const [etag, setEtag] = useState(card?.etag)
   const [photo, setPhoto] = useState<Blob | 'remove' | null>(null)
   const [cropFile, setCropFile] = useState<File | null>(null)
@@ -147,7 +149,8 @@ export function ContactEditor({
   const resetFile = useRef<() => void>(null)
 
   const fieldsChanged = !card || meaningful(draft) !== meaningful(start)
-  const dirty = fieldsChanged || photo !== null || (!card && book !== defaultBook)
+  const dirty =
+    fieldsChanged || photo !== null || (!card && pickedBook !== '' && pickedBook !== defaultBook)
 
   // The new picture, shown before it is saved
   const preview = useMemo(

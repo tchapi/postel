@@ -177,3 +177,20 @@
     }
   }
 }
+
+/* A sender with a card: the name underlines on hover, as a link would */
+.senderLink {
+  display: inline-flex;
+  max-width: 100%;
+  border-radius: var(--mantine-radius-sm);
+
+  @mixin hover {
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--mantine-primary-color-filled);
+    outline-offset: 2px;
+  }
+}
