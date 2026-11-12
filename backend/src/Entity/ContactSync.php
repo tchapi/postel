@@ -19,9 +19,13 @@ class ContactSync
     #[ORM\Column(length: 500, nullable: true)]
     private ?string $home = null;
 
-    /** @var array<string, string> sync token by address book href */
+    /** @var array<string, array{token: string, name: string}> sync token and name by address book href */
     #[ORM\Column(type: Types::JSON)]
     private array $books = [];
+
+    /** False when the last refresh could not reach the server */
+    #[ORM\Column(options: ['default' => true])]
+    private bool $available = true;
 
     #[ORM\Column(nullable: true)]
     private ?DateTimeImmutable $checkedAt = null;
@@ -44,7 +48,7 @@ class ContactSync
     }
 
     /**
-     * @return array<string, string>
+     * @return array<string, array{token: string, name: string}>
      */
     public function getBooks(): array
     {
@@ -52,11 +56,21 @@ class ContactSync
     }
 
     /**
-     * @param array<string, string> $books
+     * @param array<string, array{token: string, name: string}> $books
      */
     public function setBooks(array $books): void
     {
         $this->books = $books;
+    }
+
+    public function isAvailable(): bool
+    {
+        return $this->available;
+    }
+
+    public function setAvailable(bool $available): void
+    {
+        $this->available = $available;
     }
 
     public function getCheckedAt(): ?DateTimeImmutable

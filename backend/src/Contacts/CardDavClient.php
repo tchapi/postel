@@ -14,11 +14,13 @@ use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 use function sprintf;
 
+use const ENT_XML1;
 use const LIBXML_NONET;
 
 /**
- * The few CardDAV requests contacts need: find the address books, read their
- * sync token, fetch every card's name and addresses.
+ * The CardDAV requests the address book needs (RFC 6352, RFC 4918), nothing
+ * specific to Davis: find the address books, read their sync token and the
+ * ETags of their cards, fetch cards whole.
  */
 final class CardDavClient
 {
@@ -41,40 +43,104 @@ final class CardDavClient
     }
 
     /**
-     * @return array<string, string> sync token by address book href
+     * @return array<string, array{token: string, name: string}> sync token and display name by address book href
      */
     public function books(RemoteUser $user, string $home): array
     {
-        $xpath = $this->propfind($user, $home, 1, '<d:resourcetype/><d:sync-token/>');
+        $xpath = $this->propfind($user, $home, 1, '<d:resourcetype/><d:sync-token/><d:displayname/>');
 
         $books = [];
         foreach ($this->elements($xpath, '//d:response[.//d:resourcetype/card:addressbook]') as $response) {
             $href = trim($this->text($xpath, 'd:href', $response));
-            $books[$href] = trim($this->text($xpath, './/d:sync-token', $response));
+            $books[$href] = [
+                'token' => trim($this->text($xpath, './/d:sync-token', $response)),
+                'name' => trim($this->text($xpath, './/d:displayname', $response)),
+            ];
         }
 
         return $books;
     }
 
     /**
-     * Every card of a book, with only FN and EMAIL in it.
+     * The ETag of every card in a book, nothing else (RFC 6352 section 8.6).
      *
-     * @return list<string>
+     * @return array<string, string> ETag by card href
      */
-    public function cards(RemoteUser $user, string $book): array
+    public function etags(RemoteUser $user, string $book): array
+    {
+        $etags = [];
+        foreach ($this->report($user, $book, 'addressbook-query', '<d:prop><d:getetag/></d:prop>') as $href => $props) {
+            $etags[$href] = $props['etag'];
+        }
+
+        return $etags;
+    }
+
+    /**
+     * Every card of a book, whole.
+     *
+     * @return array<string, array{etag: string, vcard: string}> by card href
+     */
+    public function all(RemoteUser $user, string $book): array
+    {
+        return $this->withData($this->report($user, $book, 'addressbook-query', '<d:prop><d:getetag/><card:address-data/></d:prop>'));
+    }
+
+    /**
+     * These cards of a book, whole (RFC 6352 section 8.7). A card that is gone
+     * in the meantime is simply not in the answer.
+     *
+     * @param list<string> $hrefs
+     *
+     * @return array<string, array{etag: string, vcard: string}> by card href
+     */
+    public function multiget(RemoteUser $user, string $book, array $hrefs): array
+    {
+        $refs = implode('', array_map(static fn (string $href) => '<d:href>'.htmlspecialchars($href, ENT_XML1).'</d:href>', $hrefs));
+
+        return $this->withData($this->report($user, $book, 'addressbook-multiget', '<d:prop><d:getetag/><card:address-data/></d:prop>'.$refs));
+    }
+
+    /**
+     * @return array<string, array{etag: string, vcard: ?string}> by card href, only what the server found
+     */
+    private function report(RemoteUser $user, string $book, string $report, string $content): array
     {
         $body = '<?xml version="1.0" encoding="utf-8"?>'
-            .'<card:addressbook-query xmlns:d="DAV:" xmlns:card="urn:ietf:params:xml:ns:carddav">'
-            .'<d:prop><card:address-data><card:prop name="FN"/><card:prop name="EMAIL"/><card:prop name="PHOTO"/></card:address-data></d:prop>'
-            .'</card:addressbook-query>';
+            .'<card:'.$report.' xmlns:d="DAV:" xmlns:card="urn:ietf:params:xml:ns:carddav">'.$content.'</card:'.$report.'>';
         $xpath = $this->request($user, 'REPORT', $book, 1, $body);
 
         $cards = [];
-        foreach ($this->elements($xpath, '//card:address-data') as $data) {
-            $cards[] = $data->textContent;
+        foreach ($this->elements($xpath, '//d:response') as $response) {
+            $href = trim($this->text($xpath, 'd:href', $response));
+            // Only the properties the server could give, not those under a 404 propstat
+            $found = './/d:propstat[not(d:status) or contains(d:status, " 200 ")]/d:prop/';
+            $etag = trim($this->text($xpath, $found.'d:getetag', $response));
+            if ('' === $href || '' === $etag) {
+                continue;
+            }
+            $data = $this->elements($xpath, $found.'card:address-data', $response)[0] ?? null;
+            $cards[$href] = ['etag' => $etag, 'vcard' => $data?->textContent];
         }
 
         return $cards;
+    }
+
+    /**
+     * @param array<string, array{etag: string, vcard: ?string}> $cards
+     *
+     * @return array<string, array{etag: string, vcard: string}>
+     */
+    private function withData(array $cards): array
+    {
+        $whole = [];
+        foreach ($cards as $href => $card) {
+            if (null !== $card['vcard'] && '' !== trim($card['vcard'])) {
+                $whole[$href] = ['etag' => $card['etag'], 'vcard' => $card['vcard']];
+            }
+        }
+
+        return $whole;
     }
 
     private function propfind(RemoteUser $user, string $url, int $depth, string $props): DOMXPath

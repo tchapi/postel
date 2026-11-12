@@ -5,16 +5,16 @@ declare(strict_types=1);
 namespace App\Entity;
 
 use App\Repository\ContactRepository;
-use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Normalizer;
 
 /**
- * One address of a Davis contact, cached for autocomplete.
+ * One address of a contact card, cached for autocomplete and for names on mail.
  */
 #[ORM\Entity(repositoryClass: ContactRepository::class)]
 #[ORM\Table(name: 'contact')]
 #[ORM\Index(name: 'contact_owner', columns: ['owner'])]
+#[ORM\Index(name: 'contact_card_id', columns: ['card_id'])]
 class Contact
 {
     #[ORM\Id]
@@ -36,11 +36,11 @@ class Contact
         private ?string $name,
         #[ORM\Column(length: 320)]
         private string $email,
-        /** The card's picture, base64 so it travels through any database as text */
-        #[ORM\Column(type: Types::TEXT, nullable: true)]
-        private ?string $photo = null,
-        #[ORM\Column(length: 64, nullable: true)]
-        private ?string $photoMime = null,
+        /** The card it comes from, to drop its rows when the card changes */
+        #[ORM\Column(length: 32)]
+        private string $cardId,
+        #[ORM\Column]
+        private bool $hasPhoto = false,
     ) {
         $this->search = self::fold(($name ?? '').' '.$email);
     }
@@ -60,21 +60,5 @@ class Contact
     public function getEmail(): string
     {
         return $this->email;
-    }
-
-    public function getPhotoMime(): ?string
-    {
-        return $this->photoMime;
-    }
-
-    /** The picture's bytes, or null without one */
-    public function getPhoto(): ?string
-    {
-        if (null === $this->photo) {
-            return null;
-        }
-        $data = base64_decode($this->photo, true);
-
-        return false === $data ? null : $data;
     }
 }
