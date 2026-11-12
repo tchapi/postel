@@ -274,7 +274,7 @@ const en = {
     needName: 'Add a name, a company or an email',
     badEmail: 'This doesn’t look like an email address',
     changed:
-      'This contact was changed somewhere else in the meantime. Your edits are still here: save again to replace that version.',
+      'This contact was changed somewhere else in the meantime. Those changes are now in the form, next to yours: check it and save again.',
     unreachable: 'Can’t reach the address book. Your edits are still here: try again in a moment.',
     saveFailed: 'Couldn’t save. Your edits are still here.',
     unreachableNothing: 'Can’t reach the address book. Nothing was changed.',
@@ -611,7 +611,7 @@ const fr: Strings = {
     needName: 'Indiquez un nom, une société ou un e-mail',
     badEmail: 'Cette adresse e-mail ne semble pas valide',
     changed:
-      'Ce contact a été modifié ailleurs entre-temps. Vos modifications sont conservées : enregistrez de nouveau pour remplacer cette version.',
+      'Ce contact a été modifié ailleurs entre-temps. Ces changements sont maintenant dans le formulaire, avec les vôtres : vérifiez-le et enregistrez de nouveau.',
     unreachable:
       'Carnet d’adresses injoignable. Vos modifications sont conservées : réessayez dans un instant.',
     saveFailed: 'Échec de l’enregistrement. Vos modifications sont conservées.',

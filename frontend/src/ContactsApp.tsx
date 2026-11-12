@@ -219,9 +219,10 @@ export function ContactsApp({
       if (problem === 'changed' && card) {
         // Someone else's version is the base from now on; the user's input stays in the form
         const fresh = await cardQuery.refetch()
-        return { ok: false, problem, etag: fresh.data?.etag }
+        return { ok: false, problem, card: fresh.data }
       }
-      return { ok: false, problem, etag: saved?.etag }
+      // The fields may have gone through before the picture failed
+      return { ok: false, problem, card: saved }
     }
     setEditing(null)
     if (saved) {

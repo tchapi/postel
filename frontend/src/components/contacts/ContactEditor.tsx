@@ -33,6 +33,7 @@ import type {
 import { formatBirthday } from '../../lib/addressBook'
 import { initials } from '../../lib/format'
 import { useI18n } from '../../lib/i18n'
+import { rebaseInput } from '../../lib/rebase'
 import { keyLabel } from '../../lib/shortcuts'
 import { PhotoCropper } from './PhotoCropper'
 import classes from './ContactEditor.module.css'
@@ -49,7 +50,11 @@ export type ContactSave = {
   etag?: string
 }
 
-export type SaveOutcome = { ok: true } | { ok: false; problem: ContactProblem; etag?: string }
+/**
+ * A save that failed may still have moved the card: someone else changed it, or the
+ * fields went through and the picture did not. `card` is then the card as it is now.
+ */
+export type SaveOutcome = { ok: true } | { ok: false; problem: ContactProblem; card?: ContactCard }
 
 export type ContactEditorProps = {
   /** The card being edited; none for a new one. */
@@ -132,7 +137,9 @@ export function ContactEditor({
   onCancel,
 }: ContactEditorProps) {
   const { t, locale } = useI18n()
-  const [start] = useState<ContactInput>(() => (card ? fromCard(card) : { ...blank(), ...prefill }))
+  const [start, setStart] = useState<ContactInput>(() =>
+    card ? fromCard(card) : { ...blank(), ...prefill },
+  )
   const [draft, setDraft] = useState<ContactInput>(() => withEmptyLines(start))
   // Empty until the user picks one: the default may arrive after the editor opens
   const [pickedBook, setBook] = useState(card?.book ?? '')
@@ -190,8 +197,14 @@ export function ContactEditor({
     setSaving(false)
     if (outcome.ok) return
     setProblem(outcome.problem)
-    // The next attempt starts from what the server has now
-    if (outcome.etag) setEtag(outcome.etag)
+    if (outcome.card) {
+      // The next attempt starts from the card as it is now: the edits are moved onto it,
+      // so that each line still points at the right line of the card
+      const now = fromCard(outcome.card)
+      setDraft((d) => withEmptyLines(rebaseInput(start, d, now)))
+      setStart(now)
+      setEtag(outcome.card.etag)
+    }
   }
 
   const cancel = () => {
