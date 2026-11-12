@@ -154,6 +154,23 @@ final class ContactCardsController
         return new JsonResponse($this->model($this->addressBook->setPhoto($user, $id, $etag, $jpeg)));
     }
 
+    /**
+     * This card takes in what `other` has and it lacks, then `other` is deleted.
+     * Both ETags are needed: the merge is made on the two cards the user looked at.
+     */
+    #[Route('/cards/{id}/merge', methods: ['POST'], requirements: ['id' => self::ID])]
+    public function merge(#[CurrentUser] RemoteUser $user, string $id, Request $request): JsonResponse
+    {
+        $this->owner($user);
+        $payload = $request->getPayload();
+        $other = $payload->getString('other');
+        if (1 !== preg_match('/^'.self::ID.'$/', $other) || $other === $id) {
+            throw new UnprocessableEntityHttpException('Expected "other", the id of another card');
+        }
+
+        return new JsonResponse($this->model($this->addressBook->merge($user, $id, self::etag($payload->getString('etag')), $other, self::etag($payload->getString('otherEtag')))));
+    }
+
     #[Route('/cards/{id}/photo', methods: ['DELETE'], requirements: ['id' => self::ID])]
     public function removePhoto(#[CurrentUser] RemoteUser $user, string $id, #[MapQueryParameter] ?string $etag = null): JsonResponse
     {

@@ -21,6 +21,7 @@ use function array_slice;
 use function in_array;
 use function is_array;
 use function is_string;
+use function strlen;
 
 use const PHP_INT_MAX;
 use const SORT_ASC;
@@ -55,6 +56,15 @@ final class CardDocument
     /** Properties shown as lists: removing one also removes its group, not these */
     private const array LISTS = ['EMAIL', 'TEL', 'ADR', 'URL'];
 
+    /** Merging: what makes a card this card, never taken from another one */
+    private const array OWN = ['VERSION', 'PRODID', 'UID', 'REV', 'X-ABUID'];
+
+    /** Merging: a card can have several of these, so the other card's are added to this one's */
+    private const array SEVERAL = ['EMAIL', 'TEL', 'ADR', 'URL', 'IMPP', 'X-SOCIALPROFILE', 'RELATED', 'X-ABRELATEDNAMES', 'X-ABDATE', 'CATEGORIES', 'KEY', 'LANG'];
+
+    /** Merging: lines that only say something about another line of their Apple group */
+    private const array GROUP_NOTES = ['X-ABLABEL', 'X-ABADR'];
+
     /**
      * Each line read from the server, as vobject would write it back right
      * after reading: a line that still writes the same was not edited.
@@ -62,6 +72,9 @@ final class CardDocument
      * @var WeakMap<Property, string>
      */
     private WeakMap $read;
+
+    /** The place of the last line read, so lines taken from another card follow in their order */
+    private int $lastLine = 0;
 
     private function __construct(private readonly VCardComponent $card)
     {
@@ -72,6 +85,7 @@ final class CardDocument
             if (!$child instanceof Property || !isset($child->lineString)) {
                 continue;
             }
+            $this->lastLine = max($this->lastLine, $child->lineIndex ?? 0);
             // Quoted-printable values (vCard 2.1) span several lines, the parser only keeps the first
             $encoding = $child->parameters['ENCODING'] ?? null;
             if (null !== $encoding && 'QUOTED-PRINTABLE' === strtoupper((string) $encoding->getValue())) {
@@ -286,17 +300,191 @@ final class CardDocument
             $this->setBirthday($input->birthday ?? '');
         }
 
-        // FN follows the names, unless the user never touched them
-        if ($namesChanged || $orgChanged || null === $this->text('FN')) {
-            $emails = array_map(static fn (EmailInput $e) => trim($e->value), $input->emails);
-            $fn = trim($first.' '.$last);
-            $fn = '' !== $fn ? $fn : ('' !== $org ? $org : ($emails[0] ?? ''));
-            if ('' !== $fn) {
-                $this->setText('FN', $fn, $this->text('FN'));
+        // FN follows the names. One written by hand ("Dr Bob Martin Jr") is only
+        // replaced when the names themselves change, not when the organisation does.
+        $fn = $this->text('FN');
+        $derived = self::displayName($before['firstName'] ?? '', $before['lastName'] ?? '', $before['org'] ?? '', $before['emails'][0]['value'] ?? '');
+        if ($namesChanged || null === $fn || $fn === $derived) {
+            $now = self::displayName($first, $last, $org, trim($input->emails[0]->value ?? ''));
+            if ('' !== $now) {
+                $this->setText('FN', $now, $fn);
             }
         }
 
         $this->touch();
+    }
+
+    /**
+     * Takes in what another card of the same person has and this one lacks.
+     * Nothing of this card is replaced:
+     *
+     * - emails, phones, addresses, links and the other lines a card can have
+     *   several of are added, unless this card already has the same one;
+     * - a line a card has once (name, organisation, birthday, picture...) is
+     *   taken only when this card has none;
+     * - two different notes are both kept, one under the other.
+     *
+     * Lines are copied as they were read, with their Apple group and its label.
+     *
+     * @throws InvalidCard when the other card cannot be brought to this one's version
+     */
+    public function absorb(self $other): void
+    {
+        if ($other->isVersion4() !== $this->isVersion4()) {
+            try {
+                $converted = $other->card->convert($this->card->getDocumentType());
+            } catch (Throwable $e) {
+                throw new InvalidCard('The two cards are of different versions: '.$e->getMessage(), previous: $e);
+            }
+            // Converted lines are new ones: they have no original text to keep
+            $other = new self($converted);
+        }
+
+        $groups = [];
+        foreach ($other->card->children() as $line) {
+            if (!$line instanceof Property || in_array($line->name, self::OWN, true) || in_array($line->name, self::GROUP_NOTES, true)) {
+                continue;
+            }
+            if ('NOTE' === $line->name) {
+                $this->absorbNote($other->flat($line));
+                continue;
+            }
+            if (!$this->lacks($line, $other)) {
+                continue;
+            }
+
+            if (null === $line->group || '' === $line->group) {
+                $this->adopt($line, null, $other);
+                continue;
+            }
+            // The whole group comes along, under a name that is free on this card
+            $group = $groups[strtolower($line->group)] ??= $this->freeGroup();
+            $this->adopt($line, $group, $other);
+            foreach ($other->card->select($line->group.'.') as $note) {
+                if ($note instanceof Property && in_array($note->name, self::GROUP_NOTES, true) && !$this->has($group, $note->name)) {
+                    $this->adopt($note, $group, $other);
+                }
+            }
+        }
+
+        $this->touch();
+    }
+
+    /**
+     * Whether this card is missing that line of another card.
+     */
+    private function lacks(Property $line, self $other): bool
+    {
+        $name = (string) $line->name;
+        if ('' === $other->identity($line)) {
+            return false;
+        }
+        if (in_array($name, self::SEVERAL, true)) {
+            foreach ($this->listed($name) as $mine) {
+                if ($this->identity($mine) === $other->identity($line)) {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        // Once per card: only when this card has none, and only the other card's first
+        foreach ($this->listed($name) as $mine) {
+            if ('' !== $this->identity($mine)) {
+                return false;
+            }
+        }
+
+        return $other->first($name) === $line;
+    }
+
+    /**
+     * What tells two lines of the same name apart; empty for a line that says nothing.
+     */
+    private function identity(Property $line): string
+    {
+        return match ($line->name) {
+            'EMAIL', 'URL' => mb_strtolower($this->flat($line)),
+            // The same number whatever its spaces and dashes
+            'TEL' => preg_replace('/\D+/', '', $this->phone($line)) ?: mb_strtolower($this->phone($line)),
+            // The same place, post office box or not
+            'ADR' => trim(mb_strtolower(implode("\n", array_slice(array_pad($this->parts($line), 7, ''), 2, 5)))),
+            default => trim($line instanceof Binary ? (string) $line->getValue() : implode('', $this->parts($line))),
+        };
+    }
+
+    private function absorbNote(string $theirs): void
+    {
+        $mine = $this->text('NOTE') ?? '';
+        if ('' === $theirs || str_contains($mine, $theirs)) {
+            return;
+        }
+        $this->setText('NOTE', '' === $mine ? $theirs : $mine."\n\n".$theirs, $mine);
+    }
+
+    /**
+     * Copies a line of another card to the end of this one, written as it was read.
+     */
+    private function adopt(Property $line, ?string $group, self $from): void
+    {
+        // An empty line of that name gives way: a card has one N, one FN
+        if (!in_array($line->name, self::SEVERAL, true) && !in_array($line->name, self::GROUP_NOTES, true)) {
+            $this->card->remove((string) $line->name);
+        }
+
+        $copy = clone $line;
+        $copy->group = $group;
+        // After this card's own lines, in the order they are taken
+        $copy->lineIndex = ++$this->lastLine;
+        $this->card->add($copy);
+
+        if (!isset($from->read[$line], $line->lineString)) {
+            return;
+        }
+        $text = $line->lineString;
+        if (null !== $line->group && '' !== $line->group) {
+            $text = (null === $group ? '' : $group.'.').substr($text, strlen($line->group) + 1);
+        }
+        $copy->lineString = $text;
+        $this->read[$copy] = $copy->serialize();
+    }
+
+    /**
+     * "item7" when the card's groups go up to item6.
+     */
+    private function freeGroup(): string
+    {
+        $last = 0;
+        foreach ($this->card->children() as $line) {
+            if ($line instanceof Property && null !== $line->group && 1 === preg_match('/^item(\d+)$/i', $line->group, $m)) {
+                $last = max($last, (int) $m[1]);
+            }
+        }
+
+        return 'item'.($last + 1);
+    }
+
+    private function has(string $group, string $name): bool
+    {
+        foreach ($this->card->select($group.'.'.$name) as $line) {
+            if ($line instanceof Property) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * The name a card goes by when nobody wrote one: "first last", else the
+     * organisation, else the first address.
+     */
+    private static function displayName(string $first, string $last, string $org, string $email): string
+    {
+        $name = trim($first.' '.$last);
+
+        return '' !== $name ? $name : ('' !== $org ? $org : $email);
     }
 
     /**

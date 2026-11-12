@@ -14,6 +14,8 @@ use App\Contacts\Request\UrlInput;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
+use function array_slice;
+use function count;
 use function is_int;
 use function is_string;
 use function sprintf;
@@ -327,6 +329,117 @@ final class CardDocumentTest extends TestCase
         $this->expectException(InvalidCard::class);
 
         CardDocument::fromString("BEGIN:VCALENDAR\r\nEND:VCALENDAR\r\n");
+    }
+
+    public function testTheNameWrittenByHandStaysWhenOnlyTheOrganisationChanges(): void
+    {
+        $card = CardDocument::fromString("BEGIN:VCARD\r\nVERSION:3.0\r\nUID:x\r\nFN:Dr Bob Martin Jr\r\nN:Martin;Bob;;;\r\nORG:Old\r\nEND:VCARD\r\n");
+
+        $card->apply(self::input($card->toArray(), ['org' => 'New']));
+        self::assertSame('Dr Bob Martin Jr', $card->toArray()['name']);
+
+        $card->apply(self::input($card->toArray(), ['firstName' => 'Robert']));
+        self::assertSame('Robert Martin', $card->toArray()['name']);
+    }
+
+    public function testACardNamedAfterItsOrganisationFollowsIt(): void
+    {
+        $card = CardDocument::fromString("BEGIN:VCARD\r\nVERSION:3.0\r\nUID:x\r\nFN:Old\r\nN:;;;;\r\nORG:Old\r\nEND:VCARD\r\n");
+
+        $card->apply(self::input($card->toArray(), ['org' => 'New']));
+
+        self::assertSame('New', $card->toArray()['name']);
+    }
+
+    public function testMergingAddsWhatIsMissingAndReplacesNothing(): void
+    {
+        $card = self::read('plain-3.0.vcf');
+        $before = self::lines($card->toString());
+        $other = CardDocument::fromString(implode("\r\n", [
+            'BEGIN:VCARD', 'VERSION:3.0', 'UID:other', 'FN:E. Durand', 'N:Durand;E.;;;', 'ORG:Elsewhere', 'NICKNAME:Mimile',
+            'EMAIL;TYPE=HOME:EMILE@example.test', 'EMAIL;TYPE=WORK:emile@other.example',
+            'TEL;TYPE=CELL:+33600000001', 'TEL;TYPE=HOME:+33 4 00 00 00 09',
+            'ADR;TYPE=WORK:;;12 Rue des Lilas;lyon;;69001;France', 'ADR;TYPE=WORK:;;1 place Bellecour;Lyon;;69002;France',
+            'URL:https://example.test/emile', 'URL:https://other.example',
+            'BDAY:1990-01-01', 'NOTE:Met in Lyon', 'X-CUSTOM;X-PARAM=a:one;two', 'REV:2021-01-01T00:00:00Z', 'END:VCARD', '',
+        ]));
+
+        $card->absorb($other);
+
+        $after = self::lines($card->toString());
+        $kept = self::without($before, 'REV', 'END');
+        self::assertSame($kept, array_slice($after, 0, count($kept)), 'every line of the card is still there, in place');
+        self::assertSame([
+            'NICKNAME:Mimile',
+            'EMAIL;TYPE=WORK:emile@other.example',
+            'TEL;TYPE=HOME:+33 4 00 00 00 09',
+            'ADR;TYPE=WORK:;;1 place Bellecour;Lyon;;69002;France',
+            'URL:https://other.example',
+            'X-CUSTOM;X-PARAM=a:one;two',
+            'NOTE:Met in Lyon',
+        ], array_values(array_diff(self::without($after, 'REV', 'END'), $before)));
+        self::assertSame('plain-30', $card->uid());
+        self::assertSame('Émile Durand', $card->toArray()['name']);
+        self::assertSame('1984-03-12', $card->toArray()['birthday']);
+    }
+
+    public function testMergingFillsAnEmptyNameAndJoinsTwoNotes(): void
+    {
+        $card = CardDocument::fromString("BEGIN:VCARD\r\nVERSION:3.0\r\nUID:x\r\nFN:\r\nN:;;;;\r\nEMAIL:bob@example.test\r\nNOTE:First note\r\nEND:VCARD\r\n");
+        $other = CardDocument::fromString("BEGIN:VCARD\r\nVERSION:3.0\r\nUID:y\r\nFN:Bob Martin\r\nN:Martin;Bob;;;\r\nEMAIL:bob@example.test\r\nNOTE:Second note\r\nEND:VCARD\r\n");
+
+        $card->absorb($other);
+        $card->absorb($other);
+
+        $model = $card->toArray();
+        self::assertSame(['Bob Martin', 'Bob', 'Martin'], [$model['name'], $model['firstName'], $model['lastName']]);
+        self::assertSame("First note\n\nSecond note", $model['note'], 'merged twice, the note is there once');
+        self::assertCount(1, $model['emails']);
+        self::assertSame(1, substr_count($card->toString(), "\r\nN:"));
+        self::assertSame(1, substr_count($card->toString(), "\r\nFN:"));
+    }
+
+    public function testMergingBringsAppleGroupsAlongUnderFreeNames(): void
+    {
+        $card = self::read('apple-grouped.vcf');
+        $before = self::lines($card->toString());
+        $other = CardDocument::fromString(implode("\r\n", [
+            'BEGIN:VCARD', 'VERSION:3.0', 'UID:other', 'FN:Grace M.', 'N:M.;Grace;;;',
+            'item1.EMAIL;type=INTERNET:grace@boat.example', 'item1.X-ABLabel:Boat',
+            'item2.EMAIL;type=INTERNET:GRACE@example.test', 'item2.X-ABLabel:Old',
+            'item3.X-ABDATE:2020-06-01', 'item3.X-ABLabel:_$!<Anniversary>!$_',
+            'IMPP;X-SERVICE-TYPE=Jabber;type=HOME:xmpp:grace@chat.example',
+            'X-SOCIALPROFILE;type=twitter:https://twitter.example/grace',
+            'END:VCARD', '',
+        ]));
+
+        $card->absorb($other);
+
+        $after = self::lines($card->toString());
+        self::assertSame([
+            'item5.EMAIL;type=INTERNET:grace@boat.example',
+            'item5.X-ABLabel:Boat',
+            'item6.X-ABDATE:2020-06-01',
+            'item6.X-ABLabel:_$!<Anniversary>!$_',
+            'X-SOCIALPROFILE;type=twitter:https://twitter.example/grace',
+        ], array_values(array_diff(self::without($after, 'REV', 'END'), $before)));
+        $emails = $card->toArray()['emails'];
+        self::assertSame(['Other', 'Boat'], array_column($emails, 'label'));
+    }
+
+    public function testMergingACardOfAnotherVersionConvertsIt(): void
+    {
+        $card = self::read('plain-3.0.vcf');
+
+        $card->absorb(self::read('version-4.0.vcf'));
+
+        $model = $card->toArray();
+        self::assertContains('noemie@work.example', array_column($model['emails'], 'value'));
+        self::assertContains('https://example.test/a,b', array_column($model['urls'], 'value'));
+        self::assertStringContainsString("VERSION:3.0\r\n", $card->toString());
+        self::assertSame('1984-03-12', $model['birthday']);
+        // Still a card the reader takes back
+        self::assertSame($model['emails'], CardDocument::fromString($card->toString())->toArray()['emails']);
     }
 
     private static function read(string $fixture): CardDocument

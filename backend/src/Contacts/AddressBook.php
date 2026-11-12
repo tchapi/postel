@@ -18,7 +18,12 @@ use function ord;
 /**
  * Changes to the address book. Each goes to the server first, conditional
  * on the ETag the user's edit was made on, and only then to the cache: a
- * refused or failed write leaves the cache as it was.
+ * failed write leaves the cache as it was.
+ *
+ * A change is made on the cached card, so it is only sent when the cache
+ * holds the version the user saw. When it does not, or when the server says
+ * the card moved on, that one card is read again: the user then sees what
+ * changed and can try again on it.
  *
  * Every card and book is looked up in the cache by id and owner, so the
  * hrefs written to come from the server, never from the client.
@@ -51,29 +56,17 @@ final class AddressBook
 
     public function update(RemoteUser $user, string $id, string $etag, CardInput $input): Card
     {
-        $card = $this->card($user, $id);
-        $document = CardDocument::fromString($card->getVcard());
-        $document->apply($input);
-
-        return $this->write($user, $card->getBook(), $card->getHref(), $document->toString(), $etag);
+        return $this->change($user, $id, $etag, static fn (CardDocument $card) => $card->apply($input));
     }
 
     public function setPhoto(RemoteUser $user, string $id, string $etag, string $jpeg): Card
     {
-        $card = $this->card($user, $id);
-        $document = CardDocument::fromString($card->getVcard());
-        $document->setPhoto($jpeg);
-
-        return $this->write($user, $card->getBook(), $card->getHref(), $document->toString(), $etag);
+        return $this->change($user, $id, $etag, static fn (CardDocument $card) => $card->setPhoto($jpeg));
     }
 
     public function removePhoto(RemoteUser $user, string $id, string $etag): Card
     {
-        $card = $this->card($user, $id);
-        $document = CardDocument::fromString($card->getVcard());
-        $document->removePhoto();
-
-        return $this->write($user, $card->getBook(), $card->getHref(), $document->toString(), $etag);
+        return $this->change($user, $id, $etag, static fn (CardDocument $card) => $card->removePhoto());
     }
 
     /**
@@ -81,13 +74,31 @@ final class AddressBook
      */
     public function delete(RemoteUser $user, string $id, string $etag): string
     {
-        $card = $this->card($user, $id);
-        $this->dav->delete($user, $card->getHref(), $etag);
-        $vcard = $card->getVcard();
-        $this->contacts->forget($card);
+        $card = $this->seen($user, $id, $etag);
+        $this->remove($user, $card);
         $this->entityManager->flush();
 
-        return $vcard;
+        return $card->getVcard();
+    }
+
+    /**
+     * Two cards of the same person become one: the first takes in what the
+     * other has and it lacks, then the other is deleted. In that order, so
+     * that a failure half way leaves a card too many, never one too few.
+     */
+    public function merge(RemoteUser $user, string $id, string $etag, string $otherId, string $otherEtag): Card
+    {
+        $card = $this->seen($user, $id, $etag);
+        $other = $this->seen($user, $otherId, $otherEtag);
+
+        $document = CardDocument::fromString($card->getVcard());
+        $document->absorb(CardDocument::fromString($other->getVcard()));
+
+        $merged = $this->rewrite($user, $card, $document);
+        $this->remove($user, $other);
+        $this->entityManager->flush();
+
+        return $merged;
     }
 
     /**
@@ -130,6 +141,78 @@ final class AddressBook
         }
 
         return ['imported' => $imported, 'failed' => $failed];
+    }
+
+    /**
+     * @param callable(CardDocument): void $edit
+     */
+    private function change(RemoteUser $user, string $id, string $etag, callable $edit): Card
+    {
+        $card = $this->seen($user, $id, $etag);
+        $document = CardDocument::fromString($card->getVcard());
+        $edit($document);
+
+        return $this->rewrite($user, $card, $document);
+    }
+
+    /**
+     * The cached card, if it is the version the user's change was made on.
+     *
+     * @throws CardChanged when it is not: the cache then has the card as it is now
+     * @throws CardGone    when there is no such card any more
+     */
+    private function seen(RemoteUser $user, string $id, string $etag): Card
+    {
+        $card = $this->card($user, $id);
+        if ($card->getEtag() !== $etag) {
+            $this->readAgain($user, $card);
+            throw new CardChanged('The card is not at version '.$etag.' any more');
+        }
+
+        return $card;
+    }
+
+    private function rewrite(RemoteUser $user, Card $card, CardDocument $document): Card
+    {
+        try {
+            return $this->write($user, $card->getBook(), $card->getHref(), $document->toString(), $card->getEtag());
+        } catch (CardChanged $e) {
+            $this->readAgain($user, $card);
+            throw $e;
+        }
+    }
+
+    private function remove(RemoteUser $user, Card $card): void
+    {
+        try {
+            $this->dav->delete($user, $card->getHref(), $card->getEtag());
+        } catch (CardChanged $e) {
+            $this->readAgain($user, $card);
+            throw $e;
+        }
+        $this->contacts->forget($card);
+    }
+
+    /**
+     * The server has another version of this card than the cache: fetch it,
+     * so the next thing the user sees and edits is the card as it is.
+     *
+     * @throws CardGone when the card is gone from the server; it leaves the cache too
+     */
+    private function readAgain(RemoteUser $user, Card $card): void
+    {
+        try {
+            $now = $this->dav->get($user, $card->getHref());
+            $this->contacts->store($card->getOwner(), $card->getBook(), $card->getHref(), $now['etag'], $now['vcard']);
+        } catch (CardGone $e) {
+            $this->contacts->forget($card);
+            $this->entityManager->flush();
+            throw $e;
+        } catch (DavisUnavailable) {
+            // The regular sync will catch up
+            return;
+        }
+        $this->entityManager->flush();
     }
 
     /**

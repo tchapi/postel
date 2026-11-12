@@ -73,7 +73,7 @@ final class ContactCardsWriteTest extends WebTestCase
         self::assertSame(['PUT '.self::EMILE], $this->dav->take(), 'the answer had an ETag, nothing to read back');
     }
 
-    public function testACardChangedElsewhereIsAConflictAndTheCacheStays(): void
+    public function testACardChangedElsewhereIsAConflictAndIsReadAgain(): void
     {
         $card = $this->card(self::EMILE);
         $this->dav->cards[self::BOOK][self::EMILE] = str_replace('TITLE:Engineer', 'TITLE:Changed elsewhere', $this->dav->cards[self::BOOK][self::EMILE]);
@@ -82,8 +82,88 @@ final class ContactCardsWriteTest extends WebTestCase
 
         self::assertResponseStatusCodeSame(409);
         self::assertSame('contact_changed', $this->json()['error']);
-        self::assertSame($card, $this->card(self::EMILE));
-        self::assertStringContainsString('Changed elsewhere', $this->dav->cards[self::BOOK][self::EMILE]);
+        self::assertStringContainsString('Changed elsewhere', $this->dav->cards[self::BOOK][self::EMILE], 'the other change was not written over');
+        self::assertSame(['PUT '.self::EMILE, 'GET '.self::EMILE], $this->dav->take());
+
+        // The user now sees the card as it is, and a change made on that version goes through
+        $now = $this->card(self::EMILE);
+        self::assertSame('Changed elsewhere', $now['title']);
+        $this->request('PUT', '/api/contacts/cards/'.$card['id'], ['title' => 'Chief'] + $now);
+        self::assertResponseIsSuccessful();
+        self::assertStringContainsString('TITLE:Chief', $this->dav->cards[self::BOOK][self::EMILE]);
+    }
+
+    public function testAChangeMadeOnAnOlderVersionThanTheCacheIsNotSent(): void
+    {
+        $card = $this->card(self::EMILE);
+
+        $this->request('PUT', '/api/contacts/cards/'.$card['id'], ['title' => 'Chief', 'etag' => '"an older version"'] + $card);
+
+        self::assertResponseStatusCodeSame(409);
+        self::assertSame(['GET '.self::EMILE], $this->dav->take(), 'nothing was written');
+        self::assertStringContainsString('TITLE:Engineer', $this->dav->cards[self::BOOK][self::EMILE]);
+    }
+
+    public function testACardDeletedElsewhereIsGoneForTheUserToo(): void
+    {
+        $card = $this->card(self::EMILE);
+        unset($this->dav->cards[self::BOOK][self::EMILE]);
+
+        $this->request('DELETE', '/api/contacts/cards/'.$card['id'].'?etag='.urlencode(self::etagOf($card)));
+
+        self::assertResponseStatusCodeSame(404);
+        self::assertSame('contact_not_found', $this->json()['error']);
+        self::assertSame([], $this->list());
+    }
+
+    public function testTwoCardsOfTheSamePersonBecomeOne(): void
+    {
+        $twin = self::BOOK.'twin.vcf';
+        $this->dav->cards[self::BOOK][$twin] = "BEGIN:VCARD\r\nVERSION:3.0\r\nUID:twin\r\nFN:E. Durand\r\nN:Durand;E.;;;\r\nEMAIL;TYPE=HOME:EMILE@example.test\r\nEMAIL:emile@other.example\r\nNOTE:Met in Lyon\r\nEND:VCARD\r\n";
+        $this->dav->books[self::BOOK] = ['token' => 't2', 'name' => 'Contacts'];
+        $this->request('POST', '/api/contacts/refresh');
+        $this->dav->take();
+        $card = $this->card(self::EMILE);
+        $other = $this->card($twin);
+
+        $this->request('POST', '/api/contacts/cards/'.$card['id'].'/merge', ['etag' => $card['etag'], 'other' => $other['id'], 'otherEtag' => $other['etag']]);
+
+        self::assertResponseIsSuccessful();
+        self::assertSame(['PUT '.self::EMILE, 'DELETE '.$twin], $this->dav->take(), 'kept first, then the other deleted');
+        $merged = $this->json();
+        self::assertSame('Émile Durand', $merged['name']);
+        self::assertSame('Met in Lyon', $merged['note']);
+        self::assertIsArray($merged['emails']);
+        self::assertSame(['emile@example.test', 'emile@home.example', 'emile@other.example'], array_column($merged['emails'], 'value'));
+        self::assertSame(['Émile Durand'], array_column($this->list(), 'name'));
+        self::assertArrayNotHasKey($twin, $this->dav->cards[self::BOOK]);
+    }
+
+    public function testAMergeOnACardThatChangedTouchesNeither(): void
+    {
+        $twin = self::BOOK.'twin.vcf';
+        $this->dav->cards[self::BOOK][$twin] = FakeCardDav::card('E. Durand', 'emile@other.example');
+        $this->dav->books[self::BOOK] = ['token' => 't2', 'name' => 'Contacts'];
+        $this->request('POST', '/api/contacts/refresh');
+        $card = $this->card(self::EMILE);
+        $other = $this->card($twin);
+        $before = $this->dav->cards[self::BOOK];
+        $this->dav->take();
+
+        $this->request('POST', '/api/contacts/cards/'.$card['id'].'/merge', ['etag' => $card['etag'], 'other' => $other['id'], 'otherEtag' => '"an older version"']);
+
+        self::assertResponseStatusCodeSame(409);
+        self::assertSame($before, $this->dav->cards[self::BOOK]);
+        self::assertNotContains('PUT '.self::EMILE, $this->dav->take());
+    }
+
+    public function testACardIsNotMergedWithItself(): void
+    {
+        $card = $this->card(self::EMILE);
+
+        $this->request('POST', '/api/contacts/cards/'.$card['id'].'/merge', ['etag' => $card['etag'], 'other' => $card['id'], 'otherEtag' => $card['etag']]);
+
+        self::assertResponseStatusCodeSame(422);
     }
 
     public function testWithoutAnEtagInTheAnswerTheCardIsReadBack(): void
