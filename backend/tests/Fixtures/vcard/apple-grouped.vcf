@@ -1,0 +1,18 @@
+BEGIN:VCARD
+VERSION:3.0
+PRODID:-//Apple Inc.//iPhone OS 17.0//EN
+N:Moreau;Grace;;;
+FN:Grace Moreau
+item1.EMAIL;type=INTERNET;type=pref:grace@example.test
+item1.X-ABLabel:_$!<Other>!$_
+item2.TEL:+33 6 00 00 00 04
+item2.X-ABLabel:Boat
+item3.ADR;type=HOME;type=pref:;;1 quai du Port;Marseille;;13002;France
+item3.X-ABADR:fr
+item4.URL;type=pref:https://grace.example
+item4.X-ABLabel:_$!<HomePage>!$_
+BDAY;X-APPLE-OMIT-YEAR=1604:1604-11-02
+X-SOCIALPROFILE;type=mastodon:https://social.example/@grace
+IMPP;X-SERVICE-TYPE=Jabber;type=HOME:xmpp:grace@chat.example
+UID:apple-grouped
+END:VCARD

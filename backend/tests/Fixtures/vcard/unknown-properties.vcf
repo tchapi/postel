@@ -1,0 +1,13 @@
+BEGIN:VCARD
+VERSION:3.0
+UID:unknown
+FN:Odd Fields
+EMAIL:odd@example.test
+X-FOO;X-BAR="a,b";X-BAZ=c:weird\,value;with parts
+X-EMPTY:
+X-MS-OL-DESIGN;CHARSET=utf-8:<card xmlns="http://schemas.microsoft.com/office/outlook/12/electronicbusinesscards"/>
+NICKNAME:Oddy,Od
+CATEGORIES:friends,work
+GEO:48.85;2.35
+PHOTO;VALUE=URI:https://example.test/pic.jpg
+END:VCARD

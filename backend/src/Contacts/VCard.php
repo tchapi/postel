@@ -19,7 +19,8 @@ final class VCard
     /** Decoded bytes: larger pictures are left out rather than cached */
     private const int PHOTO_MAX_BYTES = 2_000_000;
 
-    private const array PHOTO_TYPES = ['JPEG' => 'image/jpeg', 'JPG' => 'image/jpeg', 'PNG' => 'image/png', 'GIF' => 'image/gif', 'WEBP' => 'image/webp'];
+    /** Picture types the app reads and serves, by the name vCard 3.0 gives them */
+    public const array PHOTO_TYPES = ['JPEG' => 'image/jpeg', 'JPG' => 'image/jpeg', 'PNG' => 'image/png', 'GIF' => 'image/gif', 'WEBP' => 'image/webp'];
 
     /**
      * One entry per address: a card with a work and a home address gives two.
