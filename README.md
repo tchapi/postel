@@ -58,12 +58,15 @@ Comes as one Docker image (php-fpm and Caddy) for `amd64` and `arm64`, with a sa
 ![Inbox](_screenshots/inbox.png)
 ![Search across folders](_screenshots/search.png)
 ![Writing a message, with recipient suggestions](_screenshots/compose.png)
+![Contacts, from your Davis address books](_screenshots/contacts.png)
 
 | Dark mode | Command palette |
 |-----------|-----------------|
 | ![Dark mode](_screenshots/dark.png) | ![Command palette](_screenshots/palette.png) |
 | **Settings** | **Jump to a folder** |
 | ![Settings](_screenshots/settings.png) | ![Jump to a folder, in dark mode](_screenshots/palette-dark.png) |
+| **Editing a contact** | **Merging two duplicates** |
+| ![Editing a contact](_screenshots/contacts-edit.png) | ![Merging two duplicates, in dark mode](_screenshots/contacts-merge.png) |
 
 # 🔩 Requirements
 
@@ -310,7 +313,7 @@ dev/davis/seed.sh
 docker exec -u www-data postel-dev-davis sh -c 'cd /var/www/davis && APP_ENV=prod bin/console davis:app-key:create postel --all-users'
 ```
 
-For screenshots and demos, a second account, `camille@example.test`, gets a small mailbox that reads like a real one (35 messages, with conversations, attachments, an invitation and a newsletter), and matching Davis contacts:
+For screenshots and demos, a second account, `camille@example.test`, gets a small mailbox that reads like a real one (35 messages, with conversations, attachments, an invitation and a newsletter), and matching Davis contacts in two address books, some with a picture:
 
 ```sh
 cd backend && php bin/console app:dev:seed-demo
