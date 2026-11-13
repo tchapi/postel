@@ -33,6 +33,9 @@ final class AddressBook
     public const int IMPORT_MAX_BYTES = 10_000_000;
     public const int IMPORT_MAX_CARDS = 5_000;
 
+    /** Cards of an import written at the same time: more would only queue up on the server */
+    private const int IMPORT_AT_ONCE = 6;
+
     public function __construct(
         private readonly CardDavClient $dav,
         private readonly ContactsService $contacts,
@@ -113,9 +116,9 @@ final class AddressBook
         $taken = $this->cards->uids($user->getUserIdentifier(), $book);
 
         $texts = CardDocument::splitAll($file);
-        $imported = 0;
         // Cards past the limit are not tried, and say so
         $failed = max(0, count($texts) - self::IMPORT_MAX_CARDS);
+        $cards = [];
         foreach (array_slice($texts, 0, self::IMPORT_MAX_CARDS) as $text) {
             try {
                 $document = CardDocument::fromString($text);
@@ -130,13 +133,36 @@ final class AddressBook
                 $document->replaceUid($uid);
             }
             $taken[$uid] = true;
+            // The file name is new, never taken from the card
+            $cards[$book.self::uuid().'.vcf'] = $document->toString();
+        }
 
-            try {
-                // The file name is new, never taken from the card
-                $this->write($user, $book, $book.self::uuid().'.vcf', $document->toString(), null);
+        $imported = 0;
+        $owner = $user->getUserIdentifier();
+        foreach (array_chunk($cards, self::IMPORT_AT_ONCE, true) as $some) {
+            $down = null;
+            foreach ($this->dav->putNew($user, $some) as $href => $etag) {
+                // Refused for what it is: the next card may well go in
+                if ($etag instanceof CardChanged || $etag instanceof CardRefused) {
+                    ++$failed;
+                    continue;
+                }
+                if ($etag instanceof DavisUnavailable) {
+                    $down ??= $etag;
+                    continue;
+                }
+                $vcard = $some[$href];
+                if (null === $etag) {
+                    // The server may have changed the card on the way in
+                    ['etag' => $etag, 'vcard' => $vcard] = $this->dav->get($user, $href);
+                }
+                $this->contacts->store($owner, $book, $href, $etag, $vcard);
                 ++$imported;
-            } catch (CardRefused|CardChanged) {
-                ++$failed;
+            }
+            // What went in is kept, even when the server then went away
+            $this->entityManager->flush();
+            if (null !== $down) {
+                throw $down;
             }
         }
 

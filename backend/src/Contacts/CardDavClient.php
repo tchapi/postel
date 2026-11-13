@@ -135,11 +135,56 @@ final class CardDavClient
      */
     public function put(RemoteUser $user, string $href, string $vcard, ?string $ifMatch): ?string
     {
+        return $this->written($href, $this->settle($this->startPut($user, $href, $vcard, $ifMatch), 'PUT', $href, [200, 201, 204]));
+    }
+
+    /**
+     * Writes several new cards side by side. CardDAV has no request that
+     * takes many cards, and each one costs the server a password check, so
+     * an import is only quick when its requests overlap.
+     *
+     * @template K of string
+     *
+     * @param array<K, string> $cards vCard by href
+     *
+     * @return array<K, string|CardChanged|DavisUnavailable|null> by href: the new ETag (null when the server
+     *                                                            does not say), or why the card was not written
+     */
+    public function putNew(RemoteUser $user, array $cards): array
+    {
+        // All sent before the first answer is read
+        $responses = [];
+        foreach ($cards as $href => $vcard) {
+            $responses[$href] = $this->startPut($user, $href, $vcard, null);
+        }
+
+        $written = [];
+        foreach ($responses as $href => $response) {
+            try {
+                $written[$href] = $this->written($href, $this->settle($response, 'PUT', $href, [200, 201, 204]));
+            } catch (CardChanged|CardRefused|DavisUnavailable $e) {
+                $written[$href] = $e;
+            }
+        }
+
+        return $written;
+    }
+
+    private function startPut(RemoteUser $user, string $href, string $vcard, ?string $ifMatch): ResponseInterface
+    {
         $condition = null === $ifMatch ? ['If-None-Match' => '*'] : ['If-Match' => $ifMatch];
-        $response = $this->send($user, 'PUT', $href, [
+
+        return $this->start($user, 'PUT', $href, [
             'headers' => ['Content-Type' => 'text/vcard; charset=utf-8'] + $condition,
             'body' => $vcard,
-        ], [200, 201, 204]);
+        ]);
+    }
+
+    /**
+     * @return ?string the ETag of a card just written, null when the server does not give one
+     */
+    private function written(string $href, ResponseInterface $response): ?string
+    {
         try {
             $etag = $response->getHeaders(false)['etag'][0] ?? null;
         } catch (ExceptionInterface $e) {
@@ -245,11 +290,34 @@ final class CardDavClient
      */
     private function send(RemoteUser $user, string $method, string $url, array $options, array $accepted): ResponseInterface
     {
+        return $this->settle($this->start($user, $method, $url, $options), $method, $url, $accepted);
+    }
+
+    /**
+     * Sends a request without waiting for its answer.
+     *
+     * @param array<string, mixed> $options
+     */
+    private function start(RemoteUser $user, string $method, string $url, array $options): ResponseInterface
+    {
         try {
-            $response = $this->http->request($method, $this->absolute($url), $options + [
+            return $this->http->request($method, $this->absolute($url), $options + [
                 'auth_basic' => [$this->config->login($user), $this->config->secret],
                 'timeout' => 10,
             ]);
+        } catch (ExceptionInterface $e) {
+            throw new DavisUnavailable(sprintf('%s %s: %s', $method, $url, $e->getMessage()), previous: $e);
+        }
+    }
+
+    /**
+     * Waits for the answer and says what it means.
+     *
+     * @param list<int> $accepted
+     */
+    private function settle(ResponseInterface $response, string $method, string $url, array $accepted): ResponseInterface
+    {
+        try {
             $status = $response->getStatusCode();
         } catch (ExceptionInterface $e) {
             throw new DavisUnavailable(sprintf('%s %s: %s', $method, $url, $e->getMessage()), previous: $e);
