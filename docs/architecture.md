@@ -21,7 +21,7 @@ Dovecot does the heavy work: `SORT`, `SEARCH`, `THREAD`, `STATUS` and `PREVIEW` 
 
 Messages are parsed with `zbateson/mail-mime-parser`, which decodes encoded headers properly and lets the app guess the charset when a message doesn't declare one. The test messages in `backend/tests/Fixtures/mail` cover the difficult cases: inline images, `format=flowed`, calendar invites, Latin-1 and undeclared UTF-8, Outlook HTML, nested multiparts, and a message trying to inject scripts.
 
-Drafts and sent mail are stored in IMAP. The only local state is a SQLite file with the user settings and the contacts cache.
+Drafts and sent mail are stored in IMAP. The only local state is a SQLite file with the user settings and the copy of the address books.
 
 ## Authentication
 
@@ -41,11 +41,35 @@ Dovecot limits the number of connections per user and IP address (`mail_max_user
 
 Contacts come from [Davis](https://github.com/tchapi/davis) over CardDAV, with an app key: the backend logs in as `<login>*<app id>` with the key's secret, and Davis acts as `<login>`.
 
-Each CardDAV request costs about 170 ms, because Davis checks a bcrypt hash every time. So autocomplete never asks Davis directly. It searches a copy of the address books kept in SQLite:
+Everything after the login is plain CardDAV (RFC 6352): discovery from the principal, `REPORT`s, `GET`, `PUT` and `DELETE` with ETags. Nothing depends on how Davis lays out its URLs, and the app key is the only part another server would not have.
 
-- The first search fills the copy.
-- After that, at most every five minutes and once the response has been sent, one `PROPFIND` reads each address book's sync token. An address book whose token changed is fetched again in full with `addressbook-query`.
-- If Davis is down or refuses the key, the copy stays as it was.
+### The copy
+
+Each CardDAV request costs about 170 ms, because Davis checks a bcrypt hash every time. So neither autocomplete nor the address book asks Davis to show something. They read a copy kept in SQLite: one row per card, with the whole vCard, and one row per email address for autocomplete.
+
+- The first use fills the copy, with one `addressbook-query` per address book.
+- After that, when the address book is opened, and otherwise at most every five minutes once the response has been sent, one `PROPFIND` reads each address book's sync token. For a book whose token changed, one `addressbook-query` reads the ETag of every card, and one `addressbook-multiget` fetches only the cards whose ETag differs. Cards that are gone are dropped.
+- If Davis is down or refuses the key, the copy stays as it was, and the address book says it shows the last copy.
+
+Cards and books have ids made from the user and the href (a hash), stable across a rebuild of the copy. The browser never sends an href: every URL asked of Davis comes from the copy, looked up by id and user.
+
+### Changes
+
+A change goes to Davis first, then to the copy:
+
+- The browser sends the ETag of the card the user was looking at. The change is made on the copy's vCard, only if the copy is at that version, and sent with `If-Match`. Davis refuses it (`412`) if the card moved on in the meantime.
+- A refused change reads that one card again, so what the user sees next is the card as it is. The editor then moves the user's edits onto it (`lib/rebase.ts`) rather than dropping them or writing over the other change.
+- When Davis answers without an ETag, it stored something else than what was sent: the card is read back once.
+- A merge writes the card that stays, then deletes the other. If it stops half way there is a card too many, never one too few.
+- A `.vcf` import is cut into cards in the browser and sent a few at a time, since each card is one request to Davis.
+
+### vCards
+
+Cards are read and edited with `sabre/vobject` (`CardDocument`), in vCard 3.0 or 4.0. Only what the address book shows is touched. Every line nobody edited is written back exactly as it was read, in its place: vobject alone would change the escaping of some values it does not know, and upper-case Apple's `item1.` groups.
+
+Emails, phones, addresses and links carry a `key`, their position among the lines of the same name, so an edit lands on the line it came from and keeps its other parameters, its group and its label.
+
+Pictures are cropped in the browser, then decoded and written again as a 512 px JPEG by the backend, which never stores the bytes it was sent.
 
 ## Displaying mail
 
@@ -53,7 +77,7 @@ Message HTML goes through `symfony/html-sanitizer` on the backend, then into a s
 
 ## Frontend
 
-The interface lives in `frontend/src/components`, one component per part of the screen. None of them fetches anything: they take props and call back. `MailApp.tsx` is the only container. It reads data through the `MailHooks` contract (`hooks.ts`), implemented on top of the API in `api/mailHooks.ts`, which also holds the optimistic updates and undo.
+The interface lives in `frontend/src/components`, one component per part of the screen. None of them fetches anything: they take props and call back. `MailApp.tsx` is the container for mail, and `ContactsApp.tsx`, loaded when first opened, the one for the address book. They read data through the `MailHooks` contract (`hooks.ts`), implemented on top of the API in `api/mailHooks.ts` and `api/contactsHooks.ts`, which also hold the optimistic updates and undo.
 
 The hooks hide two things from the components:
 

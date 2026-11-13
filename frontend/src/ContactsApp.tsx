@@ -5,7 +5,7 @@ import { notifications } from '@mantine/notifications'
 import { CheckIcon, CircleAlertIcon, UploadIcon } from 'lucide-react'
 import { ContactError, useMailHooks, type ContactUrls } from './hooks'
 import type { Addr, ContactCard, ContactInput, ContactSummary, Density, Undo } from './types'
-import { matchesFilter } from './lib/addressBook'
+import { matchesFilter, secondLine } from './lib/addressBook'
 import { findDuplicates } from './lib/duplicates'
 import { useI18n } from './lib/i18n'
 import { useMailShortcuts } from './lib/shortcuts'
@@ -122,7 +122,9 @@ export function ContactsApp({
   const duplicateIds = useMemo(() => findDuplicates(data?.cards ?? []), [data])
   const duplicates = useMemo(() => {
     const ids = card ? (duplicateIds.get(card.id) ?? []) : []
-    return (data?.cards ?? []).filter((c) => ids.includes(c.id))
+    return (data?.cards ?? [])
+      .filter((c) => ids.includes(c.id))
+      .map((c) => ({ id: c.id, name: c.name, detail: secondLine(c) }))
   }, [card, duplicateIds, data])
 
   const photoUrl = (c: Pick<ContactSummary, 'id' | 'etag' | 'photo'>) =>

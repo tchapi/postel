@@ -56,8 +56,8 @@ export type ContactDetailProps = {
   /** Omit when the card cannot be changed. */
   onEdit?: () => void
   onDelete?: () => void
-  /** Cards that may be the same person. Shown with `onMerge` only. */
-  duplicates?: { id: string; name: string }[]
+  /** Cards that may be the same person; `detail` tells apart two with the same name. Shown with `onMerge` only. */
+  duplicates?: { id: string; name: string; detail: string }[]
   onMerge?: (id: string) => void
 }
 
@@ -353,23 +353,27 @@ function Body({
           )}
         </Stack>
       </header>
-      {onMerge &&
-        duplicates?.slice(0, 3).map((duplicate) => (
-          <div key={duplicate.id} className={classes.duplicate}>
-            <UsersIcon size={15} strokeWidth={1.75} />
-            <Text size="sm" truncate style={{ flex: 1, minWidth: 0 }}>
-              {t.contact.possibleDuplicate(duplicate.name)}
-            </Text>
-            <Button
-              variant="subtle"
-              color="gray"
-              size="compact-sm"
-              onClick={() => onMerge(duplicate.id)}
-            >
-              {t.contact.merge}
-            </Button>
-          </div>
-        ))}
+      {onMerge && duplicates && duplicates.length > 0 && (
+        <Stack gap={6} mt={12}>
+          {duplicates.slice(0, 3).map((duplicate) => (
+            <div key={duplicate.id} className={classes.duplicate}>
+              <UsersIcon size={15} strokeWidth={1.75} style={{ flex: 'none' }} />
+              <Text size="sm" truncate style={{ flex: 1, minWidth: 0 }}>
+                {t.contact.possibleDuplicate(duplicate.name)}
+                {duplicate.detail && ` · ${duplicate.detail}`}
+              </Text>
+              <Button
+                variant="subtle"
+                color="gray"
+                size="compact-sm"
+                onClick={() => onMerge(duplicate.id)}
+              >
+                {t.contact.merge}
+              </Button>
+            </div>
+          ))}
+        </Stack>
+      )}
       {groups.length > 0 && (
         <Stack gap={0} className={classes.groups}>
           {groups.map((group, i) => (

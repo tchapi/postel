@@ -562,7 +562,7 @@ const fr: Strings = {
   allShortcuts: 'Tous les raccourcis',
   contact: {
     title: 'Contacts',
-    allBooks: 'Tous les carnets d’adresses',
+    allBooks: 'Tous les carnets',
     bookPicker: 'Carnet d’adresses',
     filter: 'Filtrer les contacts',
     filterShort: 'Filtrer',
