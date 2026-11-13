@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace App\Http;
 
+use App\Contacts\CardChanged;
+use App\Contacts\CardGone;
+use App\Contacts\DavisUnavailable;
+use App\Contacts\InvalidCard;
 use App\Imap\Exception\ImapCommandFailed;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
@@ -17,7 +21,7 @@ use Webklex\PHPIMAP\Exceptions\AuthFailedException;
 use Webklex\PHPIMAP\Exceptions\ConnectionFailedException;
 
 /**
- * Every error under /api is JSON, IMAP failures included.
+ * Every error under /api is JSON, IMAP and address book failures included.
  */
 final class ApiExceptionSubscriber implements EventSubscriberInterface
 {
@@ -47,6 +51,10 @@ final class ApiExceptionSubscriber implements EventSubscriberInterface
             $exception instanceof AuthFailedException => [Response::HTTP_BAD_GATEWAY, 'imap_auth_failed'],
             $exception instanceof ImapCommandFailed => [Response::HTTP_BAD_GATEWAY, 'imap_command_failed'],
             $exception instanceof ConnectionFailedException => [Response::HTTP_BAD_GATEWAY, 'imap_unreachable'],
+            $exception instanceof CardChanged => [Response::HTTP_CONFLICT, 'contact_changed'],
+            $exception instanceof CardGone => [Response::HTTP_NOT_FOUND, 'contact_not_found'],
+            $exception instanceof DavisUnavailable => [Response::HTTP_BAD_GATEWAY, 'contacts_unavailable'],
+            $exception instanceof InvalidCard => [Response::HTTP_UNPROCESSABLE_ENTITY, 'contact_unreadable'],
             default => [Response::HTTP_INTERNAL_SERVER_ERROR, 'internal_error'],
         };
 

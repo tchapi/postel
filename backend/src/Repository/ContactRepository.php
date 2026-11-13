@@ -65,11 +65,11 @@ final class ContactRepository extends ServiceEntityRepository
 
     /**
      * For each of these addresses that is in a book: the name on file (null for a
-     * card without one) and whether the card has a picture.
+     * card without one), whether the card has a picture, and the card's id.
      *
      * @param list<string> $emails
      *
-     * @return array<string, array{name: ?string, photo: bool}>
+     * @return array<string, array{name: ?string, photo: bool, id: string}>
      */
     public function namesByEmail(string $owner, array $emails): array
     {
@@ -77,23 +77,27 @@ final class ContactRepository extends ServiceEntityRepository
             return [];
         }
 
-        /** @var list<array{email: string, name: ?string, photoMime: ?string}> $rows */
+        /** @var list<array{email: string, name: ?string, hasPhoto: bool, cardId: string}> $rows */
         $rows = $this->createQueryBuilder('c')
-            ->select('c.email', 'c.name', 'c.photoMime')
+            ->select('c.email', 'c.name', 'c.hasPhoto', 'c.cardId')
             ->andWhere('c.owner = :owner')
             ->andWhere('c.email IN (:emails)')
             ->setParameter('owner', $owner)
             ->setParameter('emails', array_map(strtolower(...), $emails))
             ->addOrderBy('c.name')
+            ->addOrderBy('c.cardId')
             ->getQuery()
             ->getArrayResult();
 
         $found = [];
         foreach ($rows as $row) {
-            // The same address in two books: the first name wins, a picture from any book counts
-            $entry = $found[$row['email']] ?? ['name' => null, 'photo' => false];
-            $entry['name'] ??= $row['name'];
-            $entry['photo'] = $entry['photo'] || null !== $row['photoMime'];
+            // The same address in two books: the first card with a name wins, a picture from any book counts
+            $entry = $found[$row['email']] ?? ['name' => null, 'photo' => false, 'id' => $row['cardId']];
+            if (null === $entry['name'] && null !== $row['name']) {
+                $entry['name'] = $row['name'];
+                $entry['id'] = $row['cardId'];
+            }
+            $entry['photo'] = $entry['photo'] || $row['hasPhoto'];
             $found[$row['email']] = $entry;
         }
 
@@ -101,29 +105,34 @@ final class ContactRepository extends ServiceEntityRepository
     }
 
     /**
-     * The picture on this address's card, from whichever book has one.
-     *
-     * @return ?array{mime: string, data: string}
+     * The card of this address that has a picture, from whichever book.
      */
-    public function findPhoto(string $owner, string $email): ?array
+    public function findCardWithPhoto(string $owner, string $email): ?string
     {
-        $contacts = $this->createQueryBuilder('c')
+        /** @var list<string> $ids */
+        $ids = $this->createQueryBuilder('c')
+            ->select('c.cardId')
             ->andWhere('c.owner = :owner')
             ->andWhere('c.email = :email')
-            ->andWhere('c.photoMime IS NOT NULL')
+            ->andWhere('c.hasPhoto = true')
             ->setParameter('owner', $owner)
             ->setParameter('email', strtolower($email))
             ->setMaxResults(1)
             ->getQuery()
-            ->getResult();
-        $contact = $contacts[0] ?? null;
-        if (!$contact instanceof Contact) {
-            return null;
-        }
-        $data = $contact->getPhoto();
-        $mime = $contact->getPhotoMime();
+            ->getSingleColumnResult();
 
-        return null === $data || null === $mime ? null : ['mime' => $mime, 'data' => $data];
+        return $ids[0] ?? null;
+    }
+
+    public function deleteCard(string $owner, string $cardId): void
+    {
+        $this->createQueryBuilder('c')
+            ->delete()
+            ->where('c.owner = :owner AND c.cardId = :card')
+            ->setParameter('owner', $owner)
+            ->setParameter('card', $cardId)
+            ->getQuery()
+            ->execute();
     }
 
     /**

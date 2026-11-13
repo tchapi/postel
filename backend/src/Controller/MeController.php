@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Contacts\DavisConfig;
 use App\Security\RemoteUser;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -15,6 +16,7 @@ final class MeController
     public function __construct(
         #[Autowire(env: 'LOGOUT_URL')]
         private readonly string $logoutUrl,
+        private readonly DavisConfig $davis,
     ) {
     }
 
@@ -26,6 +28,8 @@ final class MeController
             'email' => $user->email,
             'displayName' => $user->displayName,
             'logoutUrl' => '' === $this->logoutUrl ? null : $this->logoutUrl,
+            // The address book shows only when there is one to show
+            'contacts' => $this->davis->enabled(),
         ]);
     }
 }

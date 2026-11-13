@@ -1,0 +1,63 @@
+.slot {
+  position: relative;
+}
+
+/* The same rounded highlight as a message row, inset in its slot */
+.row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: calc(100% - 4px);
+  margin: 2px 6px;
+  padding-inline: 10px 8px;
+  border-radius: var(--mantine-radius-md);
+  background: var(--mantine-color-body);
+  cursor: pointer;
+  user-select: none;
+
+  [data-density='compact'] & {
+    gap: 10px;
+  }
+
+  @mixin hover {
+    background: var(--mantine-color-default-hover);
+  }
+
+  &[data-active] {
+    background: color-mix(
+      in srgb,
+      var(--mantine-primary-color-filled) 7%,
+      var(--mantine-color-body)
+    );
+  }
+}
+
+/* Keyboard cursor: visible only while the list has focus, as in the message list */
+:global([role='listbox']:focus-visible) .row[data-active] {
+  outline: 1.5px solid color-mix(in srgb, var(--mantine-primary-color-filled) 55%, transparent);
+  outline-offset: -1.5px;
+}
+
+.text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.name {
+  display: block;
+  line-height: 20px;
+  font-weight: 500;
+}
+
+.detail {
+  display: block;
+  line-height: 18px;
+
+  /* Compact rows keep one line, like compact message rows drop the snippet */
+  [data-density='compact'] & {
+    display: none;
+  }
+}

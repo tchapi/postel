@@ -1,0 +1,12 @@
+BEGIN:VCARD
+VERSION:4.0
+UID:urn:uuid:4f0e2c8a-0000-4000-8000-000000000040
+FN:Noémie Roux
+N:Roux;Noémie;;;
+KIND:individual
+EMAIL;TYPE=work;PREF=1:noemie@work.example
+TEL;VALUE=uri;TYPE="cell,voice":tel:+33-6-00-00-00-03
+BDAY:--0704
+URL:https://example.test/a,b
+IMPP;PREF=1:xmpp:noemie@chat.example
+END:VCARD

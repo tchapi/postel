@@ -32,8 +32,9 @@ import {
   ReplyIcon,
   StarIcon,
   Trash2Icon,
+  UserPlusIcon,
 } from 'lucide-react'
-import type { Attachment, Message, RowAction } from '../types'
+import type { Addr, Attachment, Message, RowAction } from '../types'
 import {
   displayName,
   shortAbsoluteDate,
@@ -68,7 +69,11 @@ export type ReaderProps = {
   onAlwaysShowImages: (senderEmail: string) => void
   /** Earlier messages of the conversation, shown above this one */
   earlier?: ReactNode
+  /** Starts a new contact from an unknown sender. Omit without an address book. */
+  onAddContact?: (from: Addr) => void
 }
+
+const NOBODY: Addr = { email: '' }
 
 export function Reader(props: ReaderProps) {
   const { t } = useI18n()
@@ -143,8 +148,17 @@ export function Reader(props: ReaderProps) {
   )
 }
 
-function ReaderToolbar({ message, isMobile, moveTargets, onAction, onBack }: ReaderProps) {
+function ReaderToolbar({
+  message,
+  isMobile,
+  moveTargets,
+  onAction,
+  onBack,
+  onAddContact,
+}: ReaderProps) {
   const { t } = useI18n()
+  const from = useKnownAddr(message?.from ?? NOBODY)
+  const canAdd = !!message?.from.email && !from.known && onAddContact
   const flagged = message?.flagged ?? false
   const disabled = !message
 
@@ -177,6 +191,17 @@ function ReaderToolbar({ message, isMobile, moveTargets, onAction, onBack }: Rea
           <Menu.Item leftSection={<MailOpenIcon size={16} />} onClick={() => onAction('read')}>
             {t.markRead}
           </Menu.Item>
+        )}
+        {canAdd && (
+          <>
+            <Menu.Divider />
+            <Menu.Item
+              leftSection={<UserPlusIcon size={16} />}
+              onClick={() => onAddContact(message.from)}
+            >
+              {t.contact.addToContacts}
+            </Menu.Item>
+          </>
         )}
         <Menu.Divider />
         <Menu.Item leftSection={<CodeIcon size={16} />} onClick={() => onAction('source')}>
@@ -324,24 +349,32 @@ function ReaderBody({
       {/* Sender first, the date across from it, subject and recipients below, an inset rule to close the block */}
       <header className={classes.header}>
         <Group gap={12} align="flex-start" wrap="nowrap">
-          <KnownAvatar known={from.known} size={40}>
-            <Avatar
-              radius="xl"
-              size={40}
-              color="initials"
-              name={displayName(from.addr)}
-              src={from.photo}
-              aria-hidden
-            >
-              {initials(from.addr)}
-            </Avatar>
-          </KnownAvatar>
+          <SenderLink open={from.open} focusable={false}>
+            <KnownAvatar known={from.known} size={40}>
+              <Avatar
+                radius="xl"
+                size={40}
+                color="initials"
+                name={displayName(from.addr)}
+                src={from.photo}
+                aria-hidden
+              >
+                {initials(from.addr)}
+              </Avatar>
+            </KnownAvatar>
+          </SenderLink>
           <Stack gap={3} style={{ flex: 1, minWidth: 0 }}>
             <Group gap={16} justify="space-between" align="baseline" wrap="nowrap">
               <Group gap={6} align="baseline" wrap="nowrap" style={{ minWidth: 0 }}>
-                <Text fw={700} truncate style={{ flex: 'none', maxWidth: '60%' }}>
-                  {displayName(from.addr)}
-                </Text>
+                <SenderLink
+                  open={from.open}
+                  label={t.contact.openContact(displayName(from.addr))}
+                  style={{ flex: 'none', maxWidth: '60%', minWidth: 0 }}
+                >
+                  <Text fw={700} truncate>
+                    {displayName(from.addr)}
+                  </Text>
+                </SenderLink>
                 {from.addr.name && (
                   <Text size="sm" c="dimmed" truncate>
                     {message.from.email}
@@ -441,5 +474,38 @@ function ReaderBody({
 
       <AttachmentList mode="read" attachments={message.attachments} urlFor={urlFor} />
     </Stack>
+  )
+}
+
+/**
+ * A sender with a card opens it: the name is the link, the avatar a larger target for the
+ * pointer only, so the keyboard does not stop twice on the same thing.
+ */
+export function SenderLink({
+  open,
+  label,
+  focusable = true,
+  style,
+  children,
+}: {
+  open?: () => void
+  label?: string
+  focusable?: boolean
+  style?: CSSProperties
+  children: ReactNode
+}) {
+  if (!open) return style ? <Box style={style}>{children}</Box> : <>{children}</>
+  return (
+    <UnstyledButton
+      className={classes.senderLink}
+      onClick={open}
+      aria-label={focusable ? label : undefined}
+      aria-hidden={focusable ? undefined : true}
+      tabIndex={focusable ? undefined : -1}
+      title={label}
+      style={style}
+    >
+      {children}
+    </UnstyledButton>
   )
 }

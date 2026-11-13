@@ -30,6 +30,15 @@ It sits behind your single sign-on (such as [Authelia](https://www.authelia.com/
 - Undo send for a few seconds after sending
 - Recipient suggestions from your [Davis](https://github.com/tchapi/davis) address books (_optional_)
 
+### Contacts (_optional, with Davis_)
+
+- Your address books, in the same three panes as mail: browse, filter, pick which book you look at
+- Create, edit and delete contacts, with undo. What other apps wrote on a card and Postel does not show is left as it is
+- Pictures, with a crop
+- Download a contact, an address book or all of them as `.vcf`, and import `.vcf` files
+- Possible duplicates pointed out on a card, merged in two clicks
+- Senders you know show their name and picture from their card, and open it; the others can be added from the message
+
 ### Interface
 
 - Light and dark mode, nine accent colours, two densities
@@ -61,7 +70,7 @@ Comes as one Docker image (php-fpm and Caddy) for `amd64` and `arm64`, with a sa
   - An IMAP server that supports master users and the `SORT`, `THREAD`, `MOVE` and `PREVIEW` extensions. [Dovecot](https://www.dovecot.org/) does, and it is the only one tested (_2.3.19, as shipped with [docker-mailserver](https://docker-mailserver.github.io/docker-mailserver/latest/) 15_)
   - An SMTP submission server that accepts the same master user. With Dovecot as the SASL backend for Postfix, which is the usual setup, it does
   - A reverse proxy doing forward-auth, which sets `Remote-User`, `Remote-Email` and `Remote-Name` on each request. For instance Traefik or Caddy with Authelia
-  - [Davis](https://github.com/tchapi/davis) 5.6 or later, if you want recipient suggestions (_optional_)
+  - [Davis](https://github.com/tchapi/davis) 5.6 or later, if you want contacts and recipient suggestions (_optional_)
 
 To run it without Docker, you also need PHP 8.4 (with the `intl` extension), Composer 2 and Node 22 or later to build the frontend.
 
@@ -74,7 +83,7 @@ Whatever the way, you need to:
 1. Create a [Dovecot master user](#dovecot-master-user) for Postel
 2. Put Postel behind a [reverse proxy with forward-auth](#-reverse-proxy-and-authentication)
 3. Set the [configuration](#configuration)
-4. Optionally, create a [Davis app key](#davis-app-key) for recipient suggestions
+4. Optionally, create a [Davis app key](#davis-app-key) for contacts and recipient suggestions
 
 ## Configuration
 
@@ -95,7 +104,7 @@ Everything is set with environment variables.
 | `SMTP_PORT` | `587` | Submission port |
 | `SMTP_ENCRYPTION` | `starttls` | `false`, `ssl` or `tls` (_implicit TLS, usually port 465_), or `starttls` (_usually port 587_) |
 | `SMTP_VALIDATE_CERT` | `true` | Check the SMTP server's certificate |
-| `DAVIS_URL` | | The DAV root of your Davis server, for instance `https://dav.example.com/dav/`. Leave it empty to turn recipient suggestions off |
+| `DAVIS_URL` | | The DAV root of your Davis server, for instance `https://dav.example.com/dav/`. Leave it empty to turn contacts and recipient suggestions off |
 | `DAVIS_APP_ID` | | The Davis app key's id (`app_…`) |
 | `DAVIS_APP_SECRET` | | The Davis app key's secret |
 | `DAVIS_LOGIN_ATTRIBUTE` | `username` | Which header is the Davis login: `username` (`Remote-User`) or `email` (`Remote-Email`) |
@@ -127,7 +136,7 @@ The `<user>` part comes from the forward-auth headers: the email (`Remote-Email`
 
 ## Davis app key
 
-Recipient suggestions come from the user's [Davis](https://github.com/tchapi/davis) address books, read with an app key: Postel logs in as `<user>*<app id>` with the key's secret, and Davis acts as `<user>`. It needs Davis 5.6 or later.
+Contacts and recipient suggestions come from the user's [Davis](https://github.com/tchapi/davis) address books, read and written with an app key: Postel logs in as `<user>*<app id>` with the key's secret, and Davis acts as `<user>`. It needs Davis 5.6 or later.
 
 1. Turn app keys on in Davis with `APP_KEYS_ENABLED=true`
 2. Create a key, for all users or only the ones using Postel:
@@ -144,11 +153,15 @@ _The **App keys** page of the Davis dashboard does the same._
 
 > [!NOTE]
 >
-> Davis never creates an account for an app key: each user needs an existing Davis account with the same name. Users without one simply get no suggestions.
+> Davis never creates an account for an app key: each user needs an existing Davis account with the same name. Users without one get an empty address book and no suggestions.
+>
+> The key lets Postel change the address books too: contacts created, edited or deleted in Postel are written to Davis.
 >
 > `--all-users` does not include Davis admins. If an admin uses Postel, add them with `--user`.
 
-Postel keeps a copy of the names and addresses in its SQLite file, and checks Davis for changes at most every five minutes. Suggestions never wait for Davis.
+Postel keeps a copy of the cards in its SQLite file, so the address book opens at once and suggestions never wait for Davis. It checks Davis for changes when you open your contacts, and otherwise at most every five minutes. A change made in Postel goes to Davis first, and is refused rather than written over a change made elsewhere in the meantime.
+
+Postel only speaks standard CardDAV to Davis. The app key is the one thing that needs Davis: it is what lets Postel act as the user without their password.
 
 # 🌐 Reverse proxy and authentication
 

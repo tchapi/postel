@@ -1,0 +1,7 @@
+BEGIN:VCARD
+VERSION:3.0
+UID:note
+FN:Note Taker
+NOTE:First line\nsecond line\, with a comma\; and a semicolon. This note is long enou
+ gh to be folded over two lines.
+END:VCARD

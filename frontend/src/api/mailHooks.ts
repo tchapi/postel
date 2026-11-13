@@ -5,10 +5,9 @@ import {
   useInfiniteQuery,
   useQuery,
 } from '@tanstack/react-query'
-import { useEffect, useMemo, useState, useSyncExternalStore } from 'react'
+import { useSyncExternalStore } from 'react'
 
 import type { MailActions, MailHooks } from '../hooks'
-import type { KnownContact } from '../lib/contacts'
 import { ACCENTS, DEFAULT_ACCENT, type AccentName } from '../theme'
 import type {
   DateRange,
@@ -23,6 +22,7 @@ import type {
   Undo,
 } from '../types'
 import { api, serverReachable } from './client'
+import { createContactsHooks } from './contactsHooks'
 import type * as Dto from './dto'
 
 const PAGE = 50
@@ -447,6 +447,8 @@ export function createMailHooks(qc: QueryClient): MailHooks {
   }
 
   return {
+    ...createContactsHooks(qc),
+
     useFolders: () =>
       useQuery({
         queryKey: ['folders'],
@@ -534,57 +536,6 @@ export function createMailHooks(qc: QueryClient): MailHooks {
         placeholderData: keepPreviousData,
       }),
 
-    useContactNames: (emails) => {
-      // Looked up once per address, then kept for the session
-      const [known, setKnown] = useState<Map<string, KnownContact | null>>(() => new Map())
-      const missing = useMemo(() => {
-        const set = new Set<string>()
-        for (const e of emails) {
-          const email = e.trim().toLowerCase()
-          if (email && !known.has(email)) set.add(email)
-        }
-        return [...set].sort()
-      }, [emails, known])
-      const { data } = useQuery({
-        queryKey: ['contact-names', missing],
-        queryFn: async () => {
-          const query = missing.map((e) => `emails[]=${encodeURIComponent(e)}`).join('&')
-          return api<Record<string, { name: string | null; photo: boolean }>>(
-            `/contacts/lookup?${query}`,
-          )
-        },
-        enabled: missing.length > 0,
-        staleTime: Infinity,
-      })
-      useEffect(() => {
-        if (!data) return
-        setKnown((prev) => {
-          const next = new Map(prev)
-          for (const email of missing) {
-            const card = data[email]
-            next.set(
-              email,
-              card
-                ? {
-                    email,
-                    name: card.name ?? undefined,
-                    photo: card.photo
-                      ? `/api/contacts/photo?email=${encodeURIComponent(email)}`
-                      : undefined,
-                  }
-                : null,
-            )
-          }
-          return next
-        })
-      }, [data, missing])
-      return useMemo(() => {
-        const out = new Map<string, KnownContact>()
-        for (const [email, contact] of known) if (contact) out.set(email, contact)
-        return out
-      }, [known])
-    },
-
     useSettings: () => {
       const { data } = useQuery({
         queryKey: settingsQueryKey,
@@ -608,7 +559,7 @@ export function createMailHooks(qc: QueryClient): MailHooks {
     useServerReachable: () => useSyncExternalStore(serverReachable.subscribe, serverReachable.get),
 
     useSession: () => {
-      const { data } = useQuery({
+      const { data, isError } = useQuery({
         queryKey: ['me'],
         queryFn: () => api<Dto.Me>('/me'),
         staleTime: Infinity,
@@ -616,6 +567,8 @@ export function createMailHooks(qc: QueryClient): MailHooks {
       return {
         name: data?.displayName ?? data?.username ?? '',
         email: data?.email ?? '',
+        // Without an answer, nothing about contacts is offered
+        contacts: data ? data.contacts === true : isError ? false : undefined,
         signOut: () => {
           if (data?.logoutUrl) window.location.assign(data.logoutUrl)
           else window.location.reload()

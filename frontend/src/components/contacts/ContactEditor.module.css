@@ -1,0 +1,130 @@
+.root {
+  position: relative;
+  min-width: 0;
+}
+
+/* Same floating bar as the card it replaces */
+.viewport,
+.scrollbar {
+  --bar-space: 50px;
+
+  @media (max-width: $mantine-breakpoint-sm) {
+    --bar-space: 62px;
+  }
+}
+
+.viewport {
+  padding-top: var(--bar-space);
+  mask-image: linear-gradient(to bottom, transparent 4px, #000 calc(var(--bar-space) + 6px));
+}
+
+.scrollbar {
+  margin-top: var(--bar-space);
+}
+
+.bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 2;
+  margin: 6px 6px 0;
+  border-radius: var(--mantine-radius-md);
+  backdrop-filter: blur(14px) saturate(140%);
+
+  @mixin light {
+    background: color-mix(
+      in srgb,
+      color-mix(in srgb, var(--mantine-color-gray-1) 55%, var(--mantine-color-body)) 78%,
+      transparent
+    );
+    box-shadow:
+      0 1px 2px rgb(31 29 26 / 6%),
+      0 2px 8px -2px rgb(31 29 26 / 10%);
+  }
+
+  @mixin dark {
+    background: color-mix(
+      in srgb,
+      color-mix(in srgb, var(--mantine-color-dark-8) 55%, var(--mantine-color-body)) 78%,
+      transparent
+    );
+    box-shadow:
+      0 1px 2px rgb(0 0 0 / 30%),
+      0 2px 8px -2px rgb(0 0 0 / 40%);
+  }
+}
+
+.toolbar {
+  height: 44px;
+
+  @media (max-width: $mantine-breakpoint-sm) {
+    height: 56px;
+  }
+}
+
+.form {
+  max-width: 680px;
+}
+
+/* Section headings as in Settings: small, uppercase, dimmed */
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.heading {
+  font-size: var(--mantine-font-size-xs);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--mantine-color-dimmed);
+}
+
+/* The picture is a button and a drop target */
+.photo {
+  flex: none;
+  border-radius: 50%;
+  transition: box-shadow 120ms ease;
+
+  &:focus-visible {
+    outline: 2px solid var(--mantine-primary-color-filled);
+    outline-offset: 2px;
+  }
+
+  &[data-dropping] {
+    box-shadow: 0 0 0 3px var(--mantine-primary-color-filled);
+  }
+}
+
+/* A label from another app, where the type picker would be */
+.label {
+  flex: none;
+  width: 120px;
+  height: 36px;
+  line-height: 36px;
+  padding-inline: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.remove {
+  flex: none;
+  color: var(--mantine-color-dimmed);
+}
+
+.add {
+  align-self: flex-start;
+  margin-inline-start: -8px;
+}
+
+.address {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px 12px;
+  border: 1px solid var(--mantine-color-default-border);
+  border-radius: var(--mantine-radius-md);
+}

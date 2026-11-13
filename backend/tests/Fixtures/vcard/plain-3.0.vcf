@@ -1,0 +1,17 @@
+BEGIN:VCARD
+VERSION:3.0
+PRODID:-//Example//Example//EN
+UID:plain-30
+FN:Émile Durand
+N:Durand;Émile;Jean;Dr;Jr
+ORG:Example;Research
+TITLE:Engineer
+EMAIL;TYPE=INTERNET;TYPE=WORK:emile@example.test
+EMAIL;TYPE=INTERNET;TYPE=HOME;TYPE=PREF:emile@home.example
+TEL;TYPE=CELL;TYPE=VOICE:+33 6 00 00 00 01
+TEL;TYPE=WORK:+33 1 00 00 00 01
+ADR;TYPE=HOME:BP 12;Bât. B;12 rue des Lilas;Lyon;;69001;France
+URL:https://example.test/emile
+BDAY:1984-03-12
+REV:2020-01-01T00:00:00Z
+END:VCARD

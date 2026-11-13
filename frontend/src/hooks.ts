@@ -1,7 +1,10 @@
 import { createContext, use } from 'react'
 import type { InfiniteData, UseInfiniteQueryResult, UseQueryResult } from '@tanstack/react-query'
 import type {
+  AddressBookData,
   Contact,
+  ContactCard,
+  ContactInput,
   DraftInput,
   Folder,
   Message,
@@ -37,7 +40,64 @@ export interface MailActions {
   refresh(folder: string): Promise<void>
 }
 
-export interface MailHooks {
+/**
+ * Why a write to the address book failed:
+ * - `changed`: someone changed the card since it was read (reload it, keep the user's input)
+ * - `unavailable`: the address book's server cannot be reached
+ * - `notFound`: the card is gone
+ * - `failed`: anything else, the backend itself included
+ */
+export type ContactProblem = 'changed' | 'unavailable' | 'notFound' | 'failed'
+
+export class ContactError extends Error {
+  readonly problem: ContactProblem
+
+  constructor(problem: ContactProblem) {
+    super(problem)
+    this.problem = problem
+  }
+}
+
+/** Every write takes the ETag the user saw, so it never overwrites a change made elsewhere. */
+export interface ContactActions {
+  create(book: string, input: ContactInput): Promise<ContactCard>
+  update(id: string, etag: string, input: ContactInput): Promise<ContactCard>
+  /** Undo puts the card back as it was, under a new id. */
+  remove(card: { id: string; book: string; etag: string }): Promise<Undo>
+  setPhoto(id: string, etag: string, jpeg: Blob): Promise<ContactCard>
+  removePhoto(id: string, etag: string): Promise<ContactCard>
+  /** Sent a few cards at a time; `onProgress` says how many of the file's cards are done. */
+  importFile(
+    book: string,
+    file: File,
+    onProgress?: (done: number, total: number) => void,
+  ): Promise<{ imported: number; failed: number }>
+  /** `keep` takes in what `other` has and `other` is deleted. No undo. */
+  merge(
+    keep: { id: string; etag: string },
+    other: { id: string; etag: string },
+  ): Promise<ContactCard>
+  /** Asks the backend to sync with the address book now; the list follows if anything changed. */
+  refresh(): Promise<{ available: boolean; changed: boolean }>
+}
+
+export interface ContactsHooks {
+  /** Every card, from the backend's copy; idle when `enabled` is false. */
+  useAddressBook(enabled: boolean): UseQueryResult<AddressBookData>
+  /** The whole card; idle when `id` is null. Fails with a ContactError. */
+  useContactCard(id: string | null): UseQueryResult<ContactCard>
+  useContactActions(): ContactActions
+}
+
+/** Where the browser finds pictures and downloads. */
+export type ContactUrls = {
+  photo: (card: { id: string; etag: string }) => string
+  cardVcf: (id: string) => string
+  bookVcf: (bookId: string) => string
+  allVcf: () => string
+}
+
+export interface MailHooks extends ContactsHooks {
   useFolders(): UseQueryResult<Folder[]>
   /** 50 rows per page. `search` null = plain folder listing. */
   useMessages(args: {
@@ -54,7 +114,13 @@ export interface MailHooks {
   useContactNames(emails: string[]): ReadonlyMap<string, KnownContact>
   useSettings(): { settings: Settings; update: (patch: Partial<Settings>) => void }
   useRecentSearches(): { recent: string[]; push: (q: string) => void }
-  useSession(): { name: string; email: string; signOut: () => void }
+  /** `contacts`: an address book is configured; undefined until the session is known. */
+  useSession(): {
+    name: string
+    email: string
+    contacts: boolean | undefined
+    signOut: () => void
+  }
   useMailActions(): MailActions
   /** False while the backend does not answer at all: nothing that needs it should be offered. */
   useServerReachable(): boolean

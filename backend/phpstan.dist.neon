@@ -4,6 +4,8 @@ includes:
 
 parameters:
     level: 8
+    stubFiles:
+        - stubs/sabre-vobject.stub
     paths:
         - src
         - tests

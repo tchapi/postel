@@ -49,7 +49,7 @@ final class RemoteUserAuthenticatorTest extends WebTestCase
 
         self::assertResponseIsSuccessful();
         self::assertJsonStringEqualsJsonString(
-            '{"username":"alice","email":"alice@example.com","displayName":"Alice","logoutUrl":null}',
+            '{"username":"alice","email":"alice@example.com","displayName":"Alice","logoutUrl":null,"contacts":true}',
             (string) $client->getResponse()->getContent(),
         );
     }

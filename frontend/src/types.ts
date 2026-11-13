@@ -98,6 +98,71 @@ export type DraftInput = {
   draftUid?: number
 }
 
+/* ---------- address book ---------- */
+
+export type AddressBook = { id: string; name: string }
+
+/** One card in the list: enough to show a row and filter on. */
+export type ContactSummary = {
+  id: string
+  book: string
+  etag: string
+  /** Never empty: the backend falls back to the organisation, then the first email. */
+  name: string
+  org: string
+  emails: string[]
+  phones: string[]
+  photo: boolean
+}
+
+export type AddressBookData = {
+  /** False when the last attempt to reach the address book failed: this is the last copy. */
+  available: boolean
+  books: AddressBook[]
+  /** Sorted by name, accents ignored. */
+  cards: ContactSummary[]
+}
+
+export type ContactType = 'home' | 'work' | 'cell' | 'other'
+
+/**
+ * `key` is the entry's place on the card as the server sent it, so an edit lands on the
+ * right line. New entries have none.
+ */
+export type ContactValue = { key?: number; value: string; type: ContactType; label?: string }
+export type ContactAddress = {
+  key?: number
+  type: ContactType
+  street: string
+  city: string
+  region: string
+  postalCode: string
+  country: string
+}
+export type ContactUrl = { key?: number; value: string }
+
+export type ContactCard = {
+  id: string
+  book: string
+  etag: string
+  name: string
+  firstName: string
+  lastName: string
+  org: string
+  title: string
+  emails: ContactValue[]
+  phones: ContactValue[]
+  addresses: ContactAddress[]
+  urls: ContactUrl[]
+  /** `YYYY-MM-DD`, or `--MM-DD` when the year is unknown; empty when none. */
+  birthday: string
+  note: string
+  photo: boolean
+}
+
+/** What the editor sends: the card without what the server computes. */
+export type ContactInput = Omit<ContactCard, 'id' | 'book' | 'etag' | 'name' | 'photo'>
+
 /** Every mutating action resolves to an undo function, so the UI can offer Undo in a toast. */
 export type Undo = () => Promise<void>
 

@@ -19,3 +19,6 @@ framework:
 when@test:
     framework:
         test: true
+        # The address book server is a fake one in tests, see tests/Contacts/FakeCardDav.php
+        http_client:
+            mock_response_factory: App\Tests\Contacts\FakeCardDav

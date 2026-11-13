@@ -1,6 +1,7 @@
 import { useRef, useState, type KeyboardEvent, type PointerEvent, type ReactNode } from 'react'
 import { AppShell, Drawer } from '@mantine/core'
 import { useI18n } from '../lib/i18n'
+import { SplitPanes } from './SplitPanes'
 import { Brand } from './TopBar'
 import classes from './AppShell.module.css'
 
@@ -19,7 +20,7 @@ export type MailAppShellProps = {
   renderNav: (collapsed: boolean) => ReactNode
   list: ReactNode
   reader: ReactNode
-  /** Replaces list + reader (settings). */
+  /** Replaces list + reader (settings, contacts). */
   page?: ReactNode
   mobilePane: 'list' | 'reader'
   listWidth: number
@@ -34,17 +35,12 @@ const MIN_NAV = 180
 const MAX_NAV = 360
 const clampNav = (w: number) => Math.min(MAX_NAV, Math.max(MIN_NAV, w))
 
-const MIN_LIST = 300
-const MAX_LIST = 560
-const clamp = (w: number) => Math.min(MAX_LIST, Math.max(MIN_LIST, w))
-
 /**
  * ≥1200 three panes · 768–1199 two panes + folder drawer · <768 one pane.
  * Built on Mantine AppShell; below `lg` the navbar is collapsed and folders move to a Drawer.
  */
 export function MailAppShell(p: MailAppShellProps) {
   const { t } = useI18n()
-  const drag = useRef<{ x: number; w: number } | null>(null)
   const desktop = p.layout === 'desktop'
   const navDrag = useRef<{ x: number; w: number } | null>(null)
   // No width animation while the pane follows the pointer
@@ -68,47 +64,15 @@ export function MailAppShell(p: MailAppShellProps) {
     if (e.key === 'ArrowRight') p.onNavWidthChange(clampNav(p.navWidth + 16))
   }
 
-  const onSplitDown = (e: PointerEvent<HTMLDivElement>) => {
-    e.currentTarget.setPointerCapture(e.pointerId)
-    drag.current = { x: e.clientX, w: p.listWidth }
-  }
-  const onSplitMove = (e: PointerEvent<HTMLDivElement>) => {
-    if (drag.current) p.onListWidthChange(clamp(drag.current.w + e.clientX - drag.current.x))
-  }
-  const onSplitKey = (e: KeyboardEvent<HTMLDivElement>) => {
-    if (e.key === 'ArrowLeft') p.onListWidthChange(clamp(p.listWidth - 16))
-    if (e.key === 'ArrowRight') p.onListWidthChange(clamp(p.listWidth + 16))
-  }
-
   const panes = p.page ?? (
-    <>
-      {(p.layout !== 'mobile' || p.mobilePane === 'list') && (
-        <div
-          className={classes.listPane}
-          style={{ width: p.layout === 'mobile' ? '100%' : p.listWidth }}
-        >
-          {p.list}
-        </div>
-      )}
-      {p.layout !== 'mobile' && (
-        <div
-          role="separator"
-          aria-orientation="vertical"
-          aria-valuenow={p.listWidth}
-          aria-valuemin={MIN_LIST}
-          aria-valuemax={MAX_LIST}
-          tabIndex={0}
-          className={classes.splitter}
-          onPointerDown={onSplitDown}
-          onPointerMove={onSplitMove}
-          onPointerUp={() => (drag.current = null)}
-          onKeyDown={onSplitKey}
-        />
-      )}
-      {(p.layout !== 'mobile' || p.mobilePane === 'reader') && (
-        <main className={classes.readerPane}>{p.reader}</main>
-      )}
-    </>
+    <SplitPanes
+      layout={p.layout}
+      list={p.list}
+      reader={p.reader}
+      mobilePane={p.mobilePane}
+      listWidth={p.listWidth}
+      onListWidthChange={p.onListWidthChange}
+    />
   )
 
   return (

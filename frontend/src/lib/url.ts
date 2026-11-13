@@ -2,25 +2,41 @@ import type { DatePreset, SearchFilters } from '../types'
 
 /** What the address bar says: one place in the app, shareable and restorable. */
 export type AppLocation = {
-  view: 'mail' | 'settings'
+  view: 'mail' | 'settings' | 'contacts'
   folderId: string
   uid: number | null
   search: SearchFilters | null
+  /** The open contact, in the contacts view. */
+  contactId: string | null
 }
 
 const PRESETS: DatePreset[] = ['any', '7d', '30d', '1y', 'custom']
 
 const segment = (value: string) => encodeURIComponent(value)
 
+// Contact ids are opaque hex from the backend; anything else in the address bar is ignored
+const CONTACT_ID = /^[A-Za-z0-9_-]{1,64}$/
+
 /**
- * /folders/<folder>[/<uid>], /settings, /search?q=…&<filters>.
+ * /folders/<folder>[/<uid>], /settings, /contacts[/<id>], /search?q=…&<filters>.
  * Anything else lands on the inbox.
  */
 export function parseLocation(pathname: string, query: string): AppLocation {
-  const inbox: AppLocation = { view: 'mail', folderId: 'INBOX', uid: null, search: null }
+  const inbox: AppLocation = {
+    view: 'mail',
+    folderId: 'INBOX',
+    uid: null,
+    search: null,
+    contactId: null,
+  }
   const parts = pathname.split('/').filter(Boolean).map(decodeURIComponent)
 
   if (parts[0] === 'settings') return { ...inbox, view: 'settings' }
+
+  if (parts[0] === 'contacts') {
+    const id = parts[1] ?? ''
+    return { ...inbox, view: 'contacts', contactId: CONTACT_ID.test(id) ? id : null }
+  }
 
   if (parts[0] === 'search') {
     const params = new URLSearchParams(query)
@@ -54,6 +70,9 @@ export function parseLocation(pathname: string, query: string): AppLocation {
 export function toUrl(location: AppLocation): string {
   if (location.view === 'settings') return '/settings'
 
+  if (location.view === 'contacts')
+    return location.contactId === null ? '/contacts' : `/contacts/${segment(location.contactId)}`
+
   if (location.search) {
     const { search } = location
     const params = new URLSearchParams()
@@ -72,4 +91,10 @@ export function toUrl(location: AppLocation): string {
 
   const folder = `/folders/${segment(location.folderId)}`
   return location.uid === null ? folder : `${folder}/${location.uid}`
+}
+
+/** The part of a URL that makes it a new place in the history; the rest is what is open there. */
+export function placeOf(url: string): string {
+  const path = url.split('?')[0]!.split('/')
+  return path.slice(0, path[1] === 'contacts' ? 2 : 3).join('/')
 }

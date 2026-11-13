@@ -1,0 +1,43 @@
+/* A neutral dark stage whatever the theme, so the picture's colours read the same */
+.stage {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--mantine-radius-md);
+  background: #1f1d1a;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+
+  &:active {
+    cursor: grabbing;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--mantine-primary-color-filled);
+    outline-offset: 2px;
+  }
+}
+
+.image {
+  position: absolute;
+  top: 0;
+  left: 0;
+  max-width: none;
+  transform-origin: 0 0;
+  pointer-events: none;
+}
+
+/* Everything outside the circle is dimmed; a thin ring marks its edge */
+.mask {
+  position: absolute;
+  border-radius: 50%;
+  box-shadow:
+    0 0 0 1px rgb(255 255 255 / 70%),
+    0 0 0 999px rgb(0 0 0 / 55%);
+  pointer-events: none;
+}
+
+.zoomIcon {
+  flex: none;
+  color: var(--mantine-color-dimmed);
+}

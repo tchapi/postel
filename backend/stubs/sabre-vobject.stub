@@ -1,0 +1,13 @@
+<?php
+
+namespace Sabre\VObject;
+
+/**
+ * vobject does not say what its nodes iterate over, which phpstan wants to know.
+ *
+ * @implements \IteratorAggregate<int, Node>
+ * @implements \ArrayAccess<string, mixed>
+ */
+abstract class Node implements \IteratorAggregate, \ArrayAccess, \Countable, \JsonSerializable
+{
+}

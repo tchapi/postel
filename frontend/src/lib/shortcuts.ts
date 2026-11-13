@@ -6,6 +6,7 @@ export type ShortcutId =
   | 'open'
   | 'close'
   | 'goInbox'
+  | 'goContacts'
   | 'search'
   | 'palette'
   | 'reply'
@@ -15,6 +16,7 @@ export type ShortcutId =
   | 'delete'
   | 'star'
   | 'unread'
+  | 'editContact'
   | 'compose'
   | 'send'
   | 'help'
@@ -27,6 +29,9 @@ type ShortcutDef = {
   alt?: string[]
 }
 
+/** Only shown, and only bound, when an address book is configured. */
+export const CONTACT_SHORTCUTS: ShortcutId[] = ['goContacts', 'editContact']
+
 /** Single source for the global handler, tooltips, ShortcutsHelp and the cheat sheet. */
 export const SHORTCUTS: Record<ShortcutId, ShortcutDef> = {
   next: { keys: ['j'], group: 'move' },
@@ -34,6 +39,7 @@ export const SHORTCUTS: Record<ShortcutId, ShortcutDef> = {
   open: { keys: ['Enter'], group: 'move' },
   close: { keys: ['Escape'], group: 'move' },
   goInbox: { keys: ['g', 'i'], group: 'move', sequence: true },
+  goContacts: { keys: ['g', 'c'], group: 'move', sequence: true },
   search: { keys: ['/'], group: 'move' },
   palette: { keys: ['mod', 'K'], group: 'move' }, // handled by Spotlight's own `shortcut`
   reply: { keys: ['r'], group: 'act' },
@@ -43,6 +49,8 @@ export const SHORTCUTS: Record<ShortcutId, ShortcutDef> = {
   delete: { keys: ['Backspace'], alt: ['Delete'], group: 'act' },
   star: { keys: ['s'], group: 'act' },
   unread: { keys: ['u'], group: 'act' },
+  // Same key as archive: each view hands over only the handlers that make sense there
+  editContact: { keys: ['e'], group: 'act' },
   compose: { keys: ['c'], group: 'app' },
   send: { keys: ['mod', 'Enter'], group: 'app' }, // handled inside the composer
   help: { keys: ['?'], group: 'app' },
@@ -96,12 +104,15 @@ export function useMailShortcuts(handlers: Handlers, enabled: boolean) {
     )
       return
 
+    const ids = (Object.keys(SHORTCUTS) as ShortcutId[]).filter((id) => handlers[id])
+
     if (pendingG.current !== null) {
       window.clearTimeout(pendingG.current)
       pendingG.current = null
-      if (key === 'i' && handlers.goInbox) {
+      const sequence = ids.find((id) => SHORTCUTS[id].sequence && SHORTCUTS[id].keys[1] === key)
+      if (sequence) {
         event.preventDefault()
-        handlers.goInbox()
+        handlers[sequence]?.()
       }
       return
     }
@@ -110,7 +121,7 @@ export function useMailShortcuts(handlers: Handlers, enabled: boolean) {
       return
     }
 
-    const match = (Object.keys(SHORTCUTS) as ShortcutId[]).find((id) => {
+    const match = ids.find((id) => {
       const def = SHORTCUTS[id]
       return (
         (!def.sequence && def.keys.length === 1 && def.keys[0] === key) ||

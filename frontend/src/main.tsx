@@ -14,6 +14,7 @@ import { type ReactNode, StrictMode, useEffect } from 'react'
 import { createRoot } from 'react-dom/client'
 
 import { createMailHooks, partUrl } from './api/mailHooks'
+import { contactUrls } from './api/contactsHooks'
 import { MailHooksProvider, useMailHooks } from './hooks'
 import { MailApp } from './MailApp'
 import { faviconUrl } from './components/Logo'
@@ -62,6 +63,7 @@ createRoot(document.getElementById('root')!).render(
                   ? `${partUrl(ref, a.id, true)}&thumb=1`
                   : partUrl(ref, a.id, disposition === 'inline')
               }
+              contactUrls={contactUrls}
             />
           </ModalsProvider>
         </ThemedRoot>

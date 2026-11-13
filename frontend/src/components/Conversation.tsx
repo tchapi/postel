@@ -6,6 +6,7 @@ import { useI18n } from '../lib/i18n'
 import { KnownAvatar, useKnownAddr } from '../lib/contacts'
 import type { Addr, Message, MessageRow } from '../types'
 import { MessageFrame, splitTextQuote } from './MessageFrame'
+import { SenderLink } from './Reader'
 import classes from './Conversation.module.css'
 
 type EarlierProps = {
@@ -61,26 +62,42 @@ export function EarlierMessages({ rows, renderMessage }: EarlierProps) {
   )
 }
 
-/** Avatar and name, as the address book knows them */
-function Sender({ addr, fw }: { addr: Addr; fw: number }) {
+/** Avatar and name, as the address book knows them. `linked`: they open the card, if there is one. */
+function Sender({ addr, fw, linked = false }: { addr: Addr; fw: number; linked?: boolean }) {
+  const { t } = useI18n()
   const from = useKnownAddr(addr)
+  const open = linked ? from.open : undefined
   return (
     <>
-      <KnownAvatar known={from.known} size={28}>
-        <Avatar
-          radius="xl"
-          size={28}
-          color="initials"
-          name={displayName(from.addr)}
-          src={from.photo}
-          aria-hidden
+      <SenderLink open={open} focusable={false}>
+        <KnownAvatar known={from.known} size={28}>
+          <Avatar
+            radius="xl"
+            size={28}
+            color="initials"
+            name={displayName(from.addr)}
+            src={from.photo}
+            aria-hidden
+          >
+            {initials(from.addr)}
+          </Avatar>
+        </KnownAvatar>
+      </SenderLink>
+      {open ? (
+        <SenderLink
+          open={open}
+          label={t.contact.openContact(displayName(from.addr))}
+          style={{ flex: 'none', maxWidth: '40%', minWidth: 0 }}
         >
-          {initials(from.addr)}
-        </Avatar>
-      </KnownAvatar>
-      <Text size="sm" fw={fw} className={classes.sender}>
-        {displayName(from.addr)}
-      </Text>
+          <Text size="sm" fw={fw} truncate>
+            {displayName(from.addr)}
+          </Text>
+        </SenderLink>
+      ) : (
+        <Text size="sm" fw={fw} className={classes.sender}>
+          {displayName(from.addr)}
+        </Text>
+      )}
     </>
   )
 }
@@ -94,17 +111,31 @@ type OpenedProps = {
 /** An earlier message, opened: who, when, the body without its quote. */
 export function EarlierMessage({ message, allowRemote, onFold }: OpenedProps) {
   const { locale } = useI18n()
+  const from = useKnownAddr(message.from)
+  const date = (
+    <Text size="xs" c="dimmed" className={classes.date}>
+      {relativeDate(message.date, locale)}
+    </Text>
+  )
   return (
     <Stack gap={12}>
-      <UnstyledButton onClick={onFold} aria-expanded>
+      {from.open ? (
+        // The sender opens their card, the rest of the line folds the message
         <Group gap={12} wrap="nowrap">
-          <Sender addr={message.from} fw={600} />
-          <Box style={{ flex: 1 }} />
-          <Text size="xs" c="dimmed" className={classes.date}>
-            {relativeDate(message.date, locale)}
-          </Text>
+          <Sender addr={message.from} fw={600} linked />
+          <UnstyledButton onClick={onFold} aria-expanded className={classes.fold}>
+            {date}
+          </UnstyledButton>
         </Group>
-      </UnstyledButton>
+      ) : (
+        <UnstyledButton onClick={onFold} aria-expanded>
+          <Group gap={12} wrap="nowrap">
+            <Sender addr={message.from} fw={600} />
+            <Box style={{ flex: 1 }} />
+            {date}
+          </Group>
+        </UnstyledButton>
+      )}
       {message.html ? (
         <MessageFrame
           html={message.html}
