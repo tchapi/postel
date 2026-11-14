@@ -92,6 +92,8 @@ export function useMailShortcuts(handlers: Handlers, enabled: boolean) {
 
   const onKeyDown = useEffectEvent((event: KeyboardEvent) => {
     if (event.defaultPrevented || isTypingTarget(event.target)) return
+    // A dialog on top has the keyboard: Esc closes it, and nothing happens underneath
+    if (document.querySelector('[aria-modal="true"]')) return
     const altGraph = event.getModifierState?.('AltGraph') ?? false
     if ((event.ctrlKey || event.metaKey || event.altKey) && !altGraph) return
 

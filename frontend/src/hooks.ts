@@ -45,16 +45,20 @@ export interface MailActions {
  * - `changed`: someone changed the card since it was read (reload it, keep the user's input)
  * - `unavailable`: the address book's server cannot be reached
  * - `notFound`: the card is gone
+ * - `refused`: the backend does not accept what was typed; `fields` says where
  * - `failed`: anything else, the backend itself included
  */
-export type ContactProblem = 'changed' | 'unavailable' | 'notFound' | 'failed'
+export type ContactProblem = 'changed' | 'unavailable' | 'notFound' | 'refused' | 'failed'
 
 export class ContactError extends Error {
   readonly problem: ContactProblem
+  /** With `refused`, the refused fields as paths: `addresses[0].region`. */
+  readonly fields: string[]
 
-  constructor(problem: ContactProblem) {
+  constructor(problem: ContactProblem, fields: string[] = []) {
     super(problem)
     this.problem = problem
+    this.fields = fields
   }
 }
 

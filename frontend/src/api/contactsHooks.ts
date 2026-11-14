@@ -49,6 +49,7 @@ function toContactError(error: unknown): ContactError {
     if (error.code === 'contact_changed' || error.status === 409) return new ContactError('changed')
     if (error.code === 'contacts_unavailable') return new ContactError('unavailable')
     if (error.code === 'contact_not_found') return new ContactError('notFound')
+    if (error.fields.length > 0) return new ContactError('refused', error.fields)
   }
   return new ContactError('failed')
 }
@@ -128,11 +129,11 @@ function toCard(dto: Dto.Card): ContactCard {
     addresses: dto.addresses.map((a) => ({
       key: a.key,
       type: toType(a.type),
-      street: a.street ?? '',
-      city: a.city ?? '',
-      region: a.region ?? '',
-      postalCode: a.postalCode ?? '',
-      country: a.country ?? '',
+      street: a.street,
+      city: a.city,
+      region: a.region,
+      postalCode: a.postalCode,
+      country: a.country,
     })),
     urls: dto.urls.map((u) => ({ key: u.key, value: u.value })),
     birthday: dto.birthday ?? '',
@@ -159,7 +160,7 @@ const orNull = (value: string) => value.trim() || null
 const withKey = (key: number | undefined) => (key === undefined ? {} : { key })
 
 /** Empty lines are dropped: the editor shows an empty row to type in, the card should not keep it. */
-function fromInput(input: ContactInput): Dto.CardInput {
+export function fromInput(input: ContactInput): Dto.CardInput {
   return {
     firstName: orNull(input.firstName),
     lastName: orNull(input.lastName),
@@ -173,14 +174,15 @@ function fromInput(input: ContactInput): Dto.CardInput {
       .map((p) => ({ ...withKey(p.key), value: p.value.trim(), type: p.type })),
     addresses: input.addresses
       .filter((a) => [a.street, a.city, a.region, a.postalCode, a.country].some((v) => v.trim()))
+      // The parts of an address are always text: an empty part is '', never null
       .map((a) => ({
         ...withKey(a.key),
         type: a.type,
-        street: orNull(a.street),
-        city: orNull(a.city),
-        region: orNull(a.region),
-        postalCode: orNull(a.postalCode),
-        country: orNull(a.country),
+        street: a.street.trim(),
+        city: a.city.trim(),
+        region: a.region.trim(),
+        postalCode: a.postalCode.trim(),
+        country: a.country.trim(),
       })),
     urls: input.urls
       .filter((u) => u.value.trim())

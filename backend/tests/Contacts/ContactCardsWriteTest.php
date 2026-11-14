@@ -166,6 +166,35 @@ final class ContactCardsWriteTest extends WebTestCase
         self::assertResponseStatusCodeSame(422);
     }
 
+    public function testARefusedSaveSaysWhichFields(): void
+    {
+        $card = $this->card(self::EMILE);
+        $this->dav->take();
+
+        $this->request('PUT', '/api/contacts/cards/'.$card['id'], [
+            'etag' => $card['etag'],
+            'firstName' => 'Émile',
+            'emails' => [['value' => 'emile@example.test', 'type' => 'work'], ['value' => 'not an address', 'type' => 'home']],
+            'addresses' => [['type' => 'home', 'city' => 'Lyon', 'region' => null]],
+        ]);
+
+        self::assertResponseStatusCodeSame(422);
+        $answer = $this->json();
+        self::assertSame('invalid_request', $answer['error']);
+        self::assertSame(['addresses[0].region'], $answer['fields']);
+        self::assertSame([], $this->dav->take());
+
+        // A wrong type is found first; once the types are right, the values are checked
+        $this->request('PUT', '/api/contacts/cards/'.$card['id'], [
+            'etag' => $card['etag'],
+            'firstName' => 'Émile',
+            'emails' => [['value' => 'emile@example.test', 'type' => 'work'], ['value' => 'not an address', 'type' => 'home']],
+        ]);
+
+        self::assertResponseStatusCodeSame(422);
+        self::assertSame(['emails[1].value'], $this->json()['fields']);
+    }
+
     public function testWithoutAnEtagInTheAnswerTheCardIsReadBack(): void
     {
         $card = $this->card(self::EMILE);

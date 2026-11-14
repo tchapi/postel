@@ -30,7 +30,7 @@ import type {
   ContactType,
   ContactValue,
 } from '../../types'
-import { formatBirthday } from '../../lib/addressBook'
+import { formatBirthday, refusedFields } from '../../lib/addressBook'
 import { initials } from '../../lib/format'
 import { useI18n } from '../../lib/i18n'
 import { rebaseInput } from '../../lib/rebase'
@@ -54,7 +54,10 @@ export type ContactSave = {
  * A save that failed may still have moved the card: someone else changed it, or the
  * fields went through and the picture did not. `card` is then the card as it is now.
  */
-export type SaveOutcome = { ok: true } | { ok: false; problem: ContactProblem; card?: ContactCard }
+export type SaveOutcome =
+  | { ok: true }
+  // `fields`: with the `refused` problem, the paths of the fields the backend refused
+  | { ok: false; problem: ContactProblem; card?: ContactCard; fields?: string[] }
 
 export type ContactEditorProps = {
   /** The card being edited; none for a new one. */
@@ -149,6 +152,7 @@ export function ContactEditor({
   const [cropFile, setCropFile] = useState<File | null>(null)
   const [problem, setProblem] = useState<ContactProblem | 'badImage' | null>(null)
   const [saving, setSaving] = useState(false)
+  const [refused, setRefused] = useState<string[]>([])
   const [errors, setErrors] = useState<{ name?: boolean; emails?: number[] }>({})
   const [dropping, setDropping] = useState(false)
   const confirming = useRef(false)
@@ -197,6 +201,7 @@ export function ContactEditor({
     setSaving(false)
     if (outcome.ok) return
     setProblem(outcome.problem)
+    setRefused(refusedFields(outcome.fields ?? []))
     if (outcome.card) {
       // The next attempt starts from the card as it is now: the edits are moved onto it,
       // so that each line still points at the right line of the card
@@ -312,16 +317,44 @@ export function ContactEditor({
   const updateAddress = (i: number, patch: Partial<ContactAddress>) =>
     set({ addresses: draft.addresses.map((a, j) => (j === i ? { ...a, ...patch } : a)) })
 
+  // The refused fields under the names they have in the form: "Email, Address (Region)"
+  const fieldNames: Record<string, string> = {
+    firstName: t.contact.firstName,
+    lastName: t.contact.lastName,
+    org: t.contact.org,
+    title: t.contact.jobTitle,
+    emails: t.contact.email,
+    phones: t.contact.phone,
+    addresses: t.contact.address,
+    urls: t.contact.url,
+    birthday: t.contact.birthdayLabel,
+    note: t.contact.noteLabel,
+    street: t.contact.street,
+    city: t.contact.city,
+    region: t.contact.region,
+    postalCode: t.contact.postalCode,
+    country: t.contact.country,
+  }
+  const refusedNames = refused.flatMap((field) => {
+    const [name = '', part] = field.split('.')
+    const label = fieldNames[name]
+    if (!label) return []
+    const partLabel = part ? fieldNames[part] : undefined
+    return [partLabel ? `${label} (${partLabel})` : label]
+  })
+
   const problemText =
-    problem === 'changed'
-      ? t.contact.changed
-      : problem === 'unavailable'
-        ? t.contact.unreachable
-        : problem === 'badImage'
-          ? t.contact.badImage
-          : problem
-            ? t.contact.saveFailed
-            : null
+    problem === 'refused' && refusedNames.length > 0
+      ? t.contact.saveRefused(refusedNames.join(', '))
+      : problem === 'changed'
+        ? t.contact.changed
+        : problem === 'unavailable'
+          ? t.contact.unreachable
+          : problem === 'badImage'
+            ? t.contact.badImage
+            : problem
+              ? t.contact.saveFailed
+              : null
 
   const title = card ? t.contact.editTitle : t.contact.newContact
   const avatarName =

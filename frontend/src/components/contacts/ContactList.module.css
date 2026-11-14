@@ -94,7 +94,8 @@
   }
 }
 
-/* A letter heading: lined up with the names, on the page colour so rows pass under it when pinned */
+/* A letter heading: lined up with the names. Pinned, it is a solid band from the top of the pane
+   down to the letter, so rows go out of sight under its lower edge */
 .letter {
   left: 0;
   right: 0;

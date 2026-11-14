@@ -5,6 +5,7 @@ import {
   formatBirthday,
   letterOf,
   matchesFilter,
+  refusedFields,
   secondLine,
   sortCards,
   withLetters,
@@ -50,7 +51,9 @@ describe('contact filter', () => {
   })
 
   it('finds phones whatever the spacing', () => {
-    expect(matchesFilter(emile, '0612')).toBe(false)
+    // Typed the way it is dialled at home, stored with the country
+    expect(matchesFilter(emile, '0612')).toBe(true)
+    expect(matchesFilter(emile, '0712')).toBe(false)
     expect(matchesFilter(emile, '612 34')).toBe(true)
     expect(matchesFilter(emile, '+33612345678')).toBe(true)
   })
@@ -114,5 +117,17 @@ describe('birthday', () => {
   it('leaves the year out when the card does not know it', () => {
     expect(formatBirthday('--03-12', 'en-GB')).toBe('12 March')
     expect(formatBirthday('--0312', 'fr-FR')).toBe('12 mars')
+  })
+})
+
+describe('the fields a save was refused for', () => {
+  it('names each field once, with the part of an address', () => {
+    expect(
+      refusedFields(['emails[1].value', 'emails[2].value', 'addresses[0].region', 'birthday']),
+    ).toEqual(['emails', 'addresses.region', 'birthday'])
+  })
+
+  it('names the address alone when no part is given', () => {
+    expect(refusedFields(['addresses', ''])).toEqual(['addresses'])
   })
 })

@@ -4,6 +4,7 @@ import { CheckIcon, CircleAlertIcon, MergeIcon } from 'lucide-react'
 import type { ContactCard } from '../../types'
 import { initials } from '../../lib/format'
 import { useI18n } from '../../lib/i18n'
+import { phoneLabel, usePhoneReader } from '../../lib/phone'
 import classes from './MergeDialog.module.css'
 
 export type MergeDialogProps = {
@@ -20,11 +21,13 @@ export type MergeDialogProps = {
 }
 
 /** The few lines that tell one card from the other. */
-function lines(card: ContactCard): string[] {
+function lines(card: ContactCard, phone: (raw: string) => string): string[] {
   const meta = [card.org !== card.name ? card.org : '', card.title].filter(Boolean).join(' · ')
-  return [meta, ...card.emails.map((e) => e.value), ...card.phones.map((p) => p.value)].filter(
-    Boolean,
-  )
+  return [
+    meta,
+    ...card.emails.map((e) => e.value),
+    ...card.phones.map((p) => phone(p.value)),
+  ].filter(Boolean)
 }
 
 /**
@@ -42,6 +45,7 @@ export function MergeDialog({
   problem,
 }: MergeDialogProps) {
   const { t } = useI18n()
+  const readPhone = usePhoneReader()
   const [keepSecond, setKeepSecond] = useState(false)
   const [busy, setBusy] = useState(false)
   const refs = useRef<(HTMLButtonElement | null)[]>([])
@@ -123,7 +127,7 @@ export function MergeDialog({
                   {initials({ name: card.name, email: card.emails[0]?.value ?? '' })}
                 </Avatar>
                 <span className={classes.name}>{card.name}</span>
-                {lines(card)
+                {lines(card, (raw) => phoneLabel(readPhone(raw)))
                   .slice(0, 4)
                   .map((line, n) => (
                     <span key={n} className={classes.line}>

@@ -25,15 +25,24 @@ const digits = (value: string) => value.replace(/\D/g, '')
  * Every word of the query must appear somewhere: in the name, the organisation, an email,
  * or, for a word with digits, a phone number.
  */
-export function matchesFilter(card: ContactSummary, query: string): boolean {
+export function matchesFilter(
+  card: ContactSummary,
+  query: string,
+  dial: (raw: string) => string = (raw) => raw,
+): boolean {
   const words = fold(query).split(/\s+/).filter(Boolean)
   if (!words.length) return true
   const text = fold([card.name, card.org, ...card.emails].join('\n'))
-  const phones = card.phones.map(digits)
+  // As typed and as shown: "06 12" and "+33 6 12" both find the same number
+  const phones = card.phones.flatMap((phone) => [digits(phone), digits(dial(phone))])
   return words.every((word) => {
     if (text.includes(word)) return true
     const number = digits(word)
-    return number.length > 0 && phones.some((phone) => phone.includes(number))
+    if (!number) return false
+    const local = number.replace(/^0+/, '')
+    return phones.some(
+      (phone) => phone.includes(number) || (local.length > 1 && phone.includes(local)),
+    )
   })
 }
 
@@ -62,10 +71,13 @@ export function withLetters(cards: ContactSummary[]): ListEntry[] {
 }
 
 /** The dimmed line under a name: the organisation, else the first email, else the first phone. */
-export function secondLine(card: ContactSummary): string {
+export function secondLine(
+  card: ContactSummary,
+  phone: (raw: string) => string = (raw) => raw,
+): string {
   if (card.org && card.org !== card.name) return card.org
   const email = card.emails.find((e) => e !== card.name)
-  return email ?? card.phones[0] ?? ''
+  return email ?? (card.phones[0] ? phone(card.phones[0]) : '')
 }
 
 /** A birthday through Intl, without the year when the card does not know it. */
@@ -85,4 +97,16 @@ export function formatBirthday(value: string, locale: string): string {
     )
   }
   return value
+}
+
+/**
+ * The fields a save was refused for, from the backend's paths: `addresses[0].region`
+ * gives `addresses.region`, `emails[1].value` gives `emails`. Each one once.
+ */
+export function refusedFields(paths: string[]): string[] {
+  const fields = paths.map((path) => {
+    const [field = '', part] = path.replace(/\[\d+\]/g, '').split('.')
+    return field === 'addresses' && part ? `${field}.${part}` : field
+  })
+  return [...new Set(fields.filter(Boolean))]
 }

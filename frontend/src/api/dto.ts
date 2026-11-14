@@ -142,11 +142,11 @@ export type CardValue = { key: number; value: string; type: CardType | null; lab
 export type CardAddress = {
   key: number
   type: CardType | null
-  street: string | null
-  city: string | null
-  region: string | null
-  postalCode: string | null
-  country: string | null
+  street: string
+  city: string
+  region: string
+  postalCode: string
+  country: string
 }
 
 export type CardUrl = { key: number; value: string }
@@ -186,11 +186,11 @@ export type CardInput = {
   addresses: {
     key?: number
     type: CardType
-    street: string | null
-    city: string | null
-    region: string | null
-    postalCode: string | null
-    country: string | null
+    street: string
+    city: string
+    region: string
+    postalCode: string
+    country: string
   }[]
   urls: { key?: number; value: string }[]
   birthday: string | null
