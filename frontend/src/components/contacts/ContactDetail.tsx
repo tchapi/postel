@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
 import {
   ActionIcon,
   Anchor,
@@ -8,6 +8,7 @@ import {
   CopyButton,
   Group,
   Menu,
+  Modal,
   ScrollArea,
   Stack,
   Text,
@@ -35,6 +36,7 @@ import type { ContactProblem } from '../../hooks'
 import { formatBirthday } from '../../lib/addressBook'
 import { initials } from '../../lib/format'
 import { useI18n } from '../../lib/i18n'
+import { flagOf, usePhoneReader } from '../../lib/phone'
 import { KeyCombo, ShortcutTooltip } from '../ShortcutTooltip'
 import { ErrorState, ReaderSkeleton, StateMessage } from '../States'
 import classes from './ContactDetail.module.css'
@@ -247,6 +249,10 @@ function Body({
 }: ContactDetailProps & { card: ContactCard }) {
   const { t, locale } = useI18n()
   const typeLabel = (type: ContactType, label?: string) => label || t.contact.types[type]
+  const readPhone = usePhoneReader()
+  const countries = useMemo(() => new Intl.DisplayNames(locale, { type: 'region' }), [locale])
+  const countryName = (country: string) => countries.of(country) ?? country
+  const [pictureOpen, setPictureOpen] = useState(false)
   const meta = [card.org !== card.name ? card.org : '', card.title].filter(Boolean).join(' · ')
   const avatar = isMobile ? 64 : 72
 
@@ -272,17 +278,26 @@ function Body({
     )
   if (card.phones.length)
     groups.push(
-      card.phones.map((p) => (
-        <Field key={`p${p.key}`} label={typeLabel(p.type, p.label)} copy={p.value}>
-          <Anchor
-            size="sm"
-            className={classes.link}
-            href={`tel:${p.value.replace(/[^\d+#*,;]/g, '')}`}
-          >
-            {p.value}
-          </Anchor>
-        </Field>
-      )),
+      card.phones.map((p) => {
+        const phone = readPhone(p.value)
+        return (
+          <Field key={`p${p.key}`} label={typeLabel(p.type, p.label)} copy={phone.text}>
+            {phone.country && (
+              <span
+                className={classes.flag}
+                role="img"
+                aria-label={countryName(phone.country)}
+                title={countryName(phone.country)}
+              >
+                {flagOf(phone.country)}
+              </span>
+            )}
+            <Anchor size="sm" className={classes.link} href={`tel:${phone.dial}`}>
+              {phone.text}
+            </Anchor>
+          </Field>
+        )
+      }),
     )
   if (card.addresses.length)
     groups.push(
@@ -334,9 +349,28 @@ function Body({
   return (
     <Stack gap={8} className={classes.body} px={isMobile ? 20 : 48} py={isMobile ? 20 : 32}>
       <header className={classes.header}>
-        <Avatar radius="xl" size={avatar} color="initials" name={card.name} src={photoUrl} alt="">
-          {initials({ name: card.name, email: card.emails[0]?.value ?? '' })}
-        </Avatar>
+        {photoUrl ? (
+          <UnstyledButton
+            className={classes.picture}
+            aria-label={t.contact.showPicture}
+            onClick={() => setPictureOpen(true)}
+          >
+            <Avatar radius="xl" size={avatar} src={photoUrl} alt="" />
+          </UnstyledButton>
+        ) : (
+          <Avatar radius="xl" size={avatar} color="initials" name={card.name} alt="">
+            {initials({ name: card.name, email: card.emails[0]?.value ?? '' })}
+          </Avatar>
+        )}
+        <Modal
+          opened={pictureOpen && !!photoUrl}
+          onClose={() => setPictureOpen(false)}
+          title={card.name}
+          centered
+          size="auto"
+        >
+          <img src={photoUrl} alt="" className={classes.largePicture} />
+        </Modal>
         <Stack gap={2} style={{ minWidth: 0 }}>
           <Title order={1} className={classes.name}>
             {card.name}

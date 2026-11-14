@@ -7,6 +7,7 @@ import { ContactError, useMailHooks, type ContactUrls } from './hooks'
 import type { Addr, ContactCard, ContactInput, ContactSummary, Density, Undo } from './types'
 import { matchesFilter, secondLine } from './lib/addressBook'
 import { findDuplicates } from './lib/duplicates'
+import { homeCallingCode, phoneLabel, PhoneHomeContext, readPhone } from './lib/phone'
 import { useI18n } from './lib/i18n'
 import { useMailShortcuts } from './lib/shortcuts'
 import type { Layout } from './components/AppShell'
@@ -101,7 +102,20 @@ export function ContactsApp({
     () => (data?.cards ?? []).filter((c) => bookId === 'all' || c.book === bookId),
     [data, bookId],
   )
-  const cards = useMemo(() => inBook.filter((c) => matchesFilter(c, filter)), [inBook, filter])
+  // Numbers written without a country are read as numbers of the book's own country
+  const phoneHome = useMemo(
+    () =>
+      homeCallingCode(
+        (data?.cards ?? []).flatMap((c) => c.phones),
+        navigator.languages,
+      ),
+    [data],
+  )
+  const phoneText = useCallback((raw: string) => phoneLabel(readPhone(raw, phoneHome)), [phoneHome])
+  const cards = useMemo(
+    () => inBook.filter((c) => matchesFilter(c, filter, (raw) => readPhone(raw, phoneHome).dial)),
+    [inBook, filter, phoneHome],
+  )
   // New cards and imports go to the picked book, else the first one
   const targetBook = bookId === 'all' ? (books[0]?.id ?? '') : bookId
 
@@ -124,8 +138,8 @@ export function ContactsApp({
     const ids = card ? (duplicateIds.get(card.id) ?? []) : []
     return (data?.cards ?? [])
       .filter((c) => ids.includes(c.id))
-      .map((c) => ({ id: c.id, name: c.name, detail: secondLine(c) }))
-  }, [card, duplicateIds, data])
+      .map((c) => ({ id: c.id, name: c.name, detail: secondLine(c, phoneText) }))
+  }, [card, duplicateIds, data, phoneText])
 
   const photoUrl = (c: Pick<ContactSummary, 'id' | 'etag' | 'photo'>) =>
     c.photo ? urls.photo(c) : undefined
@@ -453,7 +467,7 @@ export function ContactsApp({
   const showDetail = editing !== null || (mobileDetail && contactId !== null)
 
   return (
-    <>
+    <PhoneHomeContext value={phoneHome}>
       <SplitPanes
         layout={layout}
         list={list}
@@ -520,6 +534,6 @@ export function ContactsApp({
           </Group>
         </Stack>
       </Modal>
-    </>
+    </PhoneHomeContext>
   )
 }

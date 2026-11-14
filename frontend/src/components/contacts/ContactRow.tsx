@@ -3,6 +3,7 @@ import { Avatar, Text } from '@mantine/core'
 import type { ContactSummary, Density } from '../../types'
 import { secondLine } from '../../lib/addressBook'
 import { initials } from '../../lib/format'
+import { phoneLabel, usePhoneReader } from '../../lib/phone'
 import classes from './ContactRow.module.css'
 
 // Slot per row, the highlight inset 2px top and bottom like the message rows
@@ -28,7 +29,8 @@ function ContactRowImpl({
   style,
   onActivate,
 }: ContactRowProps) {
-  const detail = secondLine(card)
+  const readPhone = usePhoneReader()
+  const detail = secondLine(card, (raw) => phoneLabel(readPhone(raw)))
   const size = AVATAR_SIZE[density]
   return (
     <div style={style} className={classes.slot} data-density={density}>

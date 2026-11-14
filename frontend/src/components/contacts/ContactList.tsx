@@ -407,7 +407,8 @@ export function ContactList(props: ContactListProps) {
                 data-pinned={isPinned || undefined}
                 style={
                   isPinned
-                    ? { position: 'sticky', top: topInset + 6, height: vi.size }
+                    ? // From the very top, behind the floating header too: no row shows above the letter
+                      { position: 'sticky', top: 0, height: topInset + 6 + vi.size }
                     : {
                         position: 'absolute',
                         top: 0,

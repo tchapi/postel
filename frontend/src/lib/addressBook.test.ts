@@ -50,7 +50,9 @@ describe('contact filter', () => {
   })
 
   it('finds phones whatever the spacing', () => {
-    expect(matchesFilter(emile, '0612')).toBe(false)
+    // Typed the way it is dialled at home, stored with the country
+    expect(matchesFilter(emile, '0612')).toBe(true)
+    expect(matchesFilter(emile, '0712')).toBe(false)
     expect(matchesFilter(emile, '612 34')).toBe(true)
     expect(matchesFilter(emile, '+33612345678')).toBe(true)
   })

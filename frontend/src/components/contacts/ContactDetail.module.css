@@ -196,3 +196,30 @@
   color: var(--mantine-color-dimmed);
   user-select: none;
 }
+
+/* The picture opens larger */
+.picture {
+  flex: none;
+  border-radius: 50%;
+  cursor: zoom-in;
+
+  &:focus-visible {
+    outline: 2px solid var(--mantine-primary-color-filled);
+    outline-offset: 2px;
+  }
+}
+
+/* Pictures are saved at 512px: never shown larger than they are */
+.largePicture {
+  display: block;
+  width: min(512px, 80vw, 70vh);
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: var(--mantine-radius-md);
+}
+
+.flag {
+  margin-inline-end: 6px;
+  font-size: var(--mantine-font-size-sm);
+  user-select: none;
+}
