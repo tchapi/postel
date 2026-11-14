@@ -49,6 +49,7 @@ function toContactError(error: unknown): ContactError {
     if (error.code === 'contact_changed' || error.status === 409) return new ContactError('changed')
     if (error.code === 'contacts_unavailable') return new ContactError('unavailable')
     if (error.code === 'contact_not_found') return new ContactError('notFound')
+    if (error.fields.length > 0) return new ContactError('refused', error.fields)
   }
   return new ContactError('failed')
 }

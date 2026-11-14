@@ -251,7 +251,8 @@ export function ContactsApp({
         return { ok: false, problem, card: fresh.data }
       }
       // The fields may have gone through before the picture failed
-      return { ok: false, problem, card: saved }
+      const fields = error instanceof ContactError ? error.fields : []
+      return { ok: false, problem, card: saved, fields }
     }
     setEditing(null)
     if (saved) {

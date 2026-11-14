@@ -17,6 +17,7 @@ use Symfony\Component\HttpKernel\Event\ExceptionEvent;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 use Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException;
 use Symfony\Component\HttpKernel\KernelEvents;
+use Symfony\Component\Validator\Exception\ValidationFailedException;
 use Webklex\PHPIMAP\Exceptions\AuthFailedException;
 use Webklex\PHPIMAP\Exceptions\ConnectionFailedException;
 
@@ -59,6 +60,15 @@ final class ApiExceptionSubscriber implements EventSubscriberInterface
         };
 
         $payload = ['error' => $error];
+        // Which fields of the request were refused, so the client can point at them
+        $refused = $exception->getPrevious();
+        if ($refused instanceof ValidationFailedException) {
+            $fields = [];
+            foreach ($refused->getViolations() as $violation) {
+                $fields[$violation->getPropertyPath()] = true;
+            }
+            $payload['fields'] = array_map(strval(...), array_keys($fields));
+        }
         if ($this->debug) {
             $payload['detail'] = $exception->getMessage();
         }

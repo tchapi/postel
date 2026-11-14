@@ -1,11 +1,14 @@
 export class ApiError extends Error {
   readonly status: number
   readonly code: string
+  /** The fields of the request the backend refused, as paths: `addresses[0].region`. */
+  readonly fields: string[]
 
-  constructor(status: number, code: string) {
+  constructor(status: number, code: string, fields: string[] = []) {
     super(`${status} ${code}`)
     this.status = status
     this.code = code
+    this.fields = fields
   }
 }
 
@@ -52,8 +55,11 @@ export async function api<T>(path: string, init?: RequestInit): Promise<T> {
   }
 
   if (!response.ok) {
-    const body = (await response.json().catch(() => ({}))) as { error?: string }
-    throw new ApiError(response.status, body.error ?? 'unknown')
+    const body = (await response.json().catch(() => ({}))) as {
+      error?: string
+      fields?: string[]
+    }
+    throw new ApiError(response.status, body.error ?? 'unknown', body.fields)
   }
 
   if (response.status === 204) return undefined as T

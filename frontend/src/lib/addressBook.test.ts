@@ -5,6 +5,7 @@ import {
   formatBirthday,
   letterOf,
   matchesFilter,
+  refusedFields,
   secondLine,
   sortCards,
   withLetters,
@@ -116,5 +117,17 @@ describe('birthday', () => {
   it('leaves the year out when the card does not know it', () => {
     expect(formatBirthday('--03-12', 'en-GB')).toBe('12 March')
     expect(formatBirthday('--0312', 'fr-FR')).toBe('12 mars')
+  })
+})
+
+describe('the fields a save was refused for', () => {
+  it('names each field once, with the part of an address', () => {
+    expect(
+      refusedFields(['emails[1].value', 'emails[2].value', 'addresses[0].region', 'birthday']),
+    ).toEqual(['emails', 'addresses.region', 'birthday'])
+  })
+
+  it('names the address alone when no part is given', () => {
+    expect(refusedFields(['addresses', ''])).toEqual(['addresses'])
   })
 })

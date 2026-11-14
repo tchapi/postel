@@ -98,3 +98,15 @@ export function formatBirthday(value: string, locale: string): string {
   }
   return value
 }
+
+/**
+ * The fields a save was refused for, from the backend's paths: `addresses[0].region`
+ * gives `addresses.region`, `emails[1].value` gives `emails`. Each one once.
+ */
+export function refusedFields(paths: string[]): string[] {
+  const fields = paths.map((path) => {
+    const [field = '', part] = path.replace(/\[\d+\]/g, '').split('.')
+    return field === 'addresses' && part ? `${field}.${part}` : field
+  })
+  return [...new Set(fields.filter(Boolean))]
+}
